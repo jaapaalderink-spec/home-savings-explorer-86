@@ -14,16 +14,250 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      companies: {
+        Row: {
+          categories: string[]
+          created_at: string
+          id: string
+          join_code: string
+          monthly_lead_limit: number
+          name: string
+          plan_name: string
+          updated_at: string
+        }
+        Insert: {
+          categories?: string[]
+          created_at?: string
+          id?: string
+          join_code?: string
+          monthly_lead_limit?: number
+          name: string
+          plan_name?: string
+          updated_at?: string
+        }
+        Update: {
+          categories?: string[]
+          created_at?: string
+          id?: string
+          join_code?: string
+          monthly_lead_limit?: number
+          name?: string
+          plan_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lead_purchases: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          lead_id: string
+          note: string | null
+          purchased_by: string | null
+          status: Database["public"]["Enums"]["lead_status"]
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          lead_id: string
+          note?: string | null
+          purchased_by?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          lead_id?: string
+          note?: string | null
+          purchased_by?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_purchases_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_purchases_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          airco_rooms: number | null
+          annual_consumption_kwh: number | null
+          annual_feedin_kwh: number | null
+          annual_km: number | null
+          battery_goals: string[]
+          build_year: number | null
+          categories: string[]
+          city: string | null
+          contract_type: string | null
+          created_at: string
+          current_heating: string | null
+          email: string
+          estimated_savings: number
+          ev_status: string | null
+          first_name: string
+          house_number: string | null
+          house_type: string | null
+          id: string
+          last_name: string
+          max_partners: number
+          notes: string | null
+          panel_count: number | null
+          phone: string
+          postcode: string
+          purchase_count: number
+          smart_devices: string[]
+        }
+        Insert: {
+          airco_rooms?: number | null
+          annual_consumption_kwh?: number | null
+          annual_feedin_kwh?: number | null
+          annual_km?: number | null
+          battery_goals?: string[]
+          build_year?: number | null
+          categories?: string[]
+          city?: string | null
+          contract_type?: string | null
+          created_at?: string
+          current_heating?: string | null
+          email: string
+          estimated_savings?: number
+          ev_status?: string | null
+          first_name: string
+          house_number?: string | null
+          house_type?: string | null
+          id?: string
+          last_name: string
+          max_partners?: number
+          notes?: string | null
+          panel_count?: number | null
+          phone: string
+          postcode: string
+          purchase_count?: number
+          smart_devices?: string[]
+        }
+        Update: {
+          airco_rooms?: number | null
+          annual_consumption_kwh?: number | null
+          annual_feedin_kwh?: number | null
+          annual_km?: number | null
+          battery_goals?: string[]
+          build_year?: number | null
+          categories?: string[]
+          city?: string | null
+          contract_type?: string | null
+          created_at?: string
+          current_heating?: string | null
+          email?: string
+          estimated_savings?: number
+          ev_status?: string | null
+          first_name?: string
+          house_number?: string | null
+          house_type?: string | null
+          id?: string
+          last_name?: string
+          max_partners?: number
+          notes?: string | null
+          panel_count?: number | null
+          phone?: string
+          postcode?: string
+          purchase_count?: number
+          smart_devices?: string[]
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      current_company_id: { Args: never; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "owner" | "account_manager"
+      lead_status: "new" | "contacted" | "quoted" | "won" | "lost"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +384,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "owner", "account_manager"],
+      lead_status: ["new", "contacted", "quoted", "won", "lost"],
+    },
   },
 } as const
