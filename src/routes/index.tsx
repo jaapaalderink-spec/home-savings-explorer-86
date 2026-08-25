@@ -79,7 +79,7 @@ function Veld({
         min={min}
         max={max}
         step={step}
-        onValueChange={([v]) => onChange(v)}
+        onValueChange={([v]) => onChange(v ?? min)}
       />
       {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
     </div>
