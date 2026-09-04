@@ -1,7 +1,9 @@
 import { useRef, useState, type PointerEvent } from "react";
 import { MousePointerClick } from "lucide-react";
 import { CATEGORIES, type CategoryMeta } from "./categories";
-import houseHero from "@/assets/house-hero.jpg";
+import houseHeroAsset from "@/assets/house-hero-v2.png.asset.json";
+
+const houseHero = houseHeroAsset.url;
 
 interface Props {
   activeId: string | null;
@@ -42,8 +44,8 @@ export function HouseScene({ activeId, results, onPick }: Props) {
       <div className="relative aspect-[16/10] w-full overflow-hidden">
         <img
           src={houseHero}
-          width={1920}
-          height={1200}
+          width={1728}
+          height={941}
           alt="Vrijstaande woning met zonnepanelen op het dak, een warmtepomp-buitenunit links, een thuisbatterij in de garage, een elektrische auto met laadpaal op de oprit een warmteboiler in de bijkeuken en een airco-unit aan de gevel."
           className="h-full w-full scale-[1.06] object-cover transition-transform duration-500 ease-out motion-reduce:!transform-none"
           style={{ transform: `scale(1.06) translate3d(${tilt.x * -10}px, ${tilt.y * -8}px, 0)` }}
