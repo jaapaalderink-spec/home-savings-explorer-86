@@ -51,6 +51,18 @@ function HomePage() {
       } else if (patch.airco?.houseType && patch.airco.houseType !== prev.airco.houseType) {
         next.heatpump = { ...next.heatpump, houseType: patch.airco.houseType };
       }
+      // stroomverbruik hergebruiken tussen zonnepanelen en thuisbatterij
+      if (
+        patch.solar?.annualConsumptionKwh !== undefined &&
+        patch.solar.annualConsumptionKwh !== prev.solar.annualConsumptionKwh
+      ) {
+        next.battery = { ...next.battery, annualConsumptionKwh: patch.solar.annualConsumptionKwh };
+      } else if (
+        patch.battery?.annualConsumptionKwh !== undefined &&
+        patch.battery.annualConsumptionKwh !== prev.battery.annualConsumptionKwh
+      ) {
+        next.solar = { ...next.solar, annualConsumptionKwh: patch.battery.annualConsumptionKwh };
+      }
       return next;
     });
   }, []);
