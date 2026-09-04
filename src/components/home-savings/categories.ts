@@ -70,63 +70,6 @@ export const CATEGORIES: CategoryMeta[] = [
     order: 6,
   },
 ];
-  {
-    id: "solar",
-    label: "Zonnepanelen",
-    short: "Bespaar tot 60% op je stroomrekening",
-    icon: Sun,
-    hotspot: { x: 40, y: 20 },
-    order: 0,
-  },
-  {
-    id: "airco",
-    label: "Airco",
-    short: "Efficiënt koelen én verwarmen, minder gas",
-    icon: Snowflake,
-    hotspot: { x: 61.5, y: 55 },
-    order: 1,
-  },
-  {
-    id: "heatpump",
-    label: "Warmtepomp",
-    short: "Van gas los, flink lagere energierekening",
-    icon: Zap,
-    hotspot: { x: 10.5, y: 66.5 },
-    order: 2,
-  },
-  {
-    id: "battery",
-    label: "Thuisbatterij",
-    short: "Sla overtollige zonnestroom op",
-    icon: BatteryCharging,
-    hotspot: { x: 74, y: 64.5 },
-    order: 3,
-  },
-  {
-    id: "ev",
-    label: "Laadpaal",
-    short: "Goedkoop thuis je elektrische auto laden",
-    icon: Car,
-    hotspot: { x: 64, y: 70 },
-    order: 4,
-  },
-  {
-    id: "boiler",
-    label: "Warmteboiler",
-    short: "Sla overschot op als warm water",
-    icon: Flame,
-    hotspot: { x: 30, y: 62 },
-    order: 5,
-  },
-  {
-    id: "ehms",
-    label: "EHMS",
-    short: "Het brein dat alles slim aanstuurt",
-    icon: Cpu,
-    hotspot: { x: 46, y: 58 },
-    order: 6,
-  },
-];
 
 export const CONTRACT_META: CategoryMeta = {
   id: "contract",
