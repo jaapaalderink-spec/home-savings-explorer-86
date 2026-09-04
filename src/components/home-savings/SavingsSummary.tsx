@@ -73,7 +73,7 @@ export function SavingsSummary({ results, inputs, onPick }: Props) {
       <ul className="mt-2 space-y-2">
         {items.map((c) => {
           const r = results[c.id];
-          const owned = !!owned[c.id];
+          const isOwned = !!owned[c.id];
           const filled = c.id === "contract" ? inputs.contract.type !== "onbekend" : r != null;
           const Icon = c.icon;
 
