@@ -12,8 +12,8 @@ export function buildOfferteHref(
   const owned: Record<string, boolean> = inputs?.owned ?? {};
   const items = [...CATEGORIES, CONTRACT_META];
 
-  const counted = items
-    .map((c) => c.id)
+  const counted: string[] = items
+    .map((c) => c.id as string)
     .filter((id) => results[id] != null && !owned[id]);
   if (extraCat && !counted.includes(extraCat) && !owned[extraCat] && extraCat !== "contract") {
     counted.push(extraCat);

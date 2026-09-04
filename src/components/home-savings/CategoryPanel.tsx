@@ -16,6 +16,7 @@ import {
   buildAdviceText,
 } from "@/lib/home-savings";
 import { CountUp } from "./CountUp";
+import { buildOfferteHref } from "./offerte-params";
 
 export interface HomeInputs {
   solar: { panelCount: number; annualConsumptionKwh: number; alreadyHasSolar: boolean };
@@ -421,7 +422,7 @@ function ResultCard({
       <p className="mt-3 text-[11px] text-moss/60">{CONFIDENCE_LABEL[result.confidence]}</p>
 
       <Button asChild className="mt-4 w-full" size="lg" style={{ backgroundColor: "#4f8f62", color: "white" }}>
-        <a href={`/offerte?cat=${categoryId}`}>
+        <a href={offerteHref}>
           Vraag gratis offertes aan <ArrowRight size={18} className="ml-1.5" />
         </a>
       </Button>
