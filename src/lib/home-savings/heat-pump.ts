@@ -106,8 +106,13 @@ export function calculateHeatPumpAdvice(input: HeatPumpInput): AdviceResult {
   practicalSavings = Math.max(practicalSavings, 0);
   const range = bandwidth(practicalSavings, 0.25, ASSUMPTIONS.step);
 
-  const fieldsFilled = [input.houseType, input.currentHeating, input.buildYear].filter(Boolean).length;
-  const confidence = confidenceFromCompleteness(fieldsFilled, 3);
+  const fieldsFilled = [
+    input.houseType,
+    input.currentHeating,
+    input.buildYear,
+    input.energyLabel && input.energyLabel !== "onbekend" ? input.energyLabel : null,
+  ].filter(Boolean).length;
+  const confidence = confidenceFromCompleteness(fieldsFilled, 4);
 
   if (input.hasHeatBoiler) {
     reasons.push(
