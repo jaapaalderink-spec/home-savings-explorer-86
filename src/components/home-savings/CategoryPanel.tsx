@@ -92,6 +92,22 @@ export function CategoryPanel({ openId, onOpenChange, inputs, onChange, results,
             </SheetHeader>
 
             <div className="px-6 py-5">
+              {openId !== "contract" && (
+                <div className="mb-5">
+                  <ToggleRow
+                    label={OWNED_LABEL[openId!] ?? "Ik heb dit al"}
+                    checked={!!inputs.owned[openId!]}
+                    onChange={(c) => onChange({ owned: { ...inputs.owned, [openId!]: c } })}
+                  />
+                  {inputs.owned[openId!] && (
+                    <p className="mt-2 text-[11px] leading-relaxed text-moss/60">
+                      We rekenen dit niet mee als nieuwe besparing, maar nemen het wel mee in de
+                      berekening van de andere onderdelen.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {openId === "solar" && (
                 <SolarForm v={inputs.solar} onChange={(v) => onChange({ solar: { ...inputs.solar, ...v } })} />
               )}
