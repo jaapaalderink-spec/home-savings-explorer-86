@@ -50,7 +50,6 @@ export function SavingsSummary({ results, inputs }: Props) {
     aircoRooms: String(inputs.airco.roomCount),
     boilerPersons: String(inputs.boiler.persons),
     boilerWater: inputs.boiler.currentWaterHeating,
-    ehmsDevices: inputs.ehms.smartDevices.join(","),
     batteryGoals: inputs.battery.goals.join(","),
     total: String(total),
   });

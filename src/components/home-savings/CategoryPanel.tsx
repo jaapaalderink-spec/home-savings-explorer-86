@@ -28,10 +28,6 @@ export interface HomeInputs {
     persons: number;
     currentWaterHeating: "gas" | "elektrisch" | "warmtepomp";
   };
-  ehms: {
-    smartDevices: Array<"solar" | "battery" | "ev" | "heatpump" | "airco" | "boiler">;
-    hasDynamicContract: "ja" | "nee" | "weetniet";
-  };
   airco: { roomCount: number; houseType: HouseType };
   contract: { type: EnergyContractType };
 }
@@ -42,7 +38,6 @@ export const EMPTY_INPUTS: HomeInputs = {
   battery: { annualConsumptionKwh: 3500, annualFeedInKwh: 2000, goals: ["besparing"] },
   ev: { evStatus: "nogniet", annualKm: 12000 },
   boiler: { persons: 3, currentWaterHeating: "gas" },
-  ehms: { smartDevices: ["solar"], hasDynamicContract: "weetniet" },
   airco: { roomCount: 1, houseType: "rijtjeshuis" },
   contract: { type: "onbekend" },
 };
@@ -103,9 +98,6 @@ export function CategoryPanel({ openId, onOpenChange, inputs, onChange, results,
               )}
               {openId === "boiler" && (
                 <BoilerForm v={inputs.boiler} onChange={(v) => onChange({ boiler: { ...inputs.boiler, ...v } })} />
-              )}
-              {openId === "ehms" && (
-                <EHMSForm v={inputs.ehms} contract={inputs.contract.type} onChange={(v) => onChange({ ehms: { ...inputs.ehms, ...v } })} />
               )}
               {openId === "airco" && (
                 <AircoForm v={inputs.airco} onChange={(v) => onChange({ airco: { ...inputs.airco, ...v } })} />
@@ -283,44 +275,6 @@ function EVForm({ v, onChange }: { v: HomeInputs["ev"]; onChange: (v: Partial<Ho
         <FieldLabel hint={`${v.annualKm.toLocaleString("nl-NL")} km/jaar`}>Geschatte jaarkilometrage</FieldLabel>
         <Slider value={[v.annualKm]} min={2000} max={60000} step={1000} onValueChange={(x) => onChange({ annualKm: x[0] ?? v.annualKm })} />
       </div>
-    </div>
-  );
-}
-
-function EHMSForm({ v, contract, onChange }: { v: HomeInputs["ehms"]; contract: EnergyContractType; onChange: (v: Partial<HomeInputs["ehms"]>) => void }) {
-  return (
-    <div className="space-y-5">
-      <div>
-        <FieldLabel>Welke slimme systemen wil je combineren?</FieldLabel>
-        <TileGroup
-          multi
-          options={[
-            { id: "solar", label: "Zonnepanelen" },
-            { id: "battery", label: "Thuisbatterij" },
-            { id: "ev", label: "Laadpaal" },
-            { id: "heatpump", label: "Warmtepomp" },
-            { id: "airco", label: "Airco" },
-            { id: "boiler", label: "Warmteboiler" },
-          ]}
-          value={v.smartDevices}
-          onPick={(x) => onChange({ smartDevices: x })}
-        />
-      </div>
-      <div>
-        <FieldLabel>Dynamisch energiecontract?</FieldLabel>
-        <TileGroup
-          options={[
-            { id: "ja", label: "Ja" },
-            { id: "nee", label: "Nee" },
-            { id: "weetniet", label: "Weet ik niet" },
-          ]}
-          value={[v.hasDynamicContract]}
-          onPick={(x) => onChange({ hasDynamicContract: x[0] ?? v.hasDynamicContract })}
-        />
-      </div>
-      {contract === "dynamisch" && (
-        <p className="text-xs text-moss/60">Je hebt elders al een dynamisch contract gekozen — dat werkt door in deze berekening.</p>
-      )}
     </div>
   );
 }
