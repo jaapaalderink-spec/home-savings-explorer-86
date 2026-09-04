@@ -42,10 +42,22 @@ const insulationFactor: Record<string, number> = {
   old: 1.3,
 };
 
+const labelFactor: Record<EnergyLabel, number> = {
+  "a++": 0.7,
+  "a+": 0.75,
+  a: 0.8,
+  b: 0.9,
+  c: 1.0,
+  d: 1.1,
+  e: 1.2,
+  f: 1.3,
+  g: 1.4,
+  onbekend: 1.0,
+};
+
 function yearBucket(year: number): keyof typeof insulationFactor {
   if (year >= 2015) return "modern";
-  if (year >= 1995) return "recent";
-  if (year >= 1975) return "older";
+  if (year >= 1995) return "recent"n  if (year >= 1975) return "older";
   return "old";
 }
 
