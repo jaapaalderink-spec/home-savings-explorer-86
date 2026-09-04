@@ -216,7 +216,7 @@ function SolarForm({ v, onChange }: { v: HomeInputs["solar"]; onChange: (v: Part
         <FieldLabel hint={`${v.annualConsumptionKwh.toLocaleString("nl-NL")} kWh`}>Jaarlijks stroomverbruik</FieldLabel>
         <Slider value={[v.annualConsumptionKwh]} min={1500} max={8000} step={250} onValueChange={(x) => onChange({ annualConsumptionKwh: x[0] ?? v.annualConsumptionKwh })} />
       </div>
-      <ToggleRow label="Heb je al zonnepanelen?" checked={v.alreadyHasSolar} onChange={(c) => onChange({ alreadyHasSolar: c })} />
+      
     </div>
   );
 }
