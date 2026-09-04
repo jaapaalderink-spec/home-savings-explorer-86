@@ -12,24 +12,25 @@ interface Props {
 }
 
 export function SavingsSummary({ results, inputs, onPick }: Props) {
+  const owned: Record<string, boolean> = inputs?.owned ?? {};
   const items = [...CATEGORIES, CONTRACT_META];
 
   const counted = items
     .map((c) => c.id)
-    .filter((id) => results[id] != null && !inputs.owned[id]);
+    .filter((id) => results[id] != null && !owned[id]);
 
   const total = combineSavings(
     Object.fromEntries(counted.map((id) => [id, results[id]?.practicalSavings ?? 0])),
   );
 
   const doneCount = items.filter(
-    (c) => results[c.id] != null || inputs.owned[c.id] || (c.id === "contract" && inputs.contract.type !== "onbekend"),
+    (c) => results[c.id] != null || owned[c.id] || (c.id === "contract" && inputs.contract.type !== "onbekend"),
   ).length;
 
   const params = new URLSearchParams({
     cats: counted.join(","),
-    owned: Object.keys(inputs.owned)
-      .filter((k) => inputs.owned[k])
+    owned: Object.keys(owned)
+      .filter((k) => owned[k])
       .join(","),
     houseType: inputs.heatpump.houseType,
     contract: inputs.contract.type,
@@ -72,7 +73,7 @@ export function SavingsSummary({ results, inputs, onPick }: Props) {
       <ul className="mt-2 space-y-2">
         {items.map((c) => {
           const r = results[c.id];
-          const owned = !!inputs.owned[c.id];
+          const owned = !!owned[c.id];
           const filled = c.id === "contract" ? inputs.contract.type !== "onbekend" : r != null;
           const Icon = c.icon;
 
