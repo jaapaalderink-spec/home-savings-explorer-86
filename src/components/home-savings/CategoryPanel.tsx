@@ -362,13 +362,12 @@ function ContractForm({ v, onChange }: { v: HomeInputs["contract"]; onChange: (v
 /* ---------------- result card ---------------- */
 
 function ResultCard({
-  categoryId,
   offerteHref,
-
   result,
   onCalculate,
 }: {
   categoryId: string;
+  offerteHref: string;
   result: AdviceResult | null;
   onCalculate: () => void;
 }) {
