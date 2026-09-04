@@ -24,10 +24,6 @@ export interface HomeInputs {
     goals: Array<"besparing" | "dynamisch" | "zelfconsumptie" | "noodstroom">;
   };
   ev: { evStatus: "nu" | "binnen2jaar" | "nogniet"; annualKm: number };
-  boiler: {
-    persons: number;
-    currentWaterHeating: "gas" | "elektrisch" | "warmtepomp";
-  };
   airco: { roomCount: number; houseType: HouseType };
   contract: { type: EnergyContractType };
 }
@@ -37,7 +33,6 @@ export const EMPTY_INPUTS: HomeInputs = {
   heatpump: { houseType: "rijtjeshuis", currentHeating: "gas", buildYear: 1985 },
   battery: { annualConsumptionKwh: 3500, annualFeedInKwh: 2000, goals: ["besparing"] },
   ev: { evStatus: "nogniet", annualKm: 12000 },
-  boiler: { persons: 3, currentWaterHeating: "gas" },
   airco: { roomCount: 1, houseType: "rijtjeshuis" },
   contract: { type: "onbekend" },
 };
@@ -95,9 +90,6 @@ export function CategoryPanel({ openId, onOpenChange, inputs, onChange, results,
               )}
               {openId === "ev" && (
                 <EVForm v={inputs.ev} onChange={(v) => onChange({ ev: { ...inputs.ev, ...v } })} />
-              )}
-              {openId === "boiler" && (
-                <BoilerForm v={inputs.boiler} onChange={(v) => onChange({ boiler: { ...inputs.boiler, ...v } })} />
               )}
               {openId === "airco" && (
                 <AircoForm v={inputs.airco} onChange={(v) => onChange({ airco: { ...inputs.airco, ...v } })} />
@@ -275,41 +267,6 @@ function EVForm({ v, onChange }: { v: HomeInputs["ev"]; onChange: (v: Partial<Ho
         <FieldLabel hint={`${v.annualKm.toLocaleString("nl-NL")} km/jaar`}>Geschatte jaarkilometrage</FieldLabel>
         <Slider value={[v.annualKm]} min={2000} max={60000} step={1000} onValueChange={(x) => onChange({ annualKm: x[0] ?? v.annualKm })} />
       </div>
-    </div>
-  );
-}
-
-function BoilerForm({ v, onChange }: { v: HomeInputs["boiler"]; onChange: (v: Partial<HomeInputs["boiler"]>) => void }) {
-  return (
-    <div className="space-y-5">
-      <div>
-        <FieldLabel hint={`${v.persons} ${v.persons === 1 ? "persoon" : "personen"}`}>
-          Aantal personen in huis
-        </FieldLabel>
-        <Slider
-          value={[v.persons]}
-          min={1}
-          max={7}
-          step={1}
-          onValueChange={(x) => onChange({ persons: x[0] ?? v.persons })}
-        />
-      </div>
-      <div>
-        <FieldLabel>Hoe maak je nu warm water?</FieldLabel>
-        <TileGroup
-          options={[
-            { id: "gas", label: "Gasketel" },
-            { id: "elektrisch", label: "Elektrische boiler" },
-            { id: "warmtepomp", label: "Warmtepomp" },
-          ]}
-          value={[v.currentWaterHeating]}
-          onPick={(x) => onChange({ currentWaterHeating: x[0] ?? v.currentWaterHeating })}
-        />
-      </div>
-      <p className="text-xs text-moss/60">
-        Een warmteboiler slaat overtollige zonnestroom op als warm water — de goedkoopste vorm van
-        energieopslag in huis.
-      </p>
     </div>
   );
 }

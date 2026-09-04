@@ -48,8 +48,6 @@ export function SavingsSummary({ results, inputs }: Props) {
     evStatus: inputs.ev.evStatus,
     evKm: String(inputs.ev.annualKm),
     aircoRooms: String(inputs.airco.roomCount),
-    boilerPersons: String(inputs.boiler.persons),
-    boilerWater: inputs.boiler.currentWaterHeating,
     batteryGoals: inputs.battery.goals.join(","),
     total: String(total),
   });
