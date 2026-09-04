@@ -8,10 +8,13 @@ import {
   confidenceFromCompleteness,
 } from "./shared";
 
+export type EnergyLabel = "a++" | "a+" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "onbekend";
+
 export interface HeatPumpInput {
   houseType: HouseType;
   currentHeating: "gas" | "elektrisch" | "anders";
   buildYear: number;
+  energyLabel: EnergyLabel;
   contract?: EnergyContractType;
   /** Warm water wordt al door een warmteboiler verzorgd: minder gas te vervangen. */
   hasHeatBoiler?: boolean;
