@@ -131,6 +131,7 @@ export function CategoryPanel({ openId, onOpenChange, inputs, onChange, results,
                 <ResultCard
                   categoryId={openId!}
                   result={result}
+                  offerteHref={buildOfferteHref(inputs, results, openId!)}
                   onCalculate={() => onCalculate(openId!)}
                 />
               </div>
@@ -361,11 +362,12 @@ function ContractForm({ v, onChange }: { v: HomeInputs["contract"]; onChange: (v
 /* ---------------- result card ---------------- */
 
 function ResultCard({
-  categoryId,
+  offerteHref,
   result,
   onCalculate,
 }: {
   categoryId: string;
+  offerteHref: string;
   result: AdviceResult | null;
   onCalculate: () => void;
 }) {

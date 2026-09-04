@@ -3,6 +3,7 @@ import { ArrowRight, Wand2, Check, Circle, Home } from "lucide-react";
 import { CATEGORIES, CONTRACT_META } from "./categories";
 import { AdviceResult, formatEuro, combineSavings } from "@/lib/home-savings";
 import { CountUp } from "./CountUp";
+import { buildOfferteHref } from "./offerte-params";
 import type { HomeInputs } from "./CategoryPanel";
 
 interface Props {
@@ -27,25 +28,7 @@ export function SavingsSummary({ results, inputs, onPick }: Props) {
     (c) => results[c.id] != null || owned[c.id] || (c.id === "contract" && inputs.contract.type !== "onbekend"),
   ).length;
 
-  const params = new URLSearchParams({
-    cats: counted.join(","),
-    owned: Object.keys(owned)
-      .filter((k) => owned[k])
-      .join(","),
-    houseType: inputs.heatpump.houseType,
-    contract: inputs.contract.type,
-    consumption: String(inputs.solar.annualConsumptionKwh),
-    feedin: String(inputs.battery.annualFeedInKwh),
-    panels: String(inputs.solar.panelCount),
-    heating: inputs.heatpump.currentHeating,
-    buildYear: String(inputs.heatpump.buildYear),
-    energyLabel: inputs.heatpump.energyLabel,
-    evStatus: inputs.ev.evStatus,
-    evKm: String(inputs.ev.annualKm),
-    aircoRooms: String(inputs.airco.roomCount),
-    batteryGoals: inputs.battery.goals.join(","),
-    total: String(total),
-  });
+  const offerteHref = buildOfferteHref(inputs, results);
 
   return (
     <section
@@ -125,7 +108,7 @@ export function SavingsSummary({ results, inputs, onPick }: Props) {
 
       <div className="mt-6 flex flex-col items-center gap-3">
         <Button asChild size="lg" className="w-full sm:w-auto" style={{ backgroundColor: "#4f8f62", color: "white" }}>
-          <a href={`/offerte?${params.toString()}`}>
+          <a href={offerteHref}>
             Vraag gratis offertes aan voor jouw situatie <ArrowRight size={18} className="ml-1.5" />
           </a>
         </Button>
