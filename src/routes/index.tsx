@@ -90,7 +90,10 @@ function HomePage() {
   );
 
   const doneFlags = Object.fromEntries(
-    Object.keys(results).map((id) => [id, results[id] != null]),
+    [...new Set([...Object.keys(results), ...Object.keys(inputs.owned)])].map((id) => [
+      id,
+      results[id] != null || !!inputs.owned[id],
+    ]),
   );
 
   return (
