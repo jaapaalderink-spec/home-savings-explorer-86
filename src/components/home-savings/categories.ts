@@ -18,7 +18,7 @@ export const CATEGORIES: CategoryMeta[] = [
     label: "Zonnepanelen",
     short: "Bespaar tot 60% op je stroomrekening",
     icon: Sun,
-    hotspot: { x: 40, y: 20 },
+    hotspot: { x: 62, y: 20 },
     order: 0,
   },
   {
@@ -26,7 +26,7 @@ export const CATEGORIES: CategoryMeta[] = [
     label: "Airco",
     short: "Efficiënt koelen én verwarmen, minder gas",
     icon: Snowflake,
-    hotspot: { x: 61.5, y: 55 },
+    hotspot: { x: 86.5, y: 52 },
     order: 1,
   },
   {
@@ -34,7 +34,7 @@ export const CATEGORIES: CategoryMeta[] = [
     label: "Warmtepomp",
     short: "Van gas los, flink lagere energierekening",
     icon: Zap,
-    hotspot: { x: 10.5, y: 66.5 },
+    hotspot: { x: 16.5, y: 72 },
     order: 2,
   },
   {
@@ -42,7 +42,7 @@ export const CATEGORIES: CategoryMeta[] = [
     label: "Thuisbatterij",
     short: "Sla overtollige zonnestroom op",
     icon: BatteryCharging,
-    hotspot: { x: 74, y: 64.5 },
+    hotspot: { x: 48, y: 68 },
     order: 3,
   },
   {
@@ -50,7 +50,7 @@ export const CATEGORIES: CategoryMeta[] = [
     label: "Laadpaal",
     short: "Goedkoop thuis je elektrische auto laden",
     icon: Car,
-    hotspot: { x: 64, y: 70 },
+    hotspot: { x: 57, y: 62 },
     order: 4,
   },
   {
@@ -66,7 +66,7 @@ export const CATEGORIES: CategoryMeta[] = [
     label: "EHMS",
     short: "Het brein dat alles slim aanstuurt",
     icon: Cpu,
-    hotspot: { x: 46, y: 58 },
+    hotspot: { x: 38, y: 60 },
     order: 6,
   },
 ];
