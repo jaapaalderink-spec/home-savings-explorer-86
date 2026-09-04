@@ -1,6 +1,6 @@
 export * from "./shared";
 export { calculateSolarAdvice, type SolarInput } from "./solar";
-export { calculateHeatPumpAdvice, type HeatPumpInput } from "./heat-pump";
+export { calculateHeatPumpAdvice, type HeatPumpInput, type EnergyLabel } from "./heat-pump";
 export { calculateBatteryAdvice, type BatteryInput } from "./battery";
 export { calculateEVAdvice, type EVInput } from "./ev";
 export { calculateEHMSAdvice, type EHMSInput } from "./ehms";

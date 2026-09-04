@@ -8,10 +8,13 @@ import {
   confidenceFromCompleteness,
 } from "./shared";
 
+export type EnergyLabel = "a++" | "a+" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "onbekend";
+
 export interface HeatPumpInput {
   houseType: HouseType;
   currentHeating: "gas" | "elektrisch" | "anders";
   buildYear: number;
+  energyLabel: EnergyLabel;
   contract?: EnergyContractType;
   /** Warm water wordt al door een warmteboiler verzorgd: minder gas te vervangen. */
   hasHeatBoiler?: boolean;
@@ -39,6 +42,19 @@ const insulationFactor: Record<string, number> = {
   old: 1.3,
 };
 
+const labelFactor: Record<EnergyLabel, number> = {
+  "a++": 0.7,
+  "a+": 0.75,
+  a: 0.8,
+  b: 0.9,
+  c: 1.0,
+  d: 1.1,
+  e: 1.2,
+  f: 1.3,
+  g: 1.4,
+  onbekend: 1.0,
+};
+
 function yearBucket(year: number): keyof typeof insulationFactor {
   if (year >= 2015) return "modern";
   if (year >= 1995) return "recent";
@@ -50,11 +66,15 @@ export function calculateHeatPumpAdvice(input: HeatPumpInput): AdviceResult {
   const houseType = input.houseType || "rijtjeshuis";
   const currentHeating = input.currentHeating || "gas";
   const buildYear = clamp(input.buildYear || 1985, ASSUMPTIONS.minBuildYear, 2025);
+  const energyLabel = input.energyLabel || "onbekend";
 
   const baseGasUse = ASSUMPTIONS.baseGasUseByHouse[houseType];
-  const insulation = insulationFactor[yearBucket(buildYear)];
+  const yearInsulation = insulationFactor[yearBucket(buildYear)] ?? 1;
+  const labelInsulation = labelFactor[energyLabel];
+  // Combineer bouwjaar en energielabel; label heeft iets meer gewicht omdat het actuele isolatieniveau weergeeft.
+  const insulation = (yearInsulation * 0.4 + labelInsulation * 0.6);
   const adjustedGasUse = Math.round(
-    baseGasUse * (insulation ?? 1) * (input.hasHeatBoiler ? 0.88 : 1),
+    baseGasUse * insulation * (input.hasHeatBoiler ? 0.88 : 1),
   );
 
   let practicalSavings = 0;
@@ -86,8 +106,13 @@ export function calculateHeatPumpAdvice(input: HeatPumpInput): AdviceResult {
   practicalSavings = Math.max(practicalSavings, 0);
   const range = bandwidth(practicalSavings, 0.25, ASSUMPTIONS.step);
 
-  const fieldsFilled = [input.houseType, input.currentHeating, input.buildYear].filter(Boolean).length;
-  const confidence = confidenceFromCompleteness(fieldsFilled, 3);
+  const fieldsFilled = [
+    input.houseType,
+    input.currentHeating,
+    input.buildYear,
+    input.energyLabel && input.energyLabel !== "onbekend" ? input.energyLabel : null,
+  ].filter(Boolean).length;
+  const confidence = confidenceFromCompleteness(fieldsFilled, 4);
 
   if (input.hasHeatBoiler) {
     reasons.push(

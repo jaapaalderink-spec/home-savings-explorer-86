@@ -3,11 +3,13 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sparkles, ArrowRight, Info } from "lucide-react";
 import { CATEGORIES, CONTRACT_META, HOUSE_TYPES } from "./categories";
 import {
   EnergyContractType,
   HouseType,
+  EnergyLabel,
   AdviceResult,
   CONFIDENCE_LABEL,
   formatEuro,
@@ -17,7 +19,7 @@ import { CountUp } from "./CountUp";
 
 export interface HomeInputs {
   solar: { panelCount: number; annualConsumptionKwh: number; alreadyHasSolar: boolean };
-  heatpump: { houseType: HouseType; currentHeating: "gas" | "elektrisch" | "anders"; buildYear: number };
+  heatpump: { houseType: HouseType; currentHeating: "gas" | "elektrisch" | "anders"; buildYear: number; energyLabel: EnergyLabel };
   battery: {
     annualConsumptionKwh: number;
     annualFeedInKwh: number;
@@ -30,7 +32,7 @@ export interface HomeInputs {
 
 export const EMPTY_INPUTS: HomeInputs = {
   solar: { panelCount: 8, annualConsumptionKwh: 3500, alreadyHasSolar: false },
-  heatpump: { houseType: "rijtjeshuis", currentHeating: "gas", buildYear: 1985 },
+  heatpump: { houseType: "rijtjeshuis", currentHeating: "gas", buildYear: 1985, energyLabel: "onbekend" },
   battery: { annualConsumptionKwh: 3500, annualFeedInKwh: 2000, goals: ["besparing"] },
   ev: { evStatus: "nogniet", annualKm: 12000 },
   airco: { roomCount: 1, houseType: "rijtjeshuis" },
@@ -192,6 +194,19 @@ function SolarForm({ v, onChange }: { v: HomeInputs["solar"]; onChange: (v: Part
   );
 }
 
+const ENERGY_LABELS: { id: EnergyLabel; label: string }[] = [
+  { id: "a++", label: "A++" },
+  { id: "a+", label: "A+" },
+  { id: "a", label: "A" },
+  { id: "b", label: "B" },
+  { id: "c", label: "C" },
+  { id: "d", label: "D" },
+  { id: "e", label: "E" },
+  { id: "f", label: "F" },
+  { id: "g", label: "G" },
+  { id: "onbekend", label: "Weet ik niet" },
+];
+
 function HeatPumpForm({ v, onChange }: { v: HomeInputs["heatpump"]; onChange: (v: Partial<HomeInputs["heatpump"]>) => void }) {
   return (
     <div className="space-y-5">
@@ -214,6 +229,21 @@ function HeatPumpForm({ v, onChange }: { v: HomeInputs["heatpump"]; onChange: (v
       <div>
         <FieldLabel hint={`${v.buildYear}`}>Bouwjaar woning</FieldLabel>
         <Slider value={[v.buildYear]} min={1930} max={2025} step={5} onValueChange={(x) => onChange({ buildYear: x[0] ?? v.buildYear })} />
+      </div>
+      <div>
+        <FieldLabel>Huidig energielabel</FieldLabel>
+        <Select value={v.energyLabel} onValueChange={(x) => onChange({ energyLabel: x as EnergyLabel })}>
+          <SelectTrigger className="w-full rounded-xl border-none bg-background py-3 text-sm font-semibold text-ink" style={{ boxShadow: "var(--shadow-panel)" }}>
+            <SelectValue placeholder="Kies je energielabel" />
+          </SelectTrigger>
+          <SelectContent>
+            {ENERGY_LABELS.map((l) => (
+              <SelectItem key={l.id} value={l.id}>
+                {l.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );
