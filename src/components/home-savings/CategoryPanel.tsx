@@ -28,6 +28,8 @@ export interface HomeInputs {
   ev: { evStatus: "nu" | "binnen2jaar" | "nogniet"; annualKm: number };
   airco: { roomCount: number; houseType: HouseType };
   contract: { type: EnergyContractType };
+  /** heeft de consument dit al in huis? */
+  owned: Record<string, boolean>;
 }
 
 export const EMPTY_INPUTS: HomeInputs = {
@@ -37,6 +39,15 @@ export const EMPTY_INPUTS: HomeInputs = {
   ev: { evStatus: "nogniet", annualKm: 12000 },
   airco: { roomCount: 1, houseType: "rijtjeshuis" },
   contract: { type: "onbekend" },
+  owned: { solar: false, heatpump: false, battery: false, ev: false, airco: false },
+};
+
+export const OWNED_LABEL: Record<string, string> = {
+  solar: "Ik heb al zonnepanelen",
+  heatpump: "Ik heb al een warmtepomp",
+  battery: "Ik heb al een thuisbatterij",
+  ev: "Ik heb al een laadpaal",
+  airco: "Ik heb al een airco",
 };
 
 interface Props {
@@ -81,6 +92,22 @@ export function CategoryPanel({ openId, onOpenChange, inputs, onChange, results,
             </SheetHeader>
 
             <div className="px-6 py-5">
+              {openId !== "contract" && (
+                <div className="mb-5">
+                  <ToggleRow
+                    label={OWNED_LABEL[openId!] ?? "Ik heb dit al"}
+                    checked={!!inputs.owned[openId!]}
+                    onChange={(c) => onChange({ owned: { ...inputs.owned, [openId!]: c } })}
+                  />
+                  {inputs.owned[openId!] && (
+                    <p className="mt-2 text-[11px] leading-relaxed text-moss/60">
+                      We rekenen dit niet mee als nieuwe besparing, maar nemen het wel mee in de
+                      berekening van de andere onderdelen.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {openId === "solar" && (
                 <SolarForm v={inputs.solar} onChange={(v) => onChange({ solar: { ...inputs.solar, ...v } })} />
               )}
@@ -189,7 +216,7 @@ function SolarForm({ v, onChange }: { v: HomeInputs["solar"]; onChange: (v: Part
         <FieldLabel hint={`${v.annualConsumptionKwh.toLocaleString("nl-NL")} kWh`}>Jaarlijks stroomverbruik</FieldLabel>
         <Slider value={[v.annualConsumptionKwh]} min={1500} max={8000} step={250} onValueChange={(x) => onChange({ annualConsumptionKwh: x[0] ?? v.annualConsumptionKwh })} />
       </div>
-      <ToggleRow label="Heb je al zonnepanelen?" checked={v.alreadyHasSolar} onChange={(c) => onChange({ alreadyHasSolar: c })} />
+      
     </div>
   );
 }

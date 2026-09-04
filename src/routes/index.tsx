@@ -63,6 +63,10 @@ function HomePage() {
       ) {
         next.solar = { ...next.solar, annualConsumptionKwh: patch.battery.annualConsumptionKwh };
       }
+      // "heb ik al" doorgeven aan de zonnepanelen-berekening
+      if (patch.owned && patch.owned["solar"] !== prev.owned["solar"]) {
+        next.solar = { ...next.solar, alreadyHasSolar: !!patch.owned["solar"] };
+      }
       return next;
     });
   }, []);
@@ -86,7 +90,10 @@ function HomePage() {
   );
 
   const doneFlags = Object.fromEntries(
-    Object.keys(results).map((id) => [id, results[id] != null]),
+    [...new Set([...Object.keys(results), ...Object.keys(inputs.owned)])].map((id) => [
+      id,
+      results[id] != null || !!inputs.owned[id],
+    ]),
   );
 
   return (
@@ -137,7 +144,7 @@ function HomePage() {
 
       {/* total summary (Fase 4) */}
       <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-5">
-        <SavingsSummary results={results} inputs={inputs} />
+        <SavingsSummary results={results} inputs={inputs} onPick={setOpenId} />
       </section>
 
       {/* panel */}
