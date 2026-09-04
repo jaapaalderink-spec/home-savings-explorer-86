@@ -8,6 +8,7 @@ import { CATEGORIES, CONTRACT_META, HOUSE_TYPES } from "./categories";
 import {
   EnergyContractType,
   HouseType,
+  EnergyLabel,
   AdviceResult,
   CONFIDENCE_LABEL,
   formatEuro,
