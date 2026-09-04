@@ -12,24 +12,25 @@ interface Props {
 }
 
 export function SavingsSummary({ results, inputs, onPick }: Props) {
+  const owned: Record<string, boolean> = inputs?.owned ?? {};
   const items = [...CATEGORIES, CONTRACT_META];
 
   const counted = items
     .map((c) => c.id)
-    .filter((id) => results[id] != null && !inputs.owned[id]);
+    .filter((id) => results[id] != null && !owned[id]);
 
   const total = combineSavings(
     Object.fromEntries(counted.map((id) => [id, results[id]?.practicalSavings ?? 0])),
   );
 
   const doneCount = items.filter(
-    (c) => results[c.id] != null || inputs.owned[c.id] || (c.id === "contract" && inputs.contract.type !== "onbekend"),
+    (c) => results[c.id] != null || owned[c.id] || (c.id === "contract" && inputs.contract.type !== "onbekend"),
   ).length;
 
   const params = new URLSearchParams({
     cats: counted.join(","),
-    owned: Object.keys(inputs.owned)
-      .filter((k) => inputs.owned[k])
+    owned: Object.keys(owned)
+      .filter((k) => owned[k])
       .join(","),
     houseType: inputs.heatpump.houseType,
     contract: inputs.contract.type,
@@ -72,7 +73,7 @@ export function SavingsSummary({ results, inputs, onPick }: Props) {
       <ul className="mt-2 space-y-2">
         {items.map((c) => {
           const r = results[c.id];
-          const owned = !!inputs.owned[c.id];
+          const isOwned = !!owned[c.id];
           const filled = c.id === "contract" ? inputs.contract.type !== "onbekend" : r != null;
           const Icon = c.icon;
 
@@ -81,7 +82,7 @@ export function SavingsSummary({ results, inputs, onPick }: Props) {
             tone: "text-moss/50",
             mark: Circle,
           };
-          if (owned) status = { text: "Heb ik al", tone: "text-moss/70", mark: Home };
+          if (isOwned) status = { text: "Heb ik al", tone: "text-moss/70", mark: Home };
           else if (filled) status = { text: "Ingevuld", tone: "text-leaf", mark: Check };
 
           const Mark = status.mark;
@@ -96,7 +97,7 @@ export function SavingsSummary({ results, inputs, onPick }: Props) {
               >
                 <span
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-                  style={{ backgroundColor: owned ? "#dfe7e1" : "#f0b84f" }}
+                  style={{ backgroundColor: isOwned ? "#dfe7e1" : "#f0b84f" }}
                 >
                   <Icon size={18} strokeWidth={2.4} className="text-moss" />
                 </span>
@@ -107,7 +108,7 @@ export function SavingsSummary({ results, inputs, onPick }: Props) {
                   </span>
                 </span>
                 <span className="shrink-0 text-sm font-bold text-leaf">
-                  {owned || !r ? (
+                  {isOwned || !r ? (
                     <span className="text-xs font-normal text-moss/50">—</span>
                   ) : (
                     <>
