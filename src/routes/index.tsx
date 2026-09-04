@@ -63,6 +63,10 @@ function HomePage() {
       ) {
         next.solar = { ...next.solar, annualConsumptionKwh: patch.battery.annualConsumptionKwh };
       }
+      // "heb ik al" doorgeven aan de zonnepanelen-berekening
+      if (patch.owned && patch.owned.solar !== prev.owned.solar) {
+        next.solar = { ...next.solar, alreadyHasSolar: !!patch.owned.solar };
+      }
       return next;
     });
   }, []);
