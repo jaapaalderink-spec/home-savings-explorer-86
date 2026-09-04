@@ -12,7 +12,6 @@ import {
   calculateHeatPumpAdvice,
   calculateBatteryAdvice,
   calculateEVAdvice,
-  calculateEHMSAdvice,
   calculateAircoAdvice,
   calculateBoilerAdvice,
   boilerSurplusUseKwh,
@@ -25,7 +24,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Klik op je huis en ontdek per duurzame maatregel wat het jou oplevert: zonnepanelen, warmtepomp, thuisbatterij, warmteboiler, laadpaal, EHMS en airco. Gratis en vrijblijvend.",
+          "Klik op je huis en ontdek per duurzame maatregel wat het jou oplevert: zonnepanelen, warmtepomp, thuisbatterij, warmteboiler, laadpaal en airco. Gratis en vrijblijvend.",
       },
       { property: "og:title", content: "Bespaar op je huis — Onafhankelijke Offerte" },
       {
@@ -85,7 +84,6 @@ function HomePage() {
         });
       else if (id === "boiler") res = calculateBoilerAdvice(boilerInput);
       else if (id === "ev") res = calculateEVAdvice(inputs.ev);
-      else if (id === "ehms") res = calculateEHMSAdvice({ ...inputs.ehms, contract: inputs.contract.type });
       else if (id === "airco") res = calculateAircoAdvice(inputs.airco);
       // contract zelf levert geen apart bespaarbedrag op; het weegt mee in andere berekeningen.
       if (!res) return;

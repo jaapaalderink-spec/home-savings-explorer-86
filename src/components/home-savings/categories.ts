@@ -1,4 +1,4 @@
-import { Sun, Zap, Car, Snowflake, Cpu, BatteryCharging, FileText, Flame } from "lucide-react";
+import { Sun, Zap, Car, Snowflake, BatteryCharging, FileText, Flame } from "lucide-react";
 import type { CategoryId, HouseType } from "@/lib/home-savings";
 
 export interface CategoryMeta {
@@ -60,14 +60,6 @@ export const CATEGORIES: CategoryMeta[] = [
     icon: Flame,
     hotspot: { x: 30, y: 62 },
     order: 5,
-  },
-  {
-    id: "ehms",
-    label: "EHMS",
-    short: "Het brein dat alles slim aanstuurt",
-    icon: Cpu,
-    hotspot: { x: 38, y: 60 },
-    order: 6,
   },
 ];
 
