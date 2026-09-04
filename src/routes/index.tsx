@@ -13,8 +13,6 @@ import {
   calculateBatteryAdvice,
   calculateEVAdvice,
   calculateAircoAdvice,
-  calculateBoilerAdvice,
-  boilerSurplusUseKwh,
 } from "@/lib/home-savings";
 
 export const Route = createFileRoute("/")({
@@ -24,7 +22,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Klik op je huis en ontdek per duurzame maatregel wat het jou oplevert: zonnepanelen, warmtepomp, thuisbatterij, warmteboiler, laadpaal en airco. Gratis en vrijblijvend.",
+          "Klik op je huis en ontdek per duurzame maatregel wat het jou oplevert: zonnepanelen, warmtepomp, thuisbatterij, laadpaal en airco. Gratis en vrijblijvend.",
       },
       { property: "og:title", content: "Bespaar op je huis — Onafhankelijke Offerte" },
       {
@@ -60,57 +58,19 @@ function HomePage() {
   const handleCalculate = useCallback(
     (id: string) => {
       let res: AdviceResult | null = null;
-      // De warmteboiler slaat overschot als warmte op; dat werkt door in zon, batterij en warmtepomp.
-      const boilerInput = {
-        ...inputs.boiler,
-        annualFeedInKwh: inputs.battery.annualFeedInKwh,
-        contract: inputs.contract.type,
-      };
-      const boilerActive = results["boiler"] != null || id === "boiler";
-      const boilerSurplus = boilerActive ? boilerSurplusUseKwh(boilerInput) : 0;
 
-      if (id === "solar") res = calculateSolarAdvice({ ...inputs.solar, hasHeatBoiler: boilerActive });
+      if (id === "solar") res = calculateSolarAdvice(inputs.solar);
       else if (id === "heatpump")
-        res = calculateHeatPumpAdvice({
-          ...inputs.heatpump,
-          contract: inputs.contract.type,
-          hasHeatBoiler: boilerActive,
-        });
+        res = calculateHeatPumpAdvice({ ...inputs.heatpump, contract: inputs.contract.type });
       else if (id === "battery")
-        res = calculateBatteryAdvice({
-          ...inputs.battery,
-          contract: inputs.contract.type,
-          boilerSurplusKwh: boilerSurplus,
-        });
-      else if (id === "boiler") res = calculateBoilerAdvice(boilerInput);
+        res = calculateBatteryAdvice({ ...inputs.battery, contract: inputs.contract.type });
       else if (id === "ev") res = calculateEVAdvice(inputs.ev);
       else if (id === "airco") res = calculateAircoAdvice(inputs.airco);
       // contract zelf levert geen apart bespaarbedrag op; het weegt mee in andere berekeningen.
       if (!res) return;
-      setResults((prev) => {
-        const next = { ...prev, [id]: res };
-        // Bij een nieuwe of gewijzigde warmteboiler de andere resultaten herberekenen,
-        // zodat dezelfde kWh niet dubbel wordt geteld.
-        if (id === "boiler") {
-          const surplus = boilerSurplusUseKwh(boilerInput);
-          if (prev["solar"]) next["solar"] = calculateSolarAdvice({ ...inputs.solar, hasHeatBoiler: true });
-          if (prev["heatpump"])
-            next["heatpump"] = calculateHeatPumpAdvice({
-              ...inputs.heatpump,
-              contract: inputs.contract.type,
-              hasHeatBoiler: true,
-            });
-          if (prev["battery"])
-            next["battery"] = calculateBatteryAdvice({
-              ...inputs.battery,
-              contract: inputs.contract.type,
-              boilerSurplusKwh: surplus,
-            });
-        }
-        return next;
-      });
+      setResults((prev) => ({ ...prev, [id]: res }));
     },
-    [inputs, results],
+    [inputs],
   );
 
   const doneFlags = Object.fromEntries(
