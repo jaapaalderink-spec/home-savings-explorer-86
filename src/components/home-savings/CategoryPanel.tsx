@@ -28,6 +28,8 @@ export interface HomeInputs {
   ev: { evStatus: "nu" | "binnen2jaar" | "nogniet"; annualKm: number };
   airco: { roomCount: number; houseType: HouseType };
   contract: { type: EnergyContractType };
+  /** heeft de consument dit al in huis? */
+  owned: Record<string, boolean>;
 }
 
 export const EMPTY_INPUTS: HomeInputs = {
@@ -37,6 +39,15 @@ export const EMPTY_INPUTS: HomeInputs = {
   ev: { evStatus: "nogniet", annualKm: 12000 },
   airco: { roomCount: 1, houseType: "rijtjeshuis" },
   contract: { type: "onbekend" },
+  owned: { solar: false, heatpump: false, battery: false, ev: false, airco: false },
+};
+
+export const OWNED_LABEL: Record<string, string> = {
+  solar: "Ik heb al zonnepanelen",
+  heatpump: "Ik heb al een warmtepomp",
+  battery: "Ik heb al een thuisbatterij",
+  ev: "Ik heb al een laadpaal",
+  airco: "Ik heb al een airco",
 };
 
 interface Props {
