@@ -41,7 +41,7 @@ export function HouseScene({ activeId, results, onPick }: Props) {
       }}
     >
       {/* foto met zachte parallax */}
-      <div className="relative aspect-[16/10] w-full overflow-hidden">
+      <div className="relative aspect-[16/9] w-full overflow-hidden">
         <img
           src={houseHero}
           width={1728}
