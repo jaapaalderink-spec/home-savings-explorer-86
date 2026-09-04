@@ -31,7 +31,7 @@ export interface HomeInputs {
 
 export const EMPTY_INPUTS: HomeInputs = {
   solar: { panelCount: 8, annualConsumptionKwh: 3500, alreadyHasSolar: false },
-  heatpump: { houseType: "rijtjeshuis", currentHeating: "gas", buildYear: 1985 },
+  heatpump: { houseType: "rijtjeshuis", currentHeating: "gas", buildYear: 1985, energyLabel: "onbekend" },
   battery: { annualConsumptionKwh: 3500, annualFeedInKwh: 2000, goals: ["besparing"] },
   ev: { evStatus: "nogniet", annualKm: 12000 },
   airco: { roomCount: 1, houseType: "rijtjeshuis" },
