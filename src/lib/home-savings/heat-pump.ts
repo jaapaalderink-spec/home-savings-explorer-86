@@ -57,7 +57,8 @@ const labelFactor: Record<EnergyLabel, number> = {
 
 function yearBucket(year: number): keyof typeof insulationFactor {
   if (year >= 2015) return "modern";
-  if (year >= 1995) return "recent"n  if (year >= 1975) return "older";
+  if (year >= 1995) return "recent";
+  if (year >= 1975) return "older";
   return "old";
 }
 
