@@ -144,7 +144,7 @@ function HomePage() {
 
       {/* total summary (Fase 4) */}
       <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-5">
-        <SavingsSummary results={results} inputs={inputs} />
+        <SavingsSummary results={results} inputs={inputs} onPick={setOpenId} />
       </section>
 
       {/* panel */}
