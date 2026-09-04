@@ -46,7 +46,7 @@ export function HouseScene({ activeId, results, onPick }: Props) {
           src={houseHero}
           width={1728}
           height={941}
-          alt="Vrijstaande woning met zonnepanelen op het dak, een warmtepomp-buitenunit links, een thuisbatterij in de garage, een elektrische auto met laadpaal op de oprit een warmteboiler in de bijkeuken en een airco-unit aan de gevel."
+          alt="Moderne vrijstaande woning met zonnepanelen op het dak, een warmtepomp-buitenunit links voor, een airco-unit aan de rechtergevel en een elektrische auto met laadpaal in de garage."
           className="h-full w-full scale-[1.06] object-cover transition-transform duration-500 ease-out motion-reduce:!transform-none"
           style={{ transform: `scale(1.06) translate3d(${tilt.x * -10}px, ${tilt.y * -8}px, 0)` }}
           fetchPriority="high"
