@@ -493,6 +493,39 @@ export type Database = {
         }
         Relationships: []
       }
+      phone_verifications: {
+        Row: {
+          attempts: number
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          token: string
+          updated_at: string
+          verified_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone: string
+          token?: string
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          token?: string
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       postcode_geo: {
         Row: {
           city: string | null
