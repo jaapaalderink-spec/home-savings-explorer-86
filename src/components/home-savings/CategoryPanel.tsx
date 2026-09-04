@@ -3,6 +3,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sparkles, ArrowRight, Info } from "lucide-react";
 import { CATEGORIES, CONTRACT_META, HOUSE_TYPES } from "./categories";
 import {
