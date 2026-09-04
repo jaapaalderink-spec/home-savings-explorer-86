@@ -17,7 +17,7 @@ export const Route = createFileRoute("/offerte")({
       {
         name: "description",
         content:
-          "Vul in 3 stappen je situatie in en ontvang gratis en vrijblijvend tot 3 offertes van gecontroleerde installateurs voor zonnepanelen, warmtepomp, thuisbatterij, warmteboiler, laadpaal of airco.",
+          "Vul in 3 stappen je situatie in en ontvang gratis en vrijblijvend tot 3 offertes van gecontroleerde installateurs voor zonnepanelen, warmtepomp, thuisbatterij, laadpaal of airco.",
       },
       { property: "og:title", content: "Gratis offertes aanvragen — Onafhankelijke Offerte" },
       {
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/offerte")({
   component: OffertePage,
 });
 
-const CATEGORY_IDS = ["solar", "heatpump", "battery", "ev", "ehms", "airco", "boiler"] as const;
+const CATEGORY_IDS = ["solar", "heatpump", "battery", "ev", "airco"] as const;
 
 const HOUSE_TYPES = ["rijtjeshuis", "hoekwoning", "vrijstaand", "appartement"];
 const HEATING = ["gasketel", "hybride", "stadswarmte", "warmtepomp"];
@@ -68,7 +68,7 @@ function OffertePage() {
     evStatus: search.get("evStatus") ?? "",
     annualKm: num(search.get("evKm"), 0),
     aircoRooms: num(search.get("aircoRooms"), 0),
-    smartDevices: (search.get("ehmsDevices") ?? "").split(",").filter(Boolean),
+    
     batteryGoals: (search.get("batteryGoals") ?? "").split(",").filter(Boolean),
     estimatedSavings: num(search.get("total"), 0),
     firstName: "",
