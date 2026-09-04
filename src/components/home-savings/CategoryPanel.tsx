@@ -18,7 +18,7 @@ import { CountUp } from "./CountUp";
 
 export interface HomeInputs {
   solar: { panelCount: number; annualConsumptionKwh: number; alreadyHasSolar: boolean };
-  heatpump: { houseType: HouseType; currentHeating: "gas" | "elektrisch" | "anders"; buildYear: number };
+  heatpump: { houseType: HouseType; currentHeating: "gas" | "elektrisch" | "anders"; buildYear: number; energyLabel: EnergyLabel };
   battery: {
     annualConsumptionKwh: number;
     annualFeedInKwh: number;
