@@ -66,11 +66,15 @@ export function calculateHeatPumpAdvice(input: HeatPumpInput): AdviceResult {
   const houseType = input.houseType || "rijtjeshuis";
   const currentHeating = input.currentHeating || "gas";
   const buildYear = clamp(input.buildYear || 1985, ASSUMPTIONS.minBuildYear, 2025);
+  const energyLabel = input.energyLabel || "onbekend";
 
   const baseGasUse = ASSUMPTIONS.baseGasUseByHouse[houseType];
-  const insulation = insulationFactor[yearBucket(buildYear)];
+  const yearInsulation = insulationFactor[yearBucket(buildYear)];
+  const labelInsulation = labelFactor[energyLabel];
+  // Combineer bouwjaar en energielabel; label heeft iets meer gewicht omdat het actuele isolatieniveau weergeeft.
+  const insulation = (yearInsulation * 0.4 + labelInsulation * 0.6);
   const adjustedGasUse = Math.round(
-    baseGasUse * (insulation ?? 1) * (input.hasHeatBoiler ? 0.88 : 1),
+    baseGasUse * insulation * (input.hasHeatBoiler ? 0.88 : 1),
   );
 
   let practicalSavings = 0;
