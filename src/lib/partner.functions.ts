@@ -1051,3 +1051,41 @@ export const listPlatformOverview = createServerFn({ method: "GET" })
       }),
     };
   });
+
+/**
+ * Creditnota's van het eigen bedrijf (beheerders zien alles) plus het
+ * openstaande tegoed. Alleen lezen: aanmaken en wijzigen gebeurt uitsluitend
+ * in de database bij het goedkeuren van een reclamatie.
+ */
+export const listCreditNotes = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const db = await adminDb();
+    const [{ data: profile }, { data: isAdmin }] = await Promise.all([
+      db.from("profiles").select("company_id").eq("id", context.userId).maybeSingle(),
+      db.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+    ]);
+
+    let query = db
+      .from("credit_notes")
+      .select(
+        "id, credit_number, status, subtotal_ex_vat, vat_rate, vat_amount, total_inc_vat, reason, description, issued_at, applied_at, company:companies(name), invoice:invoices!credit_notes_original_invoice_id_fkey(id, invoice_number), applied_invoice:invoices!credit_notes_applied_to_invoice_id_fkey(invoice_number), complaint_id, purchase:lead_purchases(id, lead:leads(first_name, last_name, postcode))",
+      )
+      .order("issued_at", { ascending: false });
+
+    if (!isAdmin) {
+      if (!profile?.company_id) return { isAdmin: false, items: [], openCreditIncVat: 0 };
+      query = query.eq("company_id", profile.company_id);
+    }
+
+    const { data } = await query;
+    const items = data ?? [];
+    const openCreditIncVat =
+      Math.round(
+        items
+          .filter((n) => n.status === "open")
+          .reduce((sum, n) => sum + Number(n.total_inc_vat ?? 0), 0) * 100,
+      ) / 100;
+
+    return { isAdmin: Boolean(isAdmin), items, openCreditIncVat };
+  });
