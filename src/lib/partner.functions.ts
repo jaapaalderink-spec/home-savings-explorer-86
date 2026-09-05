@@ -795,7 +795,7 @@ export const listInvoices = createServerFn({ method: "GET" })
     let query = db
       .from("invoices")
       .select(
-        "id, invoice_number, period_start, period_end, subtotal_ex_vat, vat_amount, total_inc_vat, status, due_date, company:companies(name), lines:invoice_lines(description, quantity, unit_price_ex_vat, amount_ex_vat)",
+        "id, invoice_number, period_start, period_end, subtotal_ex_vat, vat_amount, total_inc_vat, status, due_date, paid_at, payment_status, last_payment_attempt_at, payment_review_required, company:companies(name), lines:invoice_lines(description, quantity, unit_price_ex_vat, amount_ex_vat), payments(provider_payment_id, status, amount, paid_at, created_at)",
       )
       .order("period_start", { ascending: false });
 

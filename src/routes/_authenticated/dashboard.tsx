@@ -79,7 +79,14 @@ function DashboardPage() {
               Platformbeheer
             </Link>
           )}
+          <Link
+            to="/facturen"
+            className="text-sm font-semibold text-leaf underline-offset-4 hover:underline"
+          >
+            Facturen
+          </Link>
           <span className="text-sm text-moss/70">{data?.profile?.email}</span>
+
           <Button variant="outline" size="sm" onClick={signOut}>
             <LogOut size={14} className="mr-1.5" /> Uitloggen
           </Button>
