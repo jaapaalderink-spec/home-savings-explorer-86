@@ -655,6 +655,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      allocate_lead_to_company: {
+        Args: {
+          p_company_id: string
+          p_lead_id: string
+          p_purchased_by?: string
+          p_source?: Database["public"]["Enums"]["purchase_source"]
+        }
+        Returns: {
+          billable: boolean
+          price_ex_vat: number
+          purchase_id: string
+          result: string
+        }[]
+      }
       current_company_id: { Args: never; Returns: string }
       has_role: {
         Args: {
