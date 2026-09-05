@@ -199,6 +199,262 @@ export type Database = {
           },
         ]
       }
+      credit_note_lines: {
+        Row: {
+          complaint_id: string | null
+          created_at: string
+          credit_note_id: string
+          description: string
+          id: string
+          lead_purchase_id: string | null
+          line_total_ex_vat: number
+          quantity: number
+          unit_amount_ex_vat: number
+          vat_rate: number
+        }
+        Insert: {
+          complaint_id?: string | null
+          created_at?: string
+          credit_note_id: string
+          description: string
+          id?: string
+          lead_purchase_id?: string | null
+          line_total_ex_vat: number
+          quantity?: number
+          unit_amount_ex_vat: number
+          vat_rate?: number
+        }
+        Update: {
+          complaint_id?: string | null
+          created_at?: string
+          credit_note_id?: string
+          description?: string
+          id?: string
+          lead_purchase_id?: string | null
+          line_total_ex_vat?: number
+          quantity?: number
+          unit_amount_ex_vat?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_note_lines_complaint_id_fkey"
+            columns: ["complaint_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_note_lines_credit_note_id_fkey"
+            columns: ["credit_note_id"]
+            isOneToOne: false
+            referencedRelation: "credit_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_note_lines_lead_purchase_id_fkey"
+            columns: ["lead_purchase_id"]
+            isOneToOne: false
+            referencedRelation: "lead_purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_notes: {
+        Row: {
+          applied_at: string | null
+          applied_to_invoice_id: string | null
+          company_id: string
+          complaint_id: string
+          created_at: string
+          created_by: string | null
+          credit_number: string
+          description: string | null
+          id: string
+          issued_at: string
+          original_invoice_id: string | null
+          purchase_id: string | null
+          reason: string | null
+          status: Database["public"]["Enums"]["credit_note_status"]
+          subtotal_ex_vat: number
+          total_inc_vat: number
+          updated_at: string
+          vat_amount: number
+          vat_rate: number
+        }
+        Insert: {
+          applied_at?: string | null
+          applied_to_invoice_id?: string | null
+          company_id: string
+          complaint_id: string
+          created_at?: string
+          created_by?: string | null
+          credit_number: string
+          description?: string | null
+          id?: string
+          issued_at?: string
+          original_invoice_id?: string | null
+          purchase_id?: string | null
+          reason?: string | null
+          status?: Database["public"]["Enums"]["credit_note_status"]
+          subtotal_ex_vat: number
+          total_inc_vat: number
+          updated_at?: string
+          vat_amount: number
+          vat_rate?: number
+        }
+        Update: {
+          applied_at?: string | null
+          applied_to_invoice_id?: string | null
+          company_id?: string
+          complaint_id?: string
+          created_at?: string
+          created_by?: string | null
+          credit_number?: string
+          description?: string | null
+          id?: string
+          issued_at?: string
+          original_invoice_id?: string | null
+          purchase_id?: string | null
+          reason?: string | null
+          status?: Database["public"]["Enums"]["credit_note_status"]
+          subtotal_ex_vat?: number
+          total_inc_vat?: number
+          updated_at?: string
+          vat_amount?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_notes_applied_to_invoice_id_fkey"
+            columns: ["applied_to_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_notes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_notes_complaint_id_fkey"
+            columns: ["complaint_id"]
+            isOneToOne: true
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_notes_original_invoice_id_fkey"
+            columns: ["original_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_notes_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "lead_purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_number_counters: {
+        Row: {
+          last_number: number
+          year: number
+        }
+        Insert: {
+          last_number?: number
+          year: number
+        }
+        Update: {
+          last_number?: number
+          year?: number
+        }
+        Relationships: []
+      }
+      financial_events: {
+        Row: {
+          actor_id: string | null
+          amount_inc_vat: number | null
+          company_id: string | null
+          complaint_id: string | null
+          created_at: string
+          credit_note_id: string | null
+          detail: Json
+          event_type: string
+          id: string
+          invoice_id: string | null
+          purchase_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          amount_inc_vat?: number | null
+          company_id?: string | null
+          complaint_id?: string | null
+          created_at?: string
+          credit_note_id?: string | null
+          detail?: Json
+          event_type: string
+          id?: string
+          invoice_id?: string | null
+          purchase_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          amount_inc_vat?: number | null
+          company_id?: string | null
+          complaint_id?: string | null
+          created_at?: string
+          credit_note_id?: string | null
+          detail?: Json
+          event_type?: string
+          id?: string
+          invoice_id?: string | null
+          purchase_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_events_complaint_id_fkey"
+            columns: ["complaint_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_events_credit_note_id_fkey"
+            columns: ["credit_note_id"]
+            isOneToOne: false
+            referencedRelation: "credit_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_events_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_events_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "lead_purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_lines: {
         Row: {
           amount_ex_vat: number
@@ -208,6 +464,7 @@ export type Database = {
           invoice_id: string
           quantity: number
           unit_price_ex_vat: number
+          vat_rate: number
         }
         Insert: {
           amount_ex_vat?: number
@@ -217,6 +474,7 @@ export type Database = {
           invoice_id: string
           quantity?: number
           unit_price_ex_vat?: number
+          vat_rate?: number
         }
         Update: {
           amount_ex_vat?: number
@@ -226,6 +484,7 @@ export type Database = {
           invoice_id?: string
           quantity?: number
           unit_price_ex_vat?: number
+          vat_rate?: number
         }
         Relationships: [
           {
@@ -240,8 +499,10 @@ export type Database = {
       invoices: {
         Row: {
           active_payment_id: string | null
+          amount_due_inc_vat: number | null
           company_id: string
           created_at: string
+          credit_applied_inc_vat: number
           due_date: string
           id: string
           invoice_number: string
@@ -259,8 +520,10 @@ export type Database = {
         }
         Insert: {
           active_payment_id?: string | null
+          amount_due_inc_vat?: number | null
           company_id: string
           created_at?: string
+          credit_applied_inc_vat?: number
           due_date?: string
           id?: string
           invoice_number: string
@@ -278,8 +541,10 @@ export type Database = {
         }
         Update: {
           active_payment_id?: string | null
+          amount_due_inc_vat?: number | null
           company_id?: string
           created_at?: string
+          credit_applied_inc_vat?: number
           due_date?: string
           id?: string
           invoice_number?: string
@@ -829,13 +1094,42 @@ export type Database = {
           trial_sequence_number: number
         }[]
       }
+      apply_open_credits: {
+        Args: { p_company_id: string; p_invoice_id: string }
+        Returns: number
+      }
       current_company_id: { Args: never; Returns: string }
+      ensure_credit_note_for_complaint: {
+        Args: { p_actor?: string; p_complaint_id: string }
+        Returns: {
+          credit_note_id: string
+          credit_number: string
+          result: string
+          total_inc_vat: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      next_credit_number: { Args: never; Returns: string }
+      review_complaint_with_credit: {
+        Args: {
+          p_actor?: string
+          p_approve: boolean
+          p_complaint_id: string
+          p_note?: string
+        }
+        Returns: {
+          credit_ex_vat: number
+          credit_note_id: string
+          credit_number: string
+          result: string
+          total_inc_vat: number
+        }[]
       }
       trial_lead_allowance: { Args: never; Returns: number }
     }
@@ -849,6 +1143,7 @@ export type Database = {
         | "no_interest"
         | "spam"
       complaint_status: "pending" | "approved" | "rejected"
+      credit_note_status: "open" | "applied" | "refunded"
       invoice_status:
         | "draft"
         | "issued"
@@ -1006,6 +1301,7 @@ export const Constants = {
         "spam",
       ],
       complaint_status: ["pending", "approved", "rejected"],
+      credit_note_status: ["open", "applied", "refunded"],
       invoice_status: [
         "draft",
         "issued",
