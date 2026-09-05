@@ -15,6 +15,8 @@ export const ALLOCATION_RESULTS = [
   "already_assigned",
   "lead_full",
   "lead_not_verified",
+  "lead_blocked",
+  "lead_duplicate",
   "lead_not_eligible",
   "lead_not_found",
   "company_not_eligible",

@@ -45,14 +45,35 @@ export const submitLead = createServerFn({ method: "POST" })
     }
 
     const { insertLead } = await import("@/lib/leads.server");
-    const { createChallenge } = await import("@/lib/phone-verify.server");
+    const { assessSubmission, applyAssessment } = await import("@/lib/lead-risk.server");
+    const { NEUTRAL_CONFIRMATION } = await import("@/lib/lead-risk-policy");
+
+    // Beoordeel de inzending vóórdat er een sms de deur uit gaat.
+    const assessment = await assessSubmission({ ...data, phone });
     const leadId = await insertLead({ ...data, phone });
+    await applyAssessment(leadId, assessment);
+
+    if (!assessment.allowSms) {
+      // Neutrale bevestiging: we verklappen nooit dat er al gegevens bestaan,
+      // en er wordt geen nieuwe verificatiecode verstuurd of lead verdeeld.
+      return {
+        ok: true,
+        needsVerification: false as const,
+        message: NEUTRAL_CONFIRMATION,
+        token: "",
+        expiresAt: "",
+        phoneMasked: "",
+      };
+    }
+
+    const { createChallenge } = await import("@/lib/phone-verify.server");
     const challenge = await createChallenge(leadId, phone);
 
     const { maskPhone } = await import("@/lib/phone");
     return {
       ok: true,
       needsVerification: true as const,
+      message: null,
       token: challenge.token,
       expiresAt: challenge.expiresAt,
       phoneMasked: maskPhone(phone),
