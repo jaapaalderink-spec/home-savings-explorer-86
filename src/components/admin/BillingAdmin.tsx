@@ -10,6 +10,7 @@ import {
   reviewComplaint,
 } from "@/lib/partner.functions";
 import { formatEuro } from "@/lib/home-savings";
+import { PAYMENT_STATUS_LABEL, type PaymentStatus } from "@/lib/payments-policy";
 
 const REASON_LABEL: Record<string, string> = {
   unreachable: "Niet bereikbaar",
@@ -160,6 +161,7 @@ export function BillingAdmin() {
                   <th className="p-2">Excl. btw</th>
                   <th className="p-2">Incl. btw</th>
                   <th className="p-2">Status</th>
+                  <th className="p-2">Betaling</th>
                 </tr>
               </thead>
               <tbody>
@@ -180,6 +182,27 @@ export function BillingAdmin() {
                       {formatEuro(Number(i.total_inc_vat ?? 0))}
                     </td>
                     <td className="p-2 text-xs text-moss/80">{i.status as string}</td>
+                    <td className="p-2 text-xs text-moss/80">
+                      {PAYMENT_STATUS_LABEL[(i.payment_status ?? "open") as PaymentStatus]}
+                      {i.payment_review_required ? " · controle nodig" : ""}
+                      {(() => {
+                        const attempts = (i.payments ?? []) as Array<{
+                          provider_payment_id: string;
+                          created_at: string;
+                          paid_at: string | null;
+                        }>;
+                        const last = attempts[attempts.length - 1];
+                        if (!last) return null;
+                        return (
+                          <span className="block text-[11px] text-moss/60">
+                            {last.provider_payment_id} ·{" "}
+                            {new Date(
+                              (last.paid_at ?? last.created_at) as string,
+                            ).toLocaleDateString("nl-NL")}
+                          </span>
+                        );
+                      })()}
+                    </td>
                   </tr>
                 ))}
               </tbody>
