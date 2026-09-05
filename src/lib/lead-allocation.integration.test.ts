@@ -317,10 +317,10 @@ suite("proefperiode: eerste 10 leads gratis (echte database)", () => {
     await allocateMany(company, 10, "shared_2");
     // Verplaats alle bestaande aankopen naar vorige maand: een maandgrens mag
     // de levenslange proefteller niet resetten.
-    await ctx.admin.query(
-      `UPDATE lead_purchases SET created_at = now() - interval '45 days' WHERE company_id = $1`,
-      [company],
-    );
+    await sb
+      .from("lead_purchases")
+      .update({ created_at: new Date(Date.now() - 45 * 864e5).toISOString() })
+      .eq("company_id", company);
     const rows = await allocateMany(company, 1, "shared_2");
     expect(rows[0]!.is_trial).toBe(false);
     expect(rows[0]!.billable).toBe(true);
