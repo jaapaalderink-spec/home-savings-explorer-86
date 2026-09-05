@@ -80,27 +80,34 @@ async function makePurchase(opts: {
 
 async function makeInvoice(companyId: string, total: number, paid = false, vatRate = 0.21) {
   const net = Math.round((total / (1 + vatRate)) * 100) / 100;
-  const { rows } = await db.query(
-    `INSERT INTO invoices (company_id, invoice_number, period_start, period_end,
-                           subtotal_ex_vat, vat_amount, total_inc_vat, status, paid_at)
-     VALUES ($1, $2, '2026-08-01', '2026-08-31', $3, $4, $5, $6, $7) RETURNING id`,
-    [
-      companyId,
-      `CN-T-${crypto.randomUUID().slice(0, 8)}`,
-      net,
-      Math.round((total - net) * 100) / 100,
-      total,
-      paid ? "paid" : "issued",
-      paid ? new Date().toISOString() : null,
-    ],
-  );
-  const id = rows[0].id as string;
+  const { data, error } = await sb
+    .from("invoices")
+    .insert({
+      company_id: companyId,
+      invoice_number: `CN-T-${crypto.randomUUID().slice(0, 8)}`,
+      period_start: "2026-08-01",
+      period_end: "2026-08-31",
+      due_date: "2026-09-14",
+      subtotal_ex_vat: net,
+      vat_amount: Math.round((total - net) * 100) / 100,
+      total_inc_vat: total,
+      status: paid ? "paid" : "issued",
+      paid_at: paid ? new Date().toISOString() : null,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  const id = data.id as string;
   made.invoices.push(id);
-  await db.query(
-    `INSERT INTO invoice_lines (invoice_id, description, quantity, unit_price_ex_vat, amount_ex_vat, vat_rate)
-     VALUES ($1, 'Leads', 1, $2, $2, $3)`,
-    [id, net, vatRate],
-  );
+  const line = await sb.from("invoice_lines").insert({
+    invoice_id: id,
+    description: "Leads",
+    quantity: 1,
+    unit_price_ex_vat: net,
+    amount_ex_vat: net,
+    vat_rate: vatRate,
+  });
+  if (line.error) throw new Error(line.error.message);
   return id;
 }
 
