@@ -155,11 +155,11 @@ export function assessLeadRisk(
   if (phoneRecent >= MAX_LEADS_PER_PHONE) {
     if (!reasons.includes("recent_phone_duplicate")) reasons.push("recent_phone_duplicate");
     reasons.push("submission_velocity");
-    score += 60;
+    score += BLOCK_SCORE;
   } else if (emailRecent >= MAX_LEADS_PER_EMAIL) {
     if (!reasons.includes("recent_email_duplicate")) reasons.push("recent_email_duplicate");
     reasons.push("submission_velocity");
-    score += 60;
+    score += BLOCK_SCORE;
   } else if (addressRecent >= MAX_LEADS_PER_ADDRESS) {
     reasons.push("submission_velocity");
     score += 30;
