@@ -125,7 +125,11 @@ export const getCoverage = createServerFn({ method: "GET" })
 
     const { data: regions } = await db.from("regions").select("code, name").order("code");
     if (!profile?.company_id) {
-      return { regions: regions ?? [], selected: [] as string[], products: [] as Array<{ category: string; active: boolean; monthly_max: number }> };
+      return {
+        regions: regions ?? [],
+        selected: [] as string[],
+        products: [] as Array<{ category: string; active: boolean; monthly_max: number }>,
+      };
     }
 
     const [{ data: mine }, { data: products }] = await Promise.all([
@@ -172,9 +176,11 @@ export const saveCoverage = createServerFn({ method: "POST" })
 
     await db.from("company_regions").delete().eq("company_id", profile.company_id);
     if (data.regions.length > 0) {
-      await db.from("company_regions").insert(
-        data.regions.map((region_code) => ({ company_id: profile.company_id!, region_code })),
-      );
+      await db
+        .from("company_regions")
+        .insert(
+          data.regions.map((region_code) => ({ company_id: profile.company_id!, region_code })),
+        );
     }
 
     if (data.products.length > 0) {
@@ -224,24 +230,29 @@ export const listMarketplace = createServerFn({ method: "GET" })
       return { leads: [], myRegions: [], myCategories: [], regionOptions: [], hiddenByArea: 0 };
     }
 
-    const [{ data: leads }, { data: mine }, { data: regionRows }, { data: products }, { data: allRegions }] =
-      await Promise.all([
-        db
-          .from("leads")
-          .select(
-            "id, created_at, categories, postcode, city, house_type, estimated_savings, contract_type, annual_consumption_kwh, purchase_count, max_partners, region_code, lead_type, state",
-          )
-          .order("created_at", { ascending: false })
-          .limit(200),
-        db.from("lead_purchases").select("lead_id").eq("company_id", profile.company_id),
-        db.from("company_regions").select("region_code").eq("company_id", profile.company_id),
-        db
-          .from("company_products")
-          .select("category, active")
-          .eq("company_id", profile.company_id)
-          .eq("active", true),
-        db.from("regions").select("code, name").order("code"),
-      ]);
+    const [
+      { data: leads },
+      { data: mine },
+      { data: regionRows },
+      { data: products },
+      { data: allRegions },
+    ] = await Promise.all([
+      db
+        .from("leads")
+        .select(
+          "id, created_at, categories, postcode, city, house_type, estimated_savings, contract_type, annual_consumption_kwh, purchase_count, max_partners, region_code, lead_type, state",
+        )
+        .order("created_at", { ascending: false })
+        .limit(200),
+      db.from("lead_purchases").select("lead_id").eq("company_id", profile.company_id),
+      db.from("company_regions").select("region_code").eq("company_id", profile.company_id),
+      db
+        .from("company_products")
+        .select("category, active")
+        .eq("company_id", profile.company_id)
+        .eq("active", true),
+      db.from("regions").select("code, name").order("code"),
+    ]);
 
     const regionName = new Map((allRegions ?? []).map((r) => [r.code, r.name]));
     const owned = new Set((mine ?? []).map((p) => p.lead_id));
@@ -250,14 +261,18 @@ export const listMarketplace = createServerFn({ method: "GET" })
 
     // Standaard = het eigen werkgebied. Een expliciete selectie gaat voor.
     const selectedRegions = new Set(
-      (filters.regions && filters.regions.length > 0 ? filters.regions : myRegionCodes).filter(Boolean),
+      (filters.regions && filters.regions.length > 0 ? filters.regions : myRegionCodes).filter(
+        Boolean,
+      ),
     );
     const selectedCategories = new Set(
       filters.categories && filters.categories.length > 0 ? filters.categories : myCategories,
     );
     const needle = (filters.query ?? "").trim().toLowerCase();
 
-    const available = (leads ?? []).filter((l) => !owned.has(l.id) && l.purchase_count < l.max_partners);
+    const available = (leads ?? []).filter(
+      (l) => !owned.has(l.id) && l.purchase_count < l.max_partners,
+    );
 
     const inArea = (l: (typeof available)[number]) =>
       selectedRegions.size === 0 || !l.region_code || selectedRegions.has(l.region_code);
@@ -354,7 +369,6 @@ export const purchaseLead = createServerFn({ method: "POST" })
     }
   });
 
-
 /** Gekochte en toegewezen leads van het eigen bedrijf, met volledige contactgegevens. */
 export const listPurchasedLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -376,13 +390,19 @@ export const listPurchasedLeads = createServerFn({ method: "GET" })
         .eq("company_id", profile.company_id)
         .order("created_at", { ascending: false }),
       db.from("profiles").select("id, full_name, email").eq("company_id", profile.company_id),
-      db.from("complaints").select("purchase_id, status, reason").eq("company_id", profile.company_id),
+      db
+        .from("complaints")
+        .select("purchase_id, status, reason")
+        .eq("company_id", profile.company_id),
     ]);
 
     const owners = new Map<string, string>();
     (members ?? []).forEach((m) => owners.set(m.id, m.full_name || m.email || "Onbekend"));
     const complaintByPurchase = new Map(
-      (complaints ?? []).map((c) => [c.purchase_id, { status: c.status as string, reason: c.reason as string }]),
+      (complaints ?? []).map((c) => [
+        c.purchase_id,
+        { status: c.status as string, reason: c.reason as string },
+      ]),
     );
 
     return (data ?? []).map((p) => ({
@@ -495,7 +515,10 @@ export const listCompanyLeadsByRegion = createServerFn({ method: "GET" })
     ]);
 
     const nameByCode = new Map((regions ?? []).map((r) => [r.code, r.name]));
-    const agg = new Map<string, { leads: number; won: number; categories: Record<string, number> }>();
+    const agg = new Map<
+      string,
+      { leads: number; won: number; categories: Record<string, number> }
+    >();
     (purchases ?? []).forEach((p) => {
       const lead = p.lead as { region_code?: string | null; categories?: string[] | null } | null;
       const code = lead?.region_code;
@@ -521,7 +544,6 @@ export const listCompanyLeadsByRegion = createServerFn({ method: "GET" })
       }))
       .sort((a, b) => b.leads - a.leads);
   });
-
 
 /** Registreert de eerste keer openen van een lead (SLA). */
 export const markLeadOpened = createServerFn({ method: "POST" })
@@ -581,7 +603,14 @@ export const fileComplaint = createServerFn({ method: "POST" })
     z
       .object({
         purchaseId: z.string().uuid(),
-        reason: z.enum(["unreachable", "invalid_phone", "duplicate", "out_of_area", "no_interest", "spam"]),
+        reason: z.enum([
+          "unreachable",
+          "invalid_phone",
+          "duplicate",
+          "out_of_area",
+          "no_interest",
+          "spam",
+        ]),
         details: z.string().trim().max(600).optional(),
       })
       .parse(data),
@@ -667,7 +696,9 @@ export const reviewComplaint = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!complaint) throw new Error("Reclamatie niet gevonden.");
 
-    const price = Number((complaint.purchase as { price_ex_vat?: number } | null)?.price_ex_vat ?? 0);
+    const price = Number(
+      (complaint.purchase as { price_ex_vat?: number } | null)?.price_ex_vat ?? 0,
+    );
 
     await db
       .from("complaints")
@@ -816,7 +847,10 @@ export const generateInvoices = createServerFn({ method: "POST" })
       await db
         .from("lead_purchases")
         .update({ invoice_id: invoice.id })
-        .in("id", billable.map((p) => p.id));
+        .in(
+          "id",
+          billable.map((p) => p.id),
+        );
       created += 1;
     }
 
@@ -847,7 +881,10 @@ export const listTeam = createServerFn({ method: "GET" })
       };
 
     const [{ data: members }, { data: purchases }, { data: roles }] = await Promise.all([
-      db.from("profiles").select("id, full_name, email, created_at").eq("company_id", profile.company_id),
+      db
+        .from("profiles")
+        .select("id, full_name, email, created_at")
+        .eq("company_id", profile.company_id),
       db
         .from("lead_purchases")
         .select(
@@ -896,7 +933,6 @@ export const listTeam = createServerFn({ method: "GET" })
         };
       }),
     };
-
   });
 
 /** Platformoverzicht voor beheerders, inclusief SLA per partner. */
@@ -912,11 +948,15 @@ export const listPlatformOverview = createServerFn({ method: "GET" })
 
     const [{ data: companies }, { count: leadCount }, { data: purchases }, { data: leadStates }] =
       await Promise.all([
-        db.from("companies").select("id, name, plan_name, monthly_lead_limit, monthly_fee_ex_vat, created_at"),
+        db
+          .from("companies")
+          .select("id, name, plan_name, monthly_lead_limit, monthly_fee_ex_vat, created_at"),
         db.from("leads").select("id", { count: "exact", head: true }),
         db
           .from("lead_purchases")
-          .select("company_id, status, price_ex_vat, billable, credited, response_score, contacted_within_24h"),
+          .select(
+            "company_id, status, price_ex_vat, billable, credited, response_score, contacted_within_24h",
+          ),
         db.from("leads").select("state"),
       ]);
 
@@ -939,7 +979,9 @@ export const listPlatformOverview = createServerFn({ method: "GET" })
           purchased: own.length,
           revenue:
             Number(c.monthly_fee_ex_vat ?? 0) +
-            own.filter((p) => p.billable && !p.credited).reduce((s, p) => s + Number(p.price_ex_vat ?? 0), 0),
+            own
+              .filter((p) => p.billable && !p.credited)
+              .reduce((s, p) => s + Number(p.price_ex_vat ?? 0), 0),
           responseScore: average(own.map((p) => p.response_score ?? 0)),
           contacted24h: percentage(own.map((p) => p.contacted_within_24h)),
         };

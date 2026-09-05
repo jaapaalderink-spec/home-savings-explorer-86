@@ -155,7 +155,11 @@ export async function distributeLead(leadId: string) {
 
   const total = alreadyAssigned.size + assigned;
   const state =
-    total === 0 ? ("new" as const) : total < lead.max_partners ? ("underfilled" as const) : ("assigned" as const);
+    total === 0
+      ? ("new" as const)
+      : total < lead.max_partners
+        ? ("underfilled" as const)
+        : ("assigned" as const);
 
   // Bij nul toewijzingen zet de databasefunctie niets; hier leggen we vast dat
   // de verdeling wél is uitgevoerd, zodat de lead in de leadmarkt komt.
@@ -169,4 +173,3 @@ export async function distributeLead(leadId: string) {
 
   return { assigned, state, outcome: stopped ?? ("distributed" as const) };
 }
-

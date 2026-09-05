@@ -55,7 +55,6 @@ export async function allocateLeadToCompany(params: {
     ...(params.purchasedBy ? { p_purchased_by: params.purchasedBy } : {}),
   });
 
-
   if (error) {
     // Het databasevangnet (trigger) meldt een volle lead als uitzondering.
     if (error.message?.includes("LEAD_FULL")) {
@@ -66,7 +65,12 @@ export async function allocateLeadToCompany(params: {
   }
 
   const row = (Array.isArray(data) ? data[0] : data) as
-    | { result: string; purchase_id: string | null; price_ex_vat: number | null; billable: boolean | null }
+    | {
+        result: string;
+        purchase_id: string | null;
+        price_ex_vat: number | null;
+        billable: boolean | null;
+      }
     | null
     | undefined;
 
