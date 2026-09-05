@@ -1,7 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { TRIAL_LEAD_ALLOWANCE, leadTypePrice, planByName, withVat } from "@/lib/lead-pricing";
+import {
+  TRIAL_LEAD_ALLOWANCE,
+  VAT_RATE,
+  leadTypePrice,
+  planByName,
+  withVat,
+} from "@/lib/lead-pricing";
 import { adminDb, average, monthRange, monthStart, percentage } from "@/lib/partner-util";
 
 /** Profiel, bedrijf, rollen en het maandverbruik van de ingelogde partner. */
@@ -749,37 +755,26 @@ export const reviewComplaint = createServerFn({ method: "POST" })
     });
     if (!isAdmin) throw new Error("Alleen platformbeheerders beoordelen reclamaties.");
 
-    const { data: complaint } = await db
-      .from("complaints")
-      .select("id, purchase_id, purchase:lead_purchases(price_ex_vat, is_trial)")
-      .eq("id", data.complaintId)
-      .maybeSingle();
-    if (!complaint) throw new Error("Reclamatie niet gevonden.");
+    // Beoordeling, leadmarkering en eventuele creditnota gebeuren in één
+    // databasehandeling: nooit "goedgekeurd zonder credit" of dubbele credits.
+    const { data: rows, error } = await db.rpc("review_complaint_with_credit", {
+      p_complaint_id: data.complaintId,
+      p_approve: data.approve,
+      p_note: data.note ?? null,
+      p_actor: context.userId,
+    });
+    if (error) throw new Error("Beoordelen is mislukt.");
 
-    const purchase = complaint.purchase as { price_ex_vat?: number; is_trial?: boolean } | null;
-    // Een proeflead heeft geen geldwaarde: goedkeuren geeft dus nooit een credit
-    // en herstelt ook geen gratis proefplek.
-    const price = purchase?.is_trial ? 0 : Number(purchase?.price_ex_vat ?? 0);
+    const row = (rows ?? [])[0];
+    if (!row || row.result === "complaint_not_found") throw new Error("Reclamatie niet gevonden.");
 
-    await db
-      .from("complaints")
-      .update({
-        status: data.approve ? "approved" : "rejected",
-        reviewed_by: context.userId,
-        reviewed_at: new Date().toISOString(),
-        review_note: data.note ?? null,
-        credit_ex_vat: data.approve ? price : 0,
-      })
-      .eq("id", data.complaintId);
-
-    if (data.approve) {
-      await db
-        .from("lead_purchases")
-        .update({ credited: true, billable: false })
-        .eq("id", complaint.purchase_id);
-    }
-
-    return { ok: true };
+    return {
+      ok: true,
+      result: row.result,
+      creditNumber: row.credit_number,
+      creditTotalIncVat: row.total_inc_vat === null ? null : Number(row.total_inc_vat),
+      creditExVat: Number(row.credit_ex_vat ?? 0),
+    };
   });
 
 /** Facturen van het eigen bedrijf (beheerders zien alles). */
@@ -795,7 +790,7 @@ export const listInvoices = createServerFn({ method: "GET" })
     let query = db
       .from("invoices")
       .select(
-        "id, invoice_number, period_start, period_end, subtotal_ex_vat, vat_amount, total_inc_vat, status, due_date, paid_at, payment_status, last_payment_attempt_at, payment_review_required, company:companies(name), lines:invoice_lines(description, quantity, unit_price_ex_vat, amount_ex_vat), payments(provider_payment_id, status, amount, paid_at, created_at)",
+        "id, invoice_number, period_start, period_end, subtotal_ex_vat, vat_amount, total_inc_vat, credit_applied_inc_vat, amount_due_inc_vat, status, due_date, paid_at, payment_status, last_payment_attempt_at, payment_review_required, credit_notes:credit_notes!credit_notes_original_invoice_id_fkey(credit_number, total_inc_vat, status), company:companies(name), lines:invoice_lines(description, quantity, unit_price_ex_vat, amount_ex_vat), payments(provider_payment_id, status, amount, paid_at, created_at)",
       )
       .order("period_start", { ascending: false });
 
@@ -878,6 +873,7 @@ export const generateInvoices = createServerFn({ method: "POST" })
         quantity: number;
         unit_price_ex_vat: number;
         amount_ex_vat: number;
+        vat_rate: number;
       }> = [
         {
           invoice_id: invoice.id,
@@ -885,6 +881,7 @@ export const generateInvoices = createServerFn({ method: "POST" })
           quantity: 1,
           unit_price_ex_vat: subscription,
           amount_ex_vat: subscription,
+          vat_rate: VAT_RATE,
         },
       ];
 
@@ -902,6 +899,7 @@ export const generateInvoices = createServerFn({ method: "POST" })
           quantity: entry.count,
           unit_price_ex_vat: entry.price,
           amount_ex_vat: Math.round(entry.count * entry.price * 100) / 100,
+          vat_rate: VAT_RATE,
         });
       });
 
@@ -913,6 +911,9 @@ export const generateInvoices = createServerFn({ method: "POST" })
           "id",
           billable.map((p) => p.id),
         );
+
+      // Openstaande creditnota's van dit bedrijf verlagen het te betalen bedrag.
+      await db.rpc("apply_open_credits", { p_company_id: company.id, p_invoice_id: invoice.id });
       created += 1;
     }
 
