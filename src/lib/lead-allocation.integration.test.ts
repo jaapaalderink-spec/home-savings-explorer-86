@@ -107,13 +107,9 @@ suite("allocate_lead_to_company (echte database)", () => {
       await sb.from("leads").delete().in("id", ctx.leads);
     }
     if (ctx.companies.length) {
-      await ctx.admin.query(`DELETE FROM company_products WHERE company_id = ANY($1::uuid[])`, [
-        ctx.companies,
-      ]);
-      await ctx.admin.query(`DELETE FROM company_regions WHERE company_id = ANY($1::uuid[])`, [
-        ctx.companies,
-      ]);
-      await ctx.admin.query(`DELETE FROM companies WHERE id = ANY($1::uuid[])`, [ctx.companies]);
+      await sb.from("company_products").delete().in("company_id", ctx.companies);
+      await sb.from("company_regions").delete().in("company_id", ctx.companies);
+      await sb.from("companies").delete().in("id", ctx.companies);
     }
     await ctx.admin.end();
   }, 60_000);
