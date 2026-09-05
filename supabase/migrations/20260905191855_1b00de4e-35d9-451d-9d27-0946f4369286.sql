@@ -1,0 +1,2 @@
+REVOKE ALL ON FUNCTION public.allocate_lead_to_company(uuid, uuid, purchase_source, uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.allocate_lead_to_company(uuid, uuid, purchase_source, uuid) TO service_role;
