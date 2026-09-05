@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { leadTypePrice, planByName, withVat } from "@/lib/lead-pricing";
+import { TRIAL_LEAD_ALLOWANCE, leadTypePrice, planByName, withVat } from "@/lib/lead-pricing";
 import { adminDb, average, monthRange, monthStart, percentage } from "@/lib/partner-util";
 
 /** Profiel, bedrijf, rollen en het maandverbruik van de ingelogde partner. */
@@ -16,17 +16,33 @@ export const getPartnerContext = createServerFn({ method: "GET" })
     const roles = (roleRows ?? []).map((r) => r.role as string);
 
     if (!profile?.company_id) {
-      return { profile: profile ?? null, company: null, roles, usedThisMonth: 0, limit: 0 };
+      return {
+        profile: profile ?? null,
+        company: null,
+        roles,
+        usedThisMonth: 0,
+        limit: 0,
+        trialUsed: 0,
+        trialRemaining: TRIAL_LEAD_ALLOWANCE,
+        trialActive: true,
+      };
     }
 
-    const [{ data: company }, { count }] = await Promise.all([
+    const [{ data: company }, { count }, { count: lifetimeCount }] = await Promise.all([
       db.from("companies").select("*").eq("id", profile.company_id).maybeSingle(),
       db
         .from("lead_purchases")
         .select("id", { count: "exact", head: true })
         .eq("company_id", profile.company_id)
         .gte("created_at", monthStart()),
+      db
+        .from("lead_purchases")
+        .select("id", { count: "exact", head: true })
+        .eq("company_id", profile.company_id),
     ]);
+
+    // Proefperiode: levenslange telling, dus geen maandfilter.
+    const trialUsed = Math.min(lifetimeCount ?? 0, TRIAL_LEAD_ALLOWANCE);
 
     return {
       profile,
@@ -34,6 +50,9 @@ export const getPartnerContext = createServerFn({ method: "GET" })
       roles,
       usedThisMonth: count ?? 0,
       limit: company?.monthly_lead_limit ?? 0,
+      trialUsed,
+      trialRemaining: TRIAL_LEAD_ALLOWANCE - trialUsed,
+      trialActive: trialUsed < TRIAL_LEAD_ALLOWANCE,
     };
   });
 
@@ -691,14 +710,17 @@ export const reviewComplaint = createServerFn({ method: "POST" })
 
     const { data: complaint } = await db
       .from("complaints")
-      .select("id, purchase_id, purchase:lead_purchases(price_ex_vat)")
+      .select("id, purchase_id, purchase:lead_purchases(price_ex_vat, is_trial)")
       .eq("id", data.complaintId)
       .maybeSingle();
     if (!complaint) throw new Error("Reclamatie niet gevonden.");
 
-    const price = Number(
-      (complaint.purchase as { price_ex_vat?: number } | null)?.price_ex_vat ?? 0,
-    );
+    const purchase = complaint.purchase as
+      | { price_ex_vat?: number; is_trial?: boolean }
+      | null;
+    // Een proeflead heeft geen geldwaarde: goedkeuren geeft dus nooit een credit
+    // en herstelt ook geen gratis proefplek.
+    const price = purchase?.is_trial ? 0 : Number(purchase?.price_ex_vat ?? 0);
 
     await db
       .from("complaints")
@@ -776,12 +798,13 @@ export const generateInvoices = createServerFn({ method: "POST" })
     for (const company of companies ?? []) {
       const { data: purchases } = await db
         .from("lead_purchases")
-        .select("id, price_ex_vat, billable, credited, lead:leads(lead_type)")
+        .select("id, price_ex_vat, billable, credited, is_trial, lead:leads(lead_type)")
         .eq("company_id", company.id)
         .gte("created_at", period.startIso)
         .lt("created_at", period.endIso);
 
-      const billable = (purchases ?? []).filter((p) => p.billable && !p.credited);
+      // Proefleads zijn nooit factureerbaar; ze blijven wel in de historie staan.
+      const billable = (purchases ?? []).filter((p) => p.billable && !p.credited && !p.is_trial);
       const subscription = Number(company.monthly_fee_ex_vat ?? 0);
       const leadTotal = billable.reduce((s, p) => s + Number(p.price_ex_vat ?? 0), 0);
       const subtotal = Math.round((subscription + leadTotal) * 100) / 100;
