@@ -46,10 +46,9 @@ async function createCompany(monthlyMax = 10, active = true) {
     [`ITest ${crypto.randomUUID().slice(0, 8)}`, active],
   );
   const id = rows[0].id as string;
-  await ctx.admin.query(
-    `INSERT INTO company_regions (company_id, region_code) VALUES ($1, '99')`,
-    [id],
-  );
+  await ctx.admin.query(`INSERT INTO company_regions (company_id, region_code) VALUES ($1, '99')`, [
+    id,
+  ]);
   await ctx.admin.query(
     `INSERT INTO company_products (company_id, category, active, monthly_max)
      VALUES ($1, 'solar', true, $2)`,
@@ -104,8 +103,8 @@ suite("allocate_lead_to_company (echte database)", () => {
   afterAll(async () => {
     if (!ctx.admin) return;
     if (ctx.leads.length) {
-      await ctx.admin.query(`DELETE FROM lead_purchases WHERE lead_id = ANY($1::uuid[])`, [ctx.leads]);
-      await ctx.admin.query(`DELETE FROM leads WHERE id = ANY($1::uuid[])`, [ctx.leads]);
+      await sb.from("lead_purchases").delete().in("lead_id", ctx.leads);
+      await sb.from("leads").delete().in("id", ctx.leads);
     }
     if (ctx.companies.length) {
       await ctx.admin.query(`DELETE FROM company_products WHERE company_id = ANY($1::uuid[])`, [
@@ -180,9 +179,7 @@ suite("allocate_lead_to_company (echte database)", () => {
     const lead = await createLead({ type: "shared_2" });
     const companies = [await createCompany(), await createCompany(), await createCompany()];
     const results = await Promise.all(
-      companies.map((companyId, i) =>
-        allocate(lead, companyId, i === 0 ? "market" : "assigned"),
-      ),
+      companies.map((companyId, i) => allocate(lead, companyId, i === 0 ? "market" : "assigned")),
     );
     expect(results.filter((r) => r.result === "allocated")).toHaveLength(2);
     expect(await purchaseCount(lead)).toBe(2);
@@ -196,7 +193,6 @@ suite("allocate_lead_to_company (echte database)", () => {
     expect(results.filter((r) => r.result === "allocated")).toHaveLength(1);
     expect(results.map((r) => r.result)).toContain("company_capacity_full");
   });
-
 
   it("de status van de lead volgt het aantal toewijzingen", async () => {
     const lead = await createLead({ type: "shared_2" });
@@ -225,12 +221,10 @@ suite("allocate_lead_to_company (echte database)", () => {
     const c = await createCompany();
     await allocate(lead, a);
     await allocate(lead, b);
-    await expect(
-      ctx.admin.query(
-        `INSERT INTO lead_purchases (lead_id, company_id, source) VALUES ($1, $2, 'market')`,
-        [lead, c],
-      ),
-    ).rejects.toThrow(/LEAD_FULL/);
+    const { error } = await sb
+      .from("lead_purchases")
+      .insert({ lead_id: lead, company_id: c, source: "market" });
+    expect(error?.message ?? "").toMatch(/LEAD_FULL/);
     expect(await purchaseCount(lead)).toBe(2);
   });
 });
