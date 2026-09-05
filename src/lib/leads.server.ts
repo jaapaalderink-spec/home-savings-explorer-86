@@ -1,5 +1,5 @@
 /** Server-only leadopslag en automatische leadverdeling. */
-import { adminDb, monthStart, shuffle } from "@/lib/partner-util";
+import { adminDb, monthStart } from "@/lib/partner-util";
 import { leadTypeFor, maxPartnersFor, regionFromPostcode } from "@/lib/lead-pricing";
 import type { LeadInput } from "@/lib/leads.functions";
 
@@ -145,7 +145,7 @@ export async function distributeLead(leadId: string) {
   const { loadRankingInputs } = await import("@/lib/quality.server");
   const { rankEligibleCompaniesForLead } = await import("@/lib/quality-policy");
 
-  // Ranking: alleen de vololgorde van geschikte kandidaten, nooit de toewijzing zelf.
+  // Ranking: alleen de volgorde van geschikte kandidaten, nooit de toewijzing zelf.
   const eligibleIds = eligible.map((c) => c.id);
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const [scores, { data: recentRows }] = await Promise.all([
