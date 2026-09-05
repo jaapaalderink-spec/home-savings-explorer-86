@@ -78,16 +78,18 @@ async function makePurchase(opts: {
   return data.id as string;
 }
 
+let periodSeq = 0;
 async function makeInvoice(companyId: string, total: number, paid = false, vatRate = 0.21) {
+  const month = String((periodSeq++ % 12) + 1).padStart(2, "0");
   const net = Math.round((total / (1 + vatRate)) * 100) / 100;
   const { data, error } = await sb
     .from("invoices")
     .insert({
       company_id: companyId,
       invoice_number: `CN-T-${crypto.randomUUID().slice(0, 8)}`,
-      period_start: "2026-08-01",
-      period_end: "2026-08-31",
-      due_date: "2026-09-14",
+      period_start: `2026-${month}-01`,
+      period_end: `2026-${month}-28`,
+      due_date: `2026-${month}-28`,
       subtotal_ex_vat: net,
       vat_amount: Math.round((total - net) * 100) / 100,
       total_inc_vat: total,
@@ -277,11 +279,10 @@ suite("creditnota's (echte database)", () => {
     });
     expect(insert.error).not.toBeNull();
 
-    const update = await anon
-      .from("credit_notes")
-      .update({ total_inc_vat: 1 })
-      .eq("complaint_id", complaint);
-    expect(update.error).not.toBeNull();
+    // Wijzigen raakt niets: er is geen wijzigingsrecht, het bedrag blijft staan.
+    await anon.from("credit_notes").update({ total_inc_vat: 1 }).eq("complaint_id", complaint);
+    const [unchanged] = await creditNotes(complaint);
+    expect(Number(unchanged!["total_inc_vat"])).toBe(60.5);
 
     const rpc = await anon.rpc("review_complaint_with_credit", {
       p_complaint_id: complaint,
