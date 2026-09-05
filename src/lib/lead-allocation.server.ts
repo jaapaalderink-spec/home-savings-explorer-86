@@ -39,6 +39,8 @@ export function isLeadTerminal(result: AllocationResult): boolean {
   return (
     result === "lead_full" ||
     result === "lead_not_verified" ||
+    result === "lead_blocked" ||
+    result === "lead_duplicate" ||
     result === "lead_not_eligible" ||
     result === "lead_not_found"
   );

@@ -18,6 +18,7 @@ const filterSchema = z
     state: z.enum(["new", "assigned", "underfilled", "cancelled"]).optional(),
     days: z.number().int().min(1).max(365).optional(),
     search: z.string().trim().max(80).optional(),
+    risk: z.enum(["review", "duplicate", "blocked"]).optional(),
     limit: z.number().int().min(1).max(200).optional(),
   })
   .optional()
@@ -40,7 +41,7 @@ export const listAllLeads = createServerFn({ method: "POST" })
     let query = db
       .from("leads")
       .select(
-        "id, first_name, last_name, email, phone, postcode, city, region_code, categories, lead_type, state, estimated_savings, purchase_count, max_partners, created_at, distributed_at, contract_type, house_type, annual_consumption_kwh",
+        "id, first_name, last_name, email, phone, postcode, city, region_code, categories, lead_type, state, estimated_savings, purchase_count, max_partners, created_at, distributed_at, contract_type, house_type, annual_consumption_kwh, fraud_status, fraud_score, review_required, duplicate_of_lead_id",
       )
       .order("created_at", { ascending: false })
       .limit(data.limit ?? 100);
@@ -48,6 +49,9 @@ export const listAllLeads = createServerFn({ method: "POST" })
     if (data.region) query = query.eq("region_code", data.region);
     if (data.state) query = query.eq("state", data.state);
     if (data.category) query = query.contains("categories", [data.category]);
+    if (data.risk === "review") query = query.eq("review_required", true);
+    if (data.risk === "duplicate") query = query.not("duplicate_of_lead_id", "is", null);
+    if (data.risk === "blocked") query = query.eq("fraud_status", "blocked");
     const since = sinceIso(data.days);
     if (since) query = query.gte("created_at", since);
     if (data.search) {
@@ -61,6 +65,16 @@ export const listAllLeads = createServerFn({ method: "POST" })
     if (error) throw new Error("Aanvragen konden niet worden geladen.");
 
     const ids = (leads ?? []).map((l) => l.id);
+    const { data: riskEvents } = ids.length
+      ? await db.from("lead_risk_events").select("lead_id, signal, score").in("lead_id", ids)
+      : { data: [] as Array<{ lead_id: string; signal: string; score: number }> };
+    const risksByLead = new Map<string, string[]>();
+    (riskEvents ?? []).forEach((e) => {
+      const list = risksByLead.get(e.lead_id) ?? [];
+      if (!list.includes(e.signal)) list.push(e.signal);
+      risksByLead.set(e.lead_id, list);
+    });
+
     const { data: purchases } = ids.length
       ? await db
           .from("lead_purchases")
@@ -95,6 +109,11 @@ export const listAllLeads = createServerFn({ method: "POST" })
       consumption: l.annual_consumption_kwh,
       createdAt: l.created_at,
       distributedAt: l.distributed_at,
+      fraudStatus: (l.fraud_status ?? "clean") as string,
+      fraudScore: l.fraud_score ?? 0,
+      reviewRequired: l.review_required === true,
+      duplicateOfLeadId: l.duplicate_of_lead_id ?? null,
+      riskReasons: risksByLead.get(l.id) ?? [],
     }));
   });
 
@@ -297,6 +316,9 @@ export const listLeadPostcodes = createServerFn({ method: "POST" })
       .limit(500);
     if (since) query = query.gte("created_at", since);
     if (data.category) query = query.contains("categories", [data.category]);
+    if (data.risk === "review") query = query.eq("review_required", true);
+    if (data.risk === "duplicate") query = query.not("duplicate_of_lead_id", "is", null);
+    if (data.risk === "blocked") query = query.eq("fraud_status", "blocked");
     if (data.state) query = query.eq("state", data.state);
     if (data.region) query = query.eq("region_code", data.region);
 
