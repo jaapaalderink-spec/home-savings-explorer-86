@@ -760,8 +760,8 @@ export const reviewComplaint = createServerFn({ method: "POST" })
     const { data: rows, error } = await db.rpc("review_complaint_with_credit", {
       p_complaint_id: data.complaintId,
       p_approve: data.approve,
-      p_note: data.note ?? undefined,
       p_actor: context.userId,
+      ...(data.note ? { p_note: data.note } : {}),
     });
     if (error) throw new Error("Beoordelen is mislukt.");
 
