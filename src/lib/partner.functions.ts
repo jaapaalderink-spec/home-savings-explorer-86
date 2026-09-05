@@ -1224,3 +1224,69 @@ export const listCreditNotes = createServerFn({ method: "GET" })
 
     return { isAdmin: Boolean(isAdmin), items, openCreditIncVat };
   });
+
+/** Kwaliteitsscores van alle bedrijven — alleen beheer. */
+export const listQualityScores = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const db = await adminDb();
+    const { data: isAdmin } = await db.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Alleen beheer ziet kwaliteitsscores.");
+
+    const { data } = await db
+      .from("company_quality_scores")
+      .select(
+        "company_id, overall_score, response_score, complaint_score, engagement_score, conversion_score, sample_size, quality_warning, metrics, calculated_at, company:companies(name, active)",
+      )
+      .order("overall_score", { ascending: false });
+
+    return { items: data ?? [] };
+  });
+
+/** Eenvoudige prestatieweergave voor de eigen partner (geen concurrentiegegevens). */
+export const getMyQualityScore = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const db = await adminDb();
+    const { data: profile } = await db
+      .from("profiles")
+      .select("company_id")
+      .eq("id", context.userId)
+      .maybeSingle();
+    if (!profile?.company_id) return { score: null };
+
+    const { refreshQualityScoreIfStale } = await import("@/lib/quality.server");
+    await refreshQualityScoreIfStale(profile.company_id);
+
+    const { data } = await db
+      .from("company_quality_scores")
+      .select(
+        "response_score, complaint_score, engagement_score, conversion_score, sample_size, metrics, calculated_at",
+      )
+      .eq("company_id", profile.company_id)
+      .maybeSingle();
+
+    return { score: data ?? null };
+  });
+
+/** Herberekent kwaliteitsscores op basis van de echte historie — alleen beheer. */
+export const recalculateQuality = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ companyId: z.string().uuid().optional() }).parse(data ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const db = await adminDb();
+    const { data: isAdmin } = await db.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Alleen beheer kan scores herberekenen.");
+
+    const { recalculateQualityScores } = await import("@/lib/quality.server");
+    const { updated } = await recalculateQualityScores(data.companyId);
+    return { ok: true, updated };
+  });
