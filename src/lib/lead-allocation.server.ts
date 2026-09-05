@@ -52,7 +52,7 @@ export async function allocateLeadToCompany(params: {
     p_lead_id: params.leadId,
     p_company_id: params.companyId,
     p_source: params.source ?? "assigned",
-    p_purchased_by: params.purchasedBy ?? null,
+    p_purchased_by: params.purchasedBy ?? undefined,
   });
 
   if (error) {
