@@ -153,21 +153,29 @@ export function MyLeads() {
             ) : null}
 
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              {STATUSES.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => update.mutate({ purchaseId: p.id, status: s.id })}
-                  className="min-h-9 rounded-full border px-3 py-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf"
-                  style={{
-                    borderColor: p.status === s.id ? "#4f8f62" : "#dfe6e0",
-                    backgroundColor: p.status === s.id ? "#4f8f62" : "transparent",
-                    color: p.status === s.id ? "white" : "#315642",
-                  }}
-                >
-                  {s.label}
-                </button>
-              ))}
+              {STATUSES.map((s) => {
+                const active = p.status === s.id;
+                const allowed =
+                  active || checkStatusTransition(p.status as LeadStatus, s.id).ok;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    disabled={!allowed || update.isPending}
+                    title={allowed ? undefined : "Deze stap kan niet vanuit de huidige status"}
+                    onClick={() => update.mutate({ purchaseId: p.id, status: s.id })}
+                    className="min-h-9 rounded-full border px-3 py-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf disabled:cursor-not-allowed disabled:opacity-40"
+                    style={{
+                      borderColor: active ? "#4f8f62" : "#dfe6e0",
+                      backgroundColor: active ? "#4f8f62" : "transparent",
+                      color: active ? "white" : "#315642",
+                    }}
+                  >
+                    {s.label}
+                  </button>
+                );
+              })}
+
 
               {team.data?.canAssign && (
                 <label className="ml-auto flex items-center gap-2 text-xs text-moss/70">
