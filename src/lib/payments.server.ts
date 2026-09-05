@@ -139,7 +139,13 @@ export async function startInvoicePayment(input: {
     })
     .eq("id", invoice.id);
 
-  logStatus({ invoiceId: invoice.id, paymentId: mollie.id, from: "-", to: status, note: "created" });
+  logStatus({
+    invoiceId: invoice.id,
+    paymentId: mollie.id,
+    from: "-",
+    to: status,
+    note: "created",
+  });
   return { status, checkoutUrl, reused: false };
 }
 
@@ -200,7 +206,8 @@ export async function syncPayment(
     return { status: payment.status as PaymentStatus, invoiceId: invoice.id, note: check.reason };
   }
 
-  const paidAt = mapped === "paid" ? (payment.paid_at ?? mollie.paidAt ?? new Date().toISOString()) : null;
+  const paidAt =
+    mapped === "paid" ? (payment.paid_at ?? mollie.paidAt ?? new Date().toISOString()) : null;
 
   await db
     .from("payments")

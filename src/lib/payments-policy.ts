@@ -4,7 +4,8 @@
  */
 
 export type PaymentStatus = "open" | "pending" | "paid" | "failed" | "expired" | "canceled";
-export type InvoiceStatus = "draft" | "issued" | "open" | "paid" | "overdue" | "cancelled" | "credited";
+export type InvoiceStatus =
+  "draft" | "issued" | "open" | "paid" | "overdue" | "cancelled" | "credited";
 
 /** Statussen waarbij nog op de klant of de bank gewacht wordt. */
 export const ACTIVE_STATUSES: PaymentStatus[] = ["open", "pending"];
@@ -38,10 +39,7 @@ export function mapMollieStatus(status: string): PaymentStatus {
 }
 
 /** Eén gezaghebbende afbeelding van betaalstatus op factuurstatus. */
-export function invoiceStatusFor(
-  payment: PaymentStatus,
-  current: InvoiceStatus,
-): InvoiceStatus {
+export function invoiceStatusFor(payment: PaymentStatus, current: InvoiceStatus): InvoiceStatus {
   if (current === "cancelled" || current === "credited") return current;
   if (payment === "paid") return "paid";
   if (current === "paid") return "paid"; // een betaalde factuur wordt nooit teruggedraaid

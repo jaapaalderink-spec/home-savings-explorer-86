@@ -10,7 +10,10 @@ const DB_URL = process.env["SUPABASE_DB_URL"];
 const suite = DB_URL && process.env["SUPABASE_URL"] ? describe : describe.skip;
 
 const mollieState: {
-  payments: Record<string, { status: string; value: string; currency: string; metadata?: Record<string, unknown> }>;
+  payments: Record<
+    string,
+    { status: string; value: string; currency: string; metadata?: Record<string, unknown> }
+  >;
   created: number;
 } = { payments: {}, created: 0 };
 
@@ -52,10 +55,9 @@ let admin: Client;
 const created: { companies: string[]; invoices: string[] } = { companies: [], invoices: [] };
 
 async function makeInvoice(total = "301.35", status = "issued") {
-  const { rows: c } = await admin.query(
-    `INSERT INTO companies (name) VALUES ($1) RETURNING id`,
-    [`PayTest ${crypto.randomUUID().slice(0, 8)}`],
-  );
+  const { rows: c } = await admin.query(`INSERT INTO companies (name) VALUES ($1) RETURNING id`, [
+    `PayTest ${crypto.randomUUID().slice(0, 8)}`,
+  ]);
   const companyId = c[0].id as string;
   created.companies.push(companyId);
   const { rows: i } = await admin.query(
@@ -221,7 +223,10 @@ suite("betalingen (echte database, nagebootste Mollie)", () => {
 
   it("een onbekend of misvormd betaalkenmerk wordt veilig afgehandeld", async () => {
     const { processMollieWebhook } = await import("@/lib/payments.server");
-    expect(await processMollieWebhook("niet-geldig")).toEqual({ ok: false, reason: "malformed_id" });
+    expect(await processMollieWebhook("niet-geldig")).toEqual({
+      ok: false,
+      reason: "malformed_id",
+    });
     expect(await processMollieWebhook("tr_bestaatniet")).toEqual({ ok: true, status: "pending" });
   });
 });
