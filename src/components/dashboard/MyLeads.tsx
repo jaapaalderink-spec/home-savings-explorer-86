@@ -14,6 +14,7 @@ import {
   updatePurchase,
 } from "@/lib/partner.functions";
 import { CATEGORY_LABEL } from "@/lib/lead-pricing";
+import { checkStatusTransition, type LeadStatus } from "@/lib/lead-status-policy";
 import { formatEuro } from "@/lib/home-savings";
 
 const STATUSES = [
