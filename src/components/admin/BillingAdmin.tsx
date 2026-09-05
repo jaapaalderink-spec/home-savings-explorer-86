@@ -225,7 +225,10 @@ export function BillingAdmin() {
                         </span>
                       )}
                       {((i.credit_notes ?? []) as Array<{ credit_number: string }>).map((cn) => (
-                        <span key={cn.credit_number} className="block text-[11px] font-normal text-moss/60">
+                        <span
+                          key={cn.credit_number}
+                          className="block text-[11px] font-normal text-moss/60"
+                        >
                           {cn.credit_number}
                         </span>
                       ))}
@@ -286,7 +289,11 @@ export function BillingAdmin() {
               </thead>
               <tbody>
                 {creditNotes.data.items.map((cn) => {
-                  const lead = (cn.purchase as { lead?: { first_name?: string; last_name?: string; postcode?: string } } | null)?.lead;
+                  const lead = (
+                    cn.purchase as {
+                      lead?: { first_name?: string; last_name?: string; postcode?: string };
+                    } | null
+                  )?.lead;
                   return (
                     <tr key={cn.id as string} className="border-t border-moss/10">
                       <td className="p-2 font-semibold text-ink">{cn.credit_number as string}</td>
@@ -297,7 +304,9 @@ export function BillingAdmin() {
                         {(cn.invoice as { invoice_number?: string } | null)?.invoice_number ?? "—"}
                       </td>
                       <td className="p-2 text-xs text-moss/70">
-                        {lead ? `${lead.first_name ?? ""} ${lead.last_name ?? ""} · ${lead.postcode ?? ""}` : "—"}
+                        {lead
+                          ? `${lead.first_name ?? ""} ${lead.last_name ?? ""} · ${lead.postcode ?? ""}`
+                          : "—"}
                       </td>
                       <td className="p-2 text-moss/80">
                         −{formatEuro(Number(cn.subtotal_ex_vat ?? 0))}

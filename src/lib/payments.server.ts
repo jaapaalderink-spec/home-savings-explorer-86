@@ -56,7 +56,9 @@ async function loadInvoice(invoiceId: string): Promise<InvoiceRow | null> {
   const db = await adminDb();
   const { data } = await db
     .from("invoices")
-    .select("id, company_id, invoice_number, total_inc_vat, credit_applied_inc_vat, amount_due_inc_vat, status, payment_status, paid_at")
+    .select(
+      "id, company_id, invoice_number, total_inc_vat, credit_applied_inc_vat, amount_due_inc_vat, status, payment_status, paid_at",
+    )
     .eq("id", invoiceId)
     .maybeSingle();
   return (data as InvoiceRow | null) ?? null;

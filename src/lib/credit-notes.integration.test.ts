@@ -173,7 +173,12 @@ suite("creditnota's (echte database)", () => {
   it("1. een goedgekeurde klacht over een proeflead geeft geen creditnota", async () => {
     const company = await makeCompany();
     const invoice = await makeInvoice(company, 121);
-    const purchase = await makePurchase({ companyId: company, price: 0, trial: true, invoiceId: invoice });
+    const purchase = await makePurchase({
+      companyId: company,
+      price: 0,
+      trial: true,
+      invoiceId: invoice,
+    });
     const complaint = await makeComplaint(purchase, company);
     const res = await review(complaint);
     expect(res.result).toBe("no_credit_required");
@@ -188,10 +193,9 @@ suite("creditnota's (echte database)", () => {
     const res = await review(complaint);
     expect(res.result).toBe("excluded_before_invoice");
     expect(await creditNotes(complaint)).toHaveLength(0);
-    const { rows } = await db.query(
-      `SELECT billable, credited FROM lead_purchases WHERE id = $1`,
-      [purchase],
-    );
+    const { rows } = await db.query(`SELECT billable, credited FROM lead_purchases WHERE id = $1`, [
+      purchase,
+    ]);
     expect(rows[0]).toMatchObject({ billable: false, credited: true });
   });
 
