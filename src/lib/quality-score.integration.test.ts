@@ -107,8 +107,8 @@ async function storeScore(companyId: string) {
 }
 
 beforeAll(async () => {
-  if (!DB_URL) return;
-  db = new Client({ connectionString: DB_URL });
+  if (!DB_URL || !SB_KEY) return;
+  db = new Client({ connectionString: DB_URL, ssl: { rejectUnauthorized: false } });
   await db.connect();
 });
 
