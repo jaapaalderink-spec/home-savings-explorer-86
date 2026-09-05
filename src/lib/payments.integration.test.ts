@@ -5,6 +5,7 @@
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { Client } from "pg";
+import { createClient } from "@supabase/supabase-js";
 
 const DB_URL = process.env["SUPABASE_DB_URL"];
 const suite = DB_URL && process.env["SUPABASE_URL"] ? describe : describe.skip;
@@ -99,17 +100,18 @@ suite("betalingen (echte database, nagebootste Mollie)", () => {
   });
 
   afterAll(async () => {
+    const sb = createClient(
+      process.env["SUPABASE_URL"]!,
+      process.env["SUPABASE_SERVICE_ROLE_KEY"]!,
+      { auth: { persistSession: false } },
+    );
     if (created.invoices.length) {
-      await admin.query(`UPDATE invoices SET active_payment_id = NULL WHERE id = ANY($1::uuid[])`, [
-        created.invoices,
-      ]);
-      await admin.query(`DELETE FROM payments WHERE invoice_id = ANY($1::uuid[])`, [
-        created.invoices,
-      ]);
-      await admin.query(`DELETE FROM invoices WHERE id = ANY($1::uuid[])`, [created.invoices]);
+      await sb.from("invoices").update({ active_payment_id: null }).in("id", created.invoices);
+      await sb.from("payments").delete().in("invoice_id", created.invoices);
+      await sb.from("invoices").delete().in("id", created.invoices);
     }
     if (created.companies.length)
-      await admin.query(`DELETE FROM companies WHERE id = ANY($1::uuid[])`, [created.companies]);
+      await sb.from("companies").delete().in("id", created.companies);
     await admin.end();
   });
 
