@@ -172,7 +172,7 @@ suite("betalingen (echte database, nagebootste Mollie)", () => {
     const after = await invoiceRow(invoiceId);
     for (let i = 0; i < 4; i++) await processMollieWebhook(id);
     const later = await invoiceRow(invoiceId);
-    expect(later.paid_at).toBe(after.paid_at);
+    expect(String(later.paid_at)).toBe(String(after.paid_at));
     expect(later.payment_status).toBe("paid");
     expect(await paymentCount(invoiceId)).toBe(1);
   });
