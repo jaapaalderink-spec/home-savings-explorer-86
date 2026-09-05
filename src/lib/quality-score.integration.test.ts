@@ -1,8 +1,8 @@
 /**
  * Echte database-integratietests voor de kwaliteitsscore (fase 3D).
- * Zonder SUPABASE_DB_URL worden ze overgeslagen.
+ * Zonder SUPABASE_DB_URL / servicesleutel worden ze overgeslagen.
  */
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { Client } from "pg";
 import { createClient } from "@supabase/supabase-js";
 import { computeQualityScore, rankEligibleCompaniesForLead } from "@/lib/quality-policy";
@@ -16,27 +16,43 @@ const sb = createClient(SB_URL ?? "http://localhost", SB_KEY ?? "none", {
   auth: { persistSession: false },
 });
 
-let db: Client;
 const made = { companies: [] as string[], leads: [] as string[] };
 
 async function makeCompany(name = "QualityTest") {
-  const { rows } = await db.query(
-    `INSERT INTO companies (name, monthly_lead_limit, categories) VALUES ($1, 0, '{solar}') RETURNING id`,
-    [`${name} ${crypto.randomUUID().slice(0, 8)}`],
-  );
-  made.companies.push(rows[0].id);
-  return rows[0].id as string;
+  const { data, error } = await sb
+    .from("companies")
+    .insert({
+      name: `${name} ${crypto.randomUUID().slice(0, 8)}`,
+      monthly_lead_limit: 0,
+      categories: ["solar"],
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  made.companies.push(data.id as string);
+  return data.id as string;
 }
 
 async function makeLead() {
-  const { rows } = await db.query(
-    `INSERT INTO leads (first_name, last_name, email, phone, postcode, region_code, categories,
-                        lead_type, max_partners, phone_verified)
-     VALUES ('Quality', 'Test', 'q@example.com', '+31612345677', '9997 ZZ', '97', '{solar}',
-             'shared_2', 2, true) RETURNING id`,
-  );
-  made.leads.push(rows[0].id);
-  return rows[0].id as string;
+  const { data, error } = await sb
+    .from("leads")
+    .insert({
+      first_name: "Quality",
+      last_name: "Test",
+      email: "q@example.com",
+      phone: "+31612345677",
+      postcode: "9997 ZZ",
+      region_code: "97",
+      categories: ["solar"],
+      lead_type: "shared_2",
+      max_partners: 2,
+      phone_verified: true,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  made.leads.push(data.id as string);
+  return data.id as string;
 }
 
 /** Aankoop met instelbare historie (ouder dan 48 uur zodat SLA meetelt). */
@@ -49,17 +65,14 @@ async function makePurchase(companyId: string, over: Record<string, unknown> = {
     .single();
   if (error) throw new Error(error.message);
   const purchaseId = data.id as string;
-  const sets = Object.keys(over);
-  if (sets.length) {
-    const assignments = sets.map((k, i) => `${k} = $${i + 2}`).join(", ");
-    await db.query(`UPDATE lead_purchases SET ${assignments} WHERE id = $1`, [
-      purchaseId,
-      ...Object.values(over),
-    ]);
-  }
-  await db.query(`UPDATE lead_purchases SET assigned_at = now() - interval '5 days' WHERE id = $1`, [
-    purchaseId,
-  ]);
+  const { error: upErr } = await sb
+    .from("lead_purchases")
+    .update({
+      ...over,
+      assigned_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    })
+    .eq("id", purchaseId);
+  if (upErr) throw new Error(upErr.message);
   return { purchaseId, leadId };
 }
 
@@ -106,28 +119,22 @@ async function storeScore(companyId: string) {
   return s;
 }
 
-beforeAll(async () => {
-  if (!DB_URL || !SB_KEY) return;
-  db = new Client({ connectionString: DB_URL, ssl: { rejectUnauthorized: false } });
-  await db.connect();
-});
-
 afterAll(async () => {
-  if (!db) return;
+  if (!SB_KEY) return;
   if (made.companies.length) {
-    await db.query(`DELETE FROM company_quality_scores WHERE company_id = ANY($1)`, [
-      made.companies,
-    ]);
-    await db.query(
-      `DELETE FROM complaints WHERE purchase_id IN (SELECT id FROM lead_purchases WHERE company_id = ANY($1))`,
-      [made.companies],
-    );
-    await db.query(`DELETE FROM lead_purchases WHERE company_id = ANY($1)`, [made.companies]);
-    await db.query(`DELETE FROM audit_events WHERE actor_company_id = ANY($1)`, [made.companies]);
-    await db.query(`DELETE FROM companies WHERE id = ANY($1)`, [made.companies]);
+    const { data: purchases } = await sb
+      .from("lead_purchases")
+      .select("id")
+      .in("company_id", made.companies);
+    const ids = (purchases ?? []).map((p) => p.id as string);
+    if (ids.length) await sb.from("complaints").delete().in("purchase_id", ids);
+    await sb.from("company_quality_scores").delete().in("company_id", made.companies);
+    await sb.from("lead_purchases").delete().in("company_id", made.companies);
+    await sb.from("company_products").delete().in("company_id", made.companies);
+    await sb.from("company_regions").delete().in("company_id", made.companies);
   }
-  if (made.leads.length) await db.query(`DELETE FROM leads WHERE id = ANY($1)`, [made.leads]);
-  await db.end();
+  if (made.leads.length) await sb.from("leads").delete().in("id", made.leads);
+  if (made.companies.length) await sb.from("companies").delete().in("id", made.companies);
 });
 
 suite("kwaliteitsscore tegen de echte database", () => {
@@ -155,10 +162,10 @@ suite("kwaliteitsscore tegen de echte database", () => {
       for (let i = 0; i < 4; i++) {
         const { purchaseId } = await makePurchase(company);
         if (i === 0) {
-          await db.query(
-            `INSERT INTO complaints (purchase_id, company_id, reason, status) VALUES ($1,$2,'unreachable',$3)`,
-            [purchaseId, company, status],
-          );
+          const { error } = await sb
+            .from("complaints")
+            .insert({ purchase_id: purchaseId, company_id: company, reason: "unreachable", status });
+          if (error) throw new Error(error.message);
         }
       }
     }
@@ -181,21 +188,35 @@ suite("kwaliteitsscore tegen de echte database", () => {
     await storeScore(mine);
     await storeScore(other);
 
-    const userId = crypto.randomUUID();
-    await db.query(`BEGIN`);
-    await db.query(`SET LOCAL ROLE authenticated`);
-    await db.query(`SELECT set_config('request.jwt.claims', $1, true)`, [
-      JSON.stringify({ sub: userId, role: "authenticated" }),
-    ]);
-    const writable = await db
-      .query(`UPDATE company_quality_scores SET overall_score = 100 WHERE company_id = $1`, [mine])
-      .then((r) => r.rowCount)
-      .catch(() => 0);
-    const visible = await db.query(`SELECT company_id FROM company_quality_scores`);
-    await db.query(`ROLLBACK`);
+    const db = new Client({ connectionString: DB_URL, ssl: { rejectUnauthorized: false } });
+    await db.connect();
+    let writable = 0;
+    let visible: string[] = [];
+    try {
+      await db.query("BEGIN");
+      await db.query("SET LOCAL ROLE authenticated");
+      await db.query("SELECT set_config('request.jwt.claims', $1, true)", [
+        JSON.stringify({ sub: crypto.randomUUID(), role: "authenticated" }),
+      ]);
+      try {
+        const res = await db.query(
+          "UPDATE company_quality_scores SET overall_score = 100 WHERE company_id = $1",
+          [mine],
+        );
+        writable = res.rowCount ?? 0;
+      } catch {
+        writable = 0;
+      }
+      const rows = await db.query("SELECT company_id FROM company_quality_scores");
+      visible = rows.rows.map((r: { company_id: string }) => r.company_id);
+    } finally {
+      await db.query("ROLLBACK").catch(() => undefined);
+      await db.end();
+    }
 
     expect(writable).toBe(0);
-    expect(visible.rows.map((r: { company_id: string }) => r.company_id)).not.toContain(other);
+    expect(visible).not.toContain(other);
+    expect(visible).not.toContain(mine);
   });
 
   it("16. beheer ziet alle deelscores", async () => {
@@ -204,7 +225,9 @@ suite("kwaliteitsscore tegen de echte database", () => {
     await storeScore(company);
     const { data } = await sb
       .from("company_quality_scores")
-      .select("overall_score, response_score, complaint_score, engagement_score, conversion_score, sample_size")
+      .select(
+        "overall_score, response_score, complaint_score, engagement_score, conversion_score, sample_size",
+      )
       .eq("company_id", company)
       .maybeSingle();
     expect(data).toBeTruthy();
@@ -223,7 +246,7 @@ suite("kwaliteitsscore tegen de echte database", () => {
     );
     expect(ranked.map((r) => r.companyId)).toEqual([good, weak]);
 
-    // Ranking geeft geen recht op een plek: de database beslist.
+    // Bovenaan staan geeft geen recht op een plek: de database beslist.
     const leadId = await makeLead();
     const { data } = await sb.rpc("allocate_lead_to_company", {
       p_lead_id: leadId,
@@ -231,7 +254,7 @@ suite("kwaliteitsscore tegen de echte database", () => {
       p_source: "assigned",
     });
     const row = (Array.isArray(data) ? data[0] : data) as { result: string };
-    expect(["allocated", "company_not_eligible"]).toContain(row.result);
+    expect(row.result).toBe("company_not_eligible");
   });
 
   it("18. gelijktijdige toewijzing blijft slotveilig", async () => {
@@ -241,19 +264,13 @@ suite("kwaliteitsscore tegen de echte database", () => {
       makeCompany("Race2"),
       makeCompany("Race3"),
     ]);
-    // Alle bedrijven geschikt maken voor deze lead.
     for (const c of companies) {
-      await db.query(`UPDATE companies SET active = true WHERE id = $1`, [c]);
-      await db.query(
-        `INSERT INTO company_regions (company_id, region_code) VALUES ($1, '97') ON CONFLICT DO NOTHING`,
-        [c],
-      );
-      await db.query(
-        `INSERT INTO company_products (company_id, category, active, monthly_max) VALUES ($1,'solar',true,100)`,
-        [c],
-      );
+      await sb.from("companies").update({ active: true }).eq("id", c);
+      await sb.from("company_regions").insert({ company_id: c, region_code: "97" });
+      await sb
+        .from("company_products")
+        .insert({ company_id: c, category: "solar", active: true, monthly_max: 100 });
     }
-    await db.query(`INSERT INTO regions (code, name) VALUES ('97','Testregio') ON CONFLICT DO NOTHING`);
 
     const results = await Promise.all(
       companies.map((c) =>
@@ -264,16 +281,16 @@ suite("kwaliteitsscore tegen de echte database", () => {
         }),
       ),
     );
-    const outcomes = results.map((r) => {
+    const allocated = results.filter((r) => {
       const row = (Array.isArray(r.data) ? r.data[0] : r.data) as { result: string } | null;
-      return r.error ? "lead_full" : (row?.result ?? "error");
-    });
-    expect(outcomes.filter((o) => o === "allocated").length).toBeLessThanOrEqual(2);
+      return !r.error && row?.result === "allocated";
+    }).length;
+    expect(allocated).toBeLessThanOrEqual(2);
 
-    const { rows } = await db.query(
-      `SELECT count(*)::int AS n FROM lead_purchases WHERE lead_id = $1`,
-      [leadId],
-    );
-    expect(rows[0].n).toBeLessThanOrEqual(2);
+    const { count } = await sb
+      .from("lead_purchases")
+      .select("id", { count: "exact", head: true })
+      .eq("lead_id", leadId);
+    expect(count ?? 0).toBeLessThanOrEqual(2);
   });
 });
