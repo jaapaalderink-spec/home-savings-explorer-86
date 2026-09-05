@@ -7,9 +7,22 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Client } from "pg";
+import { createClient } from "@supabase/supabase-js";
 
 const DB_URL = process.env["SUPABASE_DB_URL"];
-const suite = DB_URL ? describe : describe.skip;
+const SB_URL = process.env["SUPABASE_URL"];
+const SB_KEY = process.env["SUPABASE_SERVICE_ROLE_KEY"];
+const suite = DB_URL && SB_URL && SB_KEY ? describe : describe.skip;
+
+/**
+ * De toewijzingsfunctie is alleen uitvoerbaar door de serverrol, dus roepen we
+ * hem hier aan zoals de app dat doet: via de Data API met de serverrol-sleutel.
+ * Elke aanroep is een eigen databasetransactie, dus Promise.all levert echte
+ * gelijktijdigheid op.
+ */
+const sb = createClient(SB_URL ?? "http://localhost", SB_KEY ?? "none", {
+  auth: { persistSession: false },
+});
 
 type Ctx = {
   admin: Client;
@@ -60,12 +73,15 @@ async function createLead(opts: { type: "shared_2" | "shared_4"; verified?: bool
   return id;
 }
 
-async function allocate(client: Client, leadId: string, companyId: string, source = "assigned") {
-  const { rows } = await client.query(
-    `SELECT * FROM allocate_lead_to_company($1, $2, $3::purchase_source, NULL)`,
-    [leadId, companyId, source],
-  );
-  return rows[0] as { result: string };
+async function allocate(leadId: string, companyId: string, source = "assigned") {
+  const { data, error } = await sb.rpc("allocate_lead_to_company", {
+    p_lead_id: leadId,
+    p_company_id: companyId,
+    p_source: source,
+  });
+  if (error) throw new Error(error.message);
+  const row = (Array.isArray(data) ? data[0] : data) as { result: string };
+  return row;
 }
 
 async function purchaseCount(leadId: string) {
@@ -107,7 +123,7 @@ suite("allocate_lead_to_company (echte database)", () => {
     const lead = await createLead({ type: "shared_2" });
     const companies = [await createCompany(), await createCompany(), await createCompany()];
     const results = [];
-    for (const c of companies) results.push((await allocate(ctx.admin, lead, c)).result);
+    for (const c of companies) results.push((await allocate(lead, c)).result);
     expect(results.filter((r) => r === "allocated")).toHaveLength(2);
     expect(results).toContain("lead_full");
     expect(await purchaseCount(lead)).toBe(2);
@@ -118,7 +134,7 @@ suite("allocate_lead_to_company (echte database)", () => {
     const companies = [];
     for (let i = 0; i < 5; i++) companies.push(await createCompany());
     const results = [];
-    for (const c of companies) results.push((await allocate(ctx.admin, lead, c)).result);
+    for (const c of companies) results.push((await allocate(lead, c)).result);
     expect(results.filter((r) => r === "allocated")).toHaveLength(4);
     expect(await purchaseCount(lead)).toBe(4);
   });
@@ -126,15 +142,15 @@ suite("allocate_lead_to_company (echte database)", () => {
   it("hetzelfde bedrijf kan dezelfde lead niet twee keer krijgen", async () => {
     const lead = await createLead({ type: "shared_4" });
     const company = await createCompany();
-    expect((await allocate(ctx.admin, lead, company)).result).toBe("allocated");
-    expect((await allocate(ctx.admin, lead, company)).result).toBe("already_assigned");
+    expect((await allocate(lead, company)).result).toBe("allocated");
+    expect((await allocate(lead, company)).result).toBe("already_assigned");
     expect(await purchaseCount(lead)).toBe(1);
   });
 
   it("een niet-geverifieerde lead kan niet toegewezen worden", async () => {
     const lead = await createLead({ type: "shared_2", verified: false });
     const company = await createCompany();
-    expect((await allocate(ctx.admin, lead, company)).result).toBe("lead_not_verified");
+    expect((await allocate(lead, company)).result).toBe("lead_not_verified");
     expect(await purchaseCount(lead)).toBe(0);
   });
 
@@ -142,8 +158,8 @@ suite("allocate_lead_to_company (echte database)", () => {
     const company = await createCompany(1);
     const first = await createLead({ type: "shared_4" });
     const second = await createLead({ type: "shared_4" });
-    expect((await allocate(ctx.admin, first, company)).result).toBe("allocated");
-    expect((await allocate(ctx.admin, second, company)).result).toBe("company_capacity_full");
+    expect((await allocate(first, company)).result).toBe("allocated");
+    expect((await allocate(second, company)).result).toBe("company_capacity_full");
   });
 
   it("twee gelijktijdige pogingen op de laatste plek leveren één toewijzing", async () => {
@@ -151,11 +167,11 @@ suite("allocate_lead_to_company (echte database)", () => {
     const a = await createCompany();
     const b = await createCompany();
     const c = await createCompany();
-    expect((await allocate(ctx.admin, lead, a)).result).toBe("allocated");
+    expect((await allocate(lead, a)).result).toBe("allocated");
 
     const [c1, c2] = await Promise.all([connect(), connect()]);
     try {
-      const [r1, r2] = await Promise.all([allocate(c1, lead, b), allocate(c2, lead, c)]);
+      const [r1, r2] = await Promise.all([allocate(lead, b), allocate(lead, c)]);
       const outcomes = [r1.result, r2.result];
       expect(outcomes.filter((r) => r === "allocated")).toHaveLength(1);
       expect(outcomes).toContain("lead_full");
@@ -173,7 +189,7 @@ suite("allocate_lead_to_company (echte database)", () => {
     try {
       const results = await Promise.all(
         clients.map((client, i) =>
-          allocate(client, lead, companies[i]!, i === 0 ? "market" : "assigned"),
+          allocate(lead, companies[i]!, i === 0 ? "market" : "assigned"),
         ),
       );
       expect(results.filter((r) => r.result === "allocated")).toHaveLength(2);
@@ -190,8 +206,8 @@ suite("allocate_lead_to_company (echte database)", () => {
     const [c1, c2] = await Promise.all([connect(), connect()]);
     try {
       const results = await Promise.all([
-        allocate(c1, first, company),
-        allocate(c2, second, company),
+        allocate(first, company),
+        allocate(second, company),
       ]);
       expect(results.filter((r) => r.result === "allocated")).toHaveLength(1);
       expect(results.map((r) => r.result)).toContain("company_capacity_full");
@@ -205,14 +221,14 @@ suite("allocate_lead_to_company (echte database)", () => {
     const lead = await createLead({ type: "shared_2" });
     const a = await createCompany();
     const b = await createCompany();
-    await allocate(ctx.admin, lead, a);
+    await allocate(lead, a);
     let { rows } = await ctx.admin.query(
       `SELECT state::text, distributed_at FROM leads WHERE id = $1`,
       [lead],
     );
     expect(rows[0].state).toBe("underfilled");
     const firstDistributedAt = rows[0].distributed_at;
-    await allocate(ctx.admin, lead, b);
+    await allocate(lead, b);
     ({ rows } = await ctx.admin.query(
       `SELECT state::text, distributed_at FROM leads WHERE id = $1`,
       [lead],
@@ -226,8 +242,8 @@ suite("allocate_lead_to_company (echte database)", () => {
     const a = await createCompany();
     const b = await createCompany();
     const c = await createCompany();
-    await allocate(ctx.admin, lead, a);
-    await allocate(ctx.admin, lead, b);
+    await allocate(lead, a);
+    await allocate(lead, b);
     await expect(
       ctx.admin.query(
         `INSERT INTO lead_purchases (lead_id, company_id, source) VALUES ($1, $2, 'market')`,
