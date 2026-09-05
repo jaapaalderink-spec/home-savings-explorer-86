@@ -9,6 +9,8 @@ import {
   withVat,
 } from "@/lib/lead-pricing";
 import { adminDb, average, monthRange, monthStart, percentage } from "@/lib/partner-util";
+import { LEAD_STATUSES, checkStatusTransition, type LeadStatus } from "@/lib/lead-status-policy";
+import { PARTNER_VISIBLE_EVENTS } from "@/lib/audit-policy";
 
 /** Profiel, bedrijf, rollen en het maandverbruik van de ingelogde partner. */
 export const getPartnerContext = createServerFn({ method: "GET" })
@@ -143,15 +145,14 @@ export const updateCompanyProfile = createServerFn({ method: "POST" })
     if (!profile?.company_id) throw new Error("Geen bedrijf gekoppeld.");
     if (!isOwner) throw new Error("Alleen de eigenaar kan de bedrijfsgegevens wijzigen.");
 
-    const { error } = await db
-      .from("companies")
-      .update({
-        name: data.name,
-        address: data.address ?? null,
-        billing_email: data.billingEmail ?? null,
-        vat_number: data.vatNumber ?? null,
-      })
-      .eq("id", profile.company_id);
+    const { error } = await db.rpc("update_company_profile_audited", {
+      p_company_id: profile.company_id,
+      p_actor: context.userId,
+      p_name: data.name,
+      ...(data.address ? { p_address: data.address } : {}),
+      ...(data.billingEmail ? { p_billing_email: data.billingEmail } : {}),
+      ...(data.vatNumber ? { p_vat_number: data.vatNumber } : {}),
+    });
     if (error) throw new Error("Bedrijfsgegevens opslaan is mislukt.");
     return { ok: true };
   });
@@ -624,13 +625,13 @@ export const markLeadOpened = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!profile?.company_id) throw new Error("Geen bedrijf gekoppeld.");
 
-    await db
-      .from("lead_purchases")
-      .update({ opened_at: new Date().toISOString() })
-      .eq("id", data.purchaseId)
-      .eq("company_id", profile.company_id)
-      .is("opened_at", null);
-    return { ok: true };
+    // Via de RPC, zodat de geschiedenis de juiste persoon vastlegt.
+    const { data: opened } = await db.rpc("mark_purchase_opened", {
+      p_purchase_id: data.purchaseId,
+      p_company_id: profile.company_id,
+      p_actor: context.userId,
+    });
+    return { ok: true, firstOpen: opened === true };
   });
 
 export const updatePurchase = createServerFn({ method: "POST" })
@@ -639,28 +640,128 @@ export const updatePurchase = createServerFn({ method: "POST" })
     z
       .object({
         purchaseId: z.string().uuid(),
-        status: z.enum(["new", "contacted", "quoted", "won", "lost"]),
+        status: z.enum(LEAD_STATUSES),
         note: z.string().trim().max(1000).optional(),
       })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
     const db = await adminDb();
-    const { data: profile } = await db
-      .from("profiles")
-      .select("company_id")
-      .eq("id", context.userId)
-      .maybeSingle();
+    const [{ data: profile }, { data: isAdmin }] = await Promise.all([
+      db.from("profiles").select("company_id").eq("id", context.userId).maybeSingle(),
+      db.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+    ]);
     if (!profile?.company_id) throw new Error("Geen bedrijf gekoppeld.");
 
-    const { error } = await db
+    const { data: current } = await db
       .from("lead_purchases")
-      .update({ status: data.status, note: data.note ?? null })
+      .select("status, company_id")
       .eq("id", data.purchaseId)
-      .eq("company_id", profile.company_id);
+      .eq("company_id", profile.company_id)
+      .maybeSingle();
+    if (!current) throw new Error("Lead niet gevonden.");
+
+    const check = checkStatusTransition(current.status as LeadStatus, data.status, isAdmin === true);
+    if (!check.ok) throw new Error(check.reason);
+
+    const { data: rows, error } = await db.rpc("set_purchase_status", {
+      p_purchase_id: data.purchaseId,
+      p_company_id: profile.company_id,
+      p_status: data.status,
+      ...(data.note ? { p_note: data.note } : {}),
+      p_actor: context.userId,
+      p_source: isAdmin === true ? "admin" : "partner",
+    });
     if (error) throw new Error("Bijwerken is mislukt.");
-    return { ok: true };
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    if (row?.result === "not_found") throw new Error("Lead niet gevonden.");
+    return { ok: true, changed: row?.changed === true };
   });
+
+/** Tijdlijn van één ingekochte lead: statusgeschiedenis plus gebeurtenissen. */
+export const getPurchaseTimeline = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ purchaseId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const db = await adminDb();
+    const [{ data: profile }, { data: isAdmin }] = await Promise.all([
+      db.from("profiles").select("company_id").eq("id", context.userId).maybeSingle(),
+      db.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+    ]);
+
+    const { data: purchase } = await db
+      .from("lead_purchases")
+      .select("id, company_id")
+      .eq("id", data.purchaseId)
+      .maybeSingle();
+    if (!purchase) throw new Error("Lead niet gevonden.");
+    if (isAdmin !== true && purchase.company_id !== profile?.company_id) {
+      throw new Error("Geen toegang tot deze lead.");
+    }
+
+    const [{ data: history }, { data: events }] = await Promise.all([
+      db
+        .from("lead_purchase_status_history")
+        .select("id, from_status, to_status, changed_by, changed_by_role, source, note, created_at")
+        .eq("lead_purchase_id", data.purchaseId)
+        .order("created_at", { ascending: true }),
+      db
+        .from("audit_events")
+        .select("id, event_type, actor_user_id, actor_role, source, metadata, created_at")
+        .eq("entity_type", "lead_purchase")
+        .eq("entity_id", data.purchaseId)
+        .order("created_at", { ascending: true }),
+    ]);
+
+    const visible = (events ?? []).filter(
+      (e) => isAdmin === true || PARTNER_VISIBLE_EVENTS.has(e.event_type),
+    );
+
+    return {
+      isAdmin: isAdmin === true,
+      history: history ?? [],
+      events: visible,
+    };
+  });
+
+/** Beheeroverzicht van gebeurtenissen, optioneel gefilterd. */
+export const listAuditEvents = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        entityType: z
+          .enum(["lead", "lead_purchase", "company", "complaint", "invoice", "credit_note", "payment"])
+          .optional(),
+        entityId: z.string().uuid().optional(),
+        companyId: z.string().uuid().optional(),
+        limit: z.number().int().min(1).max(200).optional(),
+      })
+      .partial()
+      .parse(data ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const db = await adminDb();
+    const { data: isAdmin } = await db.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Alleen beheer kan het logboek inzien.");
+
+    let query = db
+      .from("audit_events")
+      .select("id, event_type, entity_type, entity_id, actor_user_id, actor_company_id, actor_role, source, metadata, created_at")
+      .order("created_at", { ascending: false })
+      .limit(data.limit ?? 100);
+    if (data.entityType) query = query.eq("entity_type", data.entityType);
+    if (data.entityId) query = query.eq("entity_id", data.entityId);
+    if (data.companyId) query = query.eq("actor_company_id", data.companyId);
+
+    const { data: rows, error } = await query;
+    if (error) throw new Error("Logboek laden is mislukt.");
+    return rows ?? [];
+  });
+
 
 /** Reclamatie indienen op een ingekochte lead. */
 export const fileComplaint = createServerFn({ method: "POST" })
