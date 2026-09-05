@@ -1,5 +1,5 @@
 /** Server-only leadopslag en automatische leadverdeling. */
-import { adminDb, monthStart, shuffle } from "@/lib/partner-util";
+import { adminDb, monthStart } from "@/lib/partner-util";
 import { leadTypeFor, maxPartnersFor, regionFromPostcode } from "@/lib/lead-pricing";
 import type { LeadInput } from "@/lib/leads.functions";
 
@@ -142,10 +142,39 @@ export async function distributeLead(leadId: string) {
   });
 
   const { allocateLeadToCompany, isLeadTerminal } = await import("@/lib/lead-allocation.server");
+  const { loadRankingInputs } = await import("@/lib/quality.server");
+  const { rankEligibleCompaniesForLead } = await import("@/lib/quality-policy");
+
+  // Ranking: alleen de volgorde van geschikte kandidaten, nooit de toewijzing zelf.
+  const eligibleIds = eligible.map((c) => c.id);
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const [scores, { data: recentRows }] = await Promise.all([
+    loadRankingInputs(eligibleIds),
+    eligibleIds.length
+      ? db
+          .from("lead_purchases")
+          .select("company_id")
+          .in("company_id", eligibleIds)
+          .gte("assigned_at", weekAgo)
+      : Promise.resolve({ data: [] as Array<{ company_id: string }> }),
+  ]);
+  const recentPerCompany = new Map<string, number>();
+  (recentRows ?? []).forEach((r) => {
+    recentPerCompany.set(r.company_id, (recentPerCompany.get(r.company_id) ?? 0) + 1);
+  });
+
+  const ranked = rankEligibleCompaniesForLead(
+    eligible.map((c) => ({
+      companyId: c.id,
+      overall: scores.get(c.id)?.overall ?? null,
+      sampleSize: scores.get(c.id)?.sampleSize ?? 0,
+      recent7d: recentPerCompany.get(c.id) ?? 0,
+    })),
+  );
 
   let assigned = 0;
   let stopped: string | null = null;
-  for (const company of shuffle(eligible)) {
+  for (const company of ranked.map((r) => ({ id: r.companyId }))) {
     if (assigned >= slotsLeft) break;
     const allocation = await allocateLeadToCompany({
       leadId,
