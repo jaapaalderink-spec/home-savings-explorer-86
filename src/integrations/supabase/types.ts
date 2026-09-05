@@ -1351,6 +1351,9 @@ export type Database = {
         | "COMPANY_ACTIVATED"
         | "COMPANY_DEACTIVATED"
         | "CURRENT_STATUS_SNAPSHOT"
+        | "QUALITY_SCORE_RECALCULATED"
+        | "QUALITY_WARNING_SET"
+        | "QUALITY_WARNING_CLEARED"
       audit_source: "partner" | "admin" | "system" | "webhook"
       complaint_reason:
         | "unreachable"
@@ -1541,6 +1544,9 @@ export const Constants = {
         "COMPANY_ACTIVATED",
         "COMPANY_DEACTIVATED",
         "CURRENT_STATUS_SNAPSHOT",
+        "QUALITY_SCORE_RECALCULATED",
+        "QUALITY_WARNING_SET",
+        "QUALITY_WARNING_CLEARED",
       ],
       audit_source: ["partner", "admin", "system", "webhook"],
       complaint_reason: [
