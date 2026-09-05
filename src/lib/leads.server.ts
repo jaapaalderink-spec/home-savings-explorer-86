@@ -1,6 +1,6 @@
 /** Server-only leadopslag en automatische leadverdeling. */
 import { adminDb, monthStart, shuffle } from "@/lib/partner-util";
-import { leadTypeFor, leadTypePrice, maxPartnersFor, regionFromPostcode } from "@/lib/lead-pricing";
+import { leadTypeFor, maxPartnersFor, regionFromPostcode } from "@/lib/lead-pricing";
 import type { LeadInput } from "@/lib/leads.functions";
 
 /** Slaat de lead op en geeft het id terug. */
