@@ -169,33 +169,22 @@ suite("allocate_lead_to_company (echte database)", () => {
     const c = await createCompany();
     expect((await allocate(lead, a)).result).toBe("allocated");
 
-    const [c1, c2] = await Promise.all([connect(), connect()]);
-    try {
-      const [r1, r2] = await Promise.all([allocate(lead, b), allocate(lead, c)]);
-      const outcomes = [r1.result, r2.result];
-      expect(outcomes.filter((r) => r === "allocated")).toHaveLength(1);
-      expect(outcomes).toContain("lead_full");
-    } finally {
-      await c1.end();
-      await c2.end();
-    }
+    const [r1, r2] = await Promise.all([allocate(lead, b), allocate(lead, c)]);
+    const outcomes = [r1.result, r2.result];
+    expect(outcomes.filter((r) => r === "allocated")).toHaveLength(1);
+    expect(outcomes).toContain("lead_full");
     expect(await purchaseCount(lead)).toBe(2);
   });
 
   it("gelijktijdige marktaankoop en automatische toewijzing kunnen de lead niet overvullen", async () => {
     const lead = await createLead({ type: "shared_2" });
     const companies = [await createCompany(), await createCompany(), await createCompany()];
-    const clients = await Promise.all([connect(), connect(), connect()]);
-    try {
-      const results = await Promise.all(
-        clients.map((client, i) =>
-          allocate(lead, companies[i]!, i === 0 ? "market" : "assigned"),
-        ),
-      );
-      expect(results.filter((r) => r.result === "allocated")).toHaveLength(2);
-    } finally {
-      await Promise.all(clients.map((c) => c.end()));
-    }
+    const results = await Promise.all(
+      companies.map((companyId, i) =>
+        allocate(lead, companyId, i === 0 ? "market" : "assigned"),
+      ),
+    );
+    expect(results.filter((r) => r.result === "allocated")).toHaveLength(2);
     expect(await purchaseCount(lead)).toBe(2);
   });
 
@@ -203,19 +192,11 @@ suite("allocate_lead_to_company (echte database)", () => {
     const company = await createCompany(1);
     const first = await createLead({ type: "shared_4" });
     const second = await createLead({ type: "shared_4" });
-    const [c1, c2] = await Promise.all([connect(), connect()]);
-    try {
-      const results = await Promise.all([
-        allocate(first, company),
-        allocate(second, company),
-      ]);
-      expect(results.filter((r) => r.result === "allocated")).toHaveLength(1);
-      expect(results.map((r) => r.result)).toContain("company_capacity_full");
-    } finally {
-      await c1.end();
-      await c2.end();
-    }
+    const results = await Promise.all([allocate(first, company), allocate(second, company)]);
+    expect(results.filter((r) => r.result === "allocated")).toHaveLength(1);
+    expect(results.map((r) => r.result)).toContain("company_capacity_full");
   });
+
 
   it("de status van de lead volgt het aantal toewijzingen", async () => {
     const lead = await createLead({ type: "shared_2" });
