@@ -21,6 +21,7 @@ export function AdminLeadsTable({ filters }: { filters: LeadFilters }) {
           ...(filters.category ? { category: filters.category } : {}),
           ...(filters.state ? { state: filters.state } : {}),
           ...(filters.days ? { days: filters.days } : {}),
+          ...(filters.risk ? { risk: filters.risk } : {}),
           ...(search.trim().length > 1 ? { search: search.trim() } : {}),
           limit: 150,
         },
@@ -91,7 +92,22 @@ export function AdminLeadsTable({ filters }: { filters: LeadFilters }) {
                     <td className="p-4 text-moss/80">
                       {l.partners.length}/{l.maxPartners}
                     </td>
-                    <td className="p-4 font-semibold text-leaf">{formatEuro(l.savings)}/jr</td>
+                    <td className="p-4 font-semibold text-leaf">
+                      {formatEuro(l.savings)}/jr
+                      {l.fraudStatus !== "clean" || l.duplicateOfLeadId ? (
+                        <span
+                          className="ml-2 rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                          style={{
+                            backgroundColor: l.fraudStatus === "blocked" ? "#f8d7d7" : "#f7e3bd",
+                            color: l.fraudStatus === "blocked" ? "#8d2020" : "#7a5410",
+                          }}
+                        >
+                          {l.duplicateOfLeadId
+                            ? RISK_LABEL["duplicate"]
+                            : (RISK_LABEL[l.fraudStatus] ?? RISK_LABEL["review"])}
+                        </span>
+                      ) : null}
+                    </td>
                     <td className="p-4 text-right">
                       <button
                         type="button"
@@ -124,8 +140,25 @@ export function AdminLeadsTable({ filters }: { filters: LeadFilters }) {
                               {l.contractType ?? "onbekend"}
                             </p>
                           </div>
-                          <div className="text-xs text-moss/80">
-                            <p className="font-semibold text-ink">Verdeeld naar</p>
+                          <div className="space-y-1 text-xs text-moss/80">
+                            <p className="font-semibold text-ink">Kwaliteitscontrole</p>
+                            <p>
+                              Status {RISK_LABEL[l.fraudStatus] ?? "Schoon"} · risicoscore{" "}
+                              {l.fraudScore}/100
+                              {l.reviewRequired ? " · handmatig bekijken" : ""}
+                            </p>
+                            {l.duplicateOfLeadId ? (
+                              <p>Dubbel van aanvraag {l.duplicateOfLeadId.slice(0, 8)}</p>
+                            ) : null}
+                            {l.riskReasons.length > 0 ? (
+                              <p>
+                                Signalen:{" "}
+                                {l.riskReasons
+                                  .map((r) => RISK_SIGNAL_LABEL[r] ?? r)
+                                  .join(", ")}
+                              </p>
+                            ) : null}
+                            <p className="pt-2 font-semibold text-ink">Verdeeld naar</p>
                             {l.partners.length === 0 ? (
                               <p className="mt-1">Nog geen partner — staat in de leadmarkt.</p>
                             ) : (
