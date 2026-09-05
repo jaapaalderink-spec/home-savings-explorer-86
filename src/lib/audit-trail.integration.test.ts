@@ -50,13 +50,28 @@ async function makePurchase(companyId: string, price = 50) {
   return { purchaseId: data.id as string, leadId };
 }
 
+type AuditRow = {
+  event_type: string;
+  source: string;
+  actor_user_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
+type HistoryRow = {
+  from_status: string | null;
+  to_status: string;
+  changed_by: string | null;
+  source: string;
+  note: string | null;
+};
+
 async function events(entityId: string) {
   const { rows } = await db.query(
     `SELECT event_type, source, actor_user_id, metadata, created_at
        FROM audit_events WHERE entity_id = $1 ORDER BY created_at`,
     [entityId],
   );
-  return rows as Array<Record<string, unknown>>;
+  return rows as Array<AuditRow>;
 }
 
 async function history(purchaseId: string) {
@@ -65,7 +80,7 @@ async function history(purchaseId: string) {
        FROM lead_purchase_status_history WHERE lead_purchase_id = $1 ORDER BY created_at`,
     [purchaseId],
   );
-  return rows as Array<Record<string, unknown>>;
+  return rows as Array<HistoryRow>;
 }
 
 async function setStatus(
@@ -192,7 +207,7 @@ suite("audit trail en statusgeschiedenis (echte database)", () => {
     await setStatus(purchaseId, company, "contacted");
     const contacted = (await events(purchaseId)).filter((e) => e.event_type === "LEAD_CONTACTED");
     expect(contacted).toHaveLength(1);
-    const meta = contacted[0].metadata as Record<string, unknown>;
+    const meta = contacted[0]!.metadata;
     expect(meta["within_24h"]).toBe(true);
     expect(meta["response_score"]).toBe(100);
   });
