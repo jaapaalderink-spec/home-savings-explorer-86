@@ -3,7 +3,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { generateInvoices, listComplaints, listInvoices, reviewComplaint } from "@/lib/partner.functions";
+import {
+  generateInvoices,
+  listComplaints,
+  listInvoices,
+  reviewComplaint,
+} from "@/lib/partner.functions";
 import { formatEuro } from "@/lib/home-savings";
 
 const REASON_LABEL: Record<string, string> = {
@@ -31,7 +36,8 @@ export function BillingAdmin() {
   const invoices = useQuery({ queryKey: ["invoices"], queryFn: () => listInvoices() });
 
   const review = useMutation({
-    mutationFn: (input: { complaintId: string; approve: boolean }) => reviewComplaint({ data: input }),
+    mutationFn: (input: { complaintId: string; approve: boolean }) =>
+      reviewComplaint({ data: input }),
     onSuccess: () => {
       toast.success("Reclamatie beoordeeld.");
       void queryClient.invalidateQueries({ queryKey: ["complaints"] });
@@ -50,7 +56,10 @@ export function BillingAdmin() {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl bg-background p-4" style={{ boxShadow: "var(--shadow-panel)" }}>
+      <section
+        className="rounded-2xl bg-background p-4"
+        style={{ boxShadow: "var(--shadow-panel)" }}
+      >
         <p className="text-sm font-semibold text-ink">Reclamaties</p>
         {complaints.isLoading ? (
           <Skeleton className="mt-3 h-24 w-full rounded-xl" />
@@ -59,7 +68,10 @@ export function BillingAdmin() {
         ) : (
           <ul className="mt-3 divide-y divide-moss/10">
             {complaints.data.items.map((c) => (
-              <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+              <li
+                key={c.id}
+                className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"
+              >
                 <div>
                   <p className="font-semibold text-ink">
                     {(c.company as { name?: string } | null)?.name ?? "Onbekend bedrijf"} ·{" "}
@@ -68,9 +80,12 @@ export function BillingAdmin() {
                   <p className="text-xs text-moss/70">
                     {new Date(c.created_at as string).toLocaleDateString("nl-NL")} ·{" "}
                     {STATUS_LABEL[c.status as string] ?? c.status}
-                    {Number(c.credit_ex_vat ?? 0) > 0 && ` · credit ${formatEuro(Number(c.credit_ex_vat))}`}
+                    {Number(c.credit_ex_vat ?? 0) > 0 &&
+                      ` · credit ${formatEuro(Number(c.credit_ex_vat))}`}
                   </p>
-                  {c.details && <p className="mt-1 max-w-xl text-xs text-moss/80">{c.details as string}</p>}
+                  {c.details && (
+                    <p className="mt-1 max-w-xl text-xs text-moss/80">{c.details as string}</p>
+                  )}
                 </div>
                 {(c.status as string) === "pending" && (
                   <div className="flex gap-2">
@@ -97,7 +112,10 @@ export function BillingAdmin() {
         )}
       </section>
 
-      <section className="rounded-2xl bg-background p-4" style={{ boxShadow: "var(--shadow-panel)" }}>
+      <section
+        className="rounded-2xl bg-background p-4"
+        style={{ boxShadow: "var(--shadow-panel)" }}
+      >
         <div className="flex flex-wrap items-end justify-between gap-3">
           <p className="text-sm font-semibold text-ink">Facturen</p>
           <div className="flex items-end gap-2">
@@ -148,13 +166,19 @@ export function BillingAdmin() {
                 {invoices.data.items.map((i) => (
                   <tr key={i.id} className="border-t border-moss/10">
                     <td className="p-2 font-semibold text-ink">{i.invoice_number as string}</td>
-                    <td className="p-2 text-moss/80">{(i.company as { name?: string } | null)?.name ?? "—"}</td>
+                    <td className="p-2 text-moss/80">
+                      {(i.company as { name?: string } | null)?.name ?? "—"}
+                    </td>
                     <td className="p-2 text-xs text-moss/70">
                       {new Date(i.period_start as string).toLocaleDateString("nl-NL")} –{" "}
                       {new Date(i.period_end as string).toLocaleDateString("nl-NL")}
                     </td>
-                    <td className="p-2 text-moss/80">{formatEuro(Number(i.subtotal_ex_vat ?? 0))}</td>
-                    <td className="p-2 font-semibold text-leaf">{formatEuro(Number(i.total_inc_vat ?? 0))}</td>
+                    <td className="p-2 text-moss/80">
+                      {formatEuro(Number(i.subtotal_ex_vat ?? 0))}
+                    </td>
+                    <td className="p-2 font-semibold text-leaf">
+                      {formatEuro(Number(i.total_inc_vat ?? 0))}
+                    </td>
                     <td className="p-2 text-xs text-moss/80">{i.status as string}</td>
                   </tr>
                 ))}

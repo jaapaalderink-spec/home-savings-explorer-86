@@ -34,14 +34,23 @@ export function FilterBar({
   onChange: (next: LeadFilters) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-background p-4" style={{ boxShadow: "var(--shadow-panel)" }}>
+    <div
+      className="flex flex-wrap items-center gap-2 rounded-2xl bg-background p-4"
+      style={{ boxShadow: "var(--shadow-panel)" }}
+    >
       <span className="text-xs font-semibold uppercase tracking-wide text-moss/60">Periode</span>
       {PERIODS.map((p) => (
-        <Chip key={p.label} active={value.days === p.days} onClick={() => onChange({ ...value, days: p.days })}>
+        <Chip
+          key={p.label}
+          active={value.days === p.days}
+          onClick={() => onChange({ ...value, days: p.days })}
+        >
           {p.label}
         </Chip>
       ))}
-      <span className="ml-2 text-xs font-semibold uppercase tracking-wide text-moss/60">Categorie</span>
+      <span className="ml-2 text-xs font-semibold uppercase tracking-wide text-moss/60">
+        Categorie
+      </span>
       <Chip active={!value.category} onClick={() => onChange({ ...value, category: undefined })}>
         Alle
       </Chip>
@@ -54,12 +63,18 @@ export function FilterBar({
           {CATEGORY_LABEL[c]}
         </Chip>
       ))}
-      <span className="ml-2 text-xs font-semibold uppercase tracking-wide text-moss/60">Status</span>
+      <span className="ml-2 text-xs font-semibold uppercase tracking-wide text-moss/60">
+        Status
+      </span>
       <Chip active={!value.state} onClick={() => onChange({ ...value, state: undefined })}>
         Alle
       </Chip>
       {STATES.map((s) => (
-        <Chip key={s} active={value.state === s} onClick={() => onChange({ ...value, state: value.state === s ? undefined : s })}>
+        <Chip
+          key={s}
+          active={value.state === s}
+          onClick={() => onChange({ ...value, state: value.state === s ? undefined : s })}
+        >
           {STATE_LABEL[s as string]}
         </Chip>
       ))}

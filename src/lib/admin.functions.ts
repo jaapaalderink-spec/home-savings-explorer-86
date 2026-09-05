@@ -128,7 +128,9 @@ export const getPlatformStats = createServerFn({ method: "GET" })
         db.from("leads").select("id, state, created_at, purchase_count, max_partners, categories"),
         db
           .from("lead_purchases")
-          .select("price_ex_vat, billable, credited, response_score, contacted_within_24h, created_at"),
+          .select(
+            "price_ex_vat, billable, credited, response_score, contacted_within_24h, created_at",
+          ),
         db.from("companies").select("id, active, monthly_fee_ex_vat"),
         db.from("complaints").select("status"),
       ]);
@@ -168,9 +170,15 @@ export const getPlatformStats = createServerFn({ method: "GET" })
       leadsTotal: all.length,
       states,
       perCategory,
-      distributionRate: all.length === 0 ? 0 : Math.round((all.filter((l) => (l.purchase_count ?? 0) > 0).length / all.length) * 100),
+      distributionRate:
+        all.length === 0
+          ? 0
+          : Math.round((all.filter((l) => (l.purchase_count ?? 0) > 0).length / all.length) * 100),
       avgPartnersPerLead:
-        all.length === 0 ? 0 : Math.round((all.reduce((s, l) => s + (l.purchase_count ?? 0), 0) / all.length) * 10) / 10,
+        all.length === 0
+          ? 0
+          : Math.round((all.reduce((s, l) => s + (l.purchase_count ?? 0), 0) / all.length) * 10) /
+            10,
       underfilled: all.filter((l) => (l.state as string) === "underfilled").length,
       purchasesMonth: buys.filter((p) => p.created_at >= monthIso).length,
       leadRevenue,
@@ -270,7 +278,10 @@ export const listCoverageGaps = createServerFn({ method: "GET" })
     const nameByCode = new Map((regions ?? []).map((r) => [r.code, r.name]));
     const partnersByRegion = new Map<string, string[]>();
     (coverage ?? []).forEach((c) => {
-      partnersByRegion.set(c.region_code, [...(partnersByRegion.get(c.region_code) ?? []), c.company_id]);
+      partnersByRegion.set(c.region_code, [
+        ...(partnersByRegion.get(c.region_code) ?? []),
+        c.company_id,
+      ]);
     });
     const activeCats = new Map<string, Set<string>>();
     (products ?? []).forEach((p) => {
@@ -280,7 +291,10 @@ export const listCoverageGaps = createServerFn({ method: "GET" })
       activeCats.set(p.company_id, set);
     });
 
-    const gaps = new Map<string, { region: string; regionName: string; category: string; leads: number; undistributed: number }>();
+    const gaps = new Map<
+      string,
+      { region: string; regionName: string; category: string; leads: number; undistributed: number }
+    >();
     (leads ?? []).forEach((l) => {
       const code = l.region_code;
       if (!code) return;
@@ -289,8 +303,13 @@ export const listCoverageGaps = createServerFn({ method: "GET" })
         const covered = companies.some((id) => activeCats.get(id)?.has(cat));
         if (covered) return;
         const key = `${code}:${cat}`;
-        const entry =
-          gaps.get(key) ?? { region: code, regionName: nameByCode.get(code) ?? code, category: cat, leads: 0, undistributed: 0 };
+        const entry = gaps.get(key) ?? {
+          region: code,
+          regionName: nameByCode.get(code) ?? code,
+          category: cat,
+          leads: 0,
+          undistributed: 0,
+        };
         entry.leads += 1;
         if ((l.purchase_count ?? 0) === 0) entry.undistributed += 1;
         gaps.set(key, entry);

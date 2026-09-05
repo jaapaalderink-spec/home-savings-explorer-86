@@ -7,7 +7,7 @@ import { listAllLeads } from "@/lib/admin.functions";
 import { CATEGORIES, CATEGORY_LABEL, LEAD_TYPE_LABEL } from "@/lib/lead-pricing";
 import { formatEuro } from "@/lib/home-savings";
 import type { LeadFilters } from "@/components/admin/filters";
-import { STATE_LABEL } from "@/components/admin/filters";
+import { RISK_LABEL, RISK_SIGNAL_LABEL, STATE_LABEL } from "@/components/admin/filters";
 
 export function AdminLeadsTable({ filters }: { filters: LeadFilters }) {
   const [search, setSearch] = useState("");
@@ -30,7 +30,10 @@ export function AdminLeadsTable({ filters }: { filters: LeadFilters }) {
 
   return (
     <div className="space-y-3">
-      <label className="flex items-center gap-2 rounded-2xl bg-background px-4" style={{ boxShadow: "var(--shadow-panel)" }}>
+      <label
+        className="flex items-center gap-2 rounded-2xl bg-background px-4"
+        style={{ boxShadow: "var(--shadow-panel)" }}
+      >
         <Search size={15} className="text-moss/60" />
         <Input
           value={search}
@@ -43,15 +46,24 @@ export function AdminLeadsTable({ filters }: { filters: LeadFilters }) {
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-2xl" />
       ) : error ? (
-        <p className="rounded-2xl bg-background p-6 text-sm text-moss/70" style={{ boxShadow: "var(--shadow-panel)" }}>
+        <p
+          className="rounded-2xl bg-background p-6 text-sm text-moss/70"
+          style={{ boxShadow: "var(--shadow-panel)" }}
+        >
           Alleen platformbeheerders zien alle aanvragen.
         </p>
       ) : !data || data.length === 0 ? (
-        <p className="rounded-2xl bg-background p-6 text-sm text-moss/70" style={{ boxShadow: "var(--shadow-panel)" }}>
+        <p
+          className="rounded-2xl bg-background p-6 text-sm text-moss/70"
+          style={{ boxShadow: "var(--shadow-panel)" }}
+        >
           Geen aanvragen gevonden met deze filters.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-2xl bg-background" style={{ boxShadow: "var(--shadow-panel)" }}>
+        <div
+          className="overflow-x-auto rounded-2xl bg-background"
+          style={{ boxShadow: "var(--shadow-panel)" }}
+        >
           <table className="w-full text-sm">
             <thead className="text-left text-xs uppercase tracking-wide text-moss/60">
               <tr>
@@ -74,19 +86,30 @@ export function AdminLeadsTable({ filters }: { filters: LeadFilters }) {
                     </td>
                     <td className="p-4">
                       <span className="font-semibold text-ink">{l.postcode}</span>
-                      <span className="block text-xs text-moss/60">{l.city || l.region || "—"}</span>
+                      <span className="block text-xs text-moss/60">
+                        {l.city || l.region || "—"}
+                      </span>
                     </td>
                     <td className="p-4">
                       <span className="flex flex-wrap gap-1">
                         {l.categories.map((c) => (
-                          <span key={c} className="rounded-full px-2 py-0.5 text-xs font-semibold text-moss" style={{ backgroundColor: "#f7e3bd" }}>
+                          <span
+                            key={c}
+                            className="rounded-full px-2 py-0.5 text-xs font-semibold text-moss"
+                            style={{ backgroundColor: "#f7e3bd" }}
+                          >
                             {CATEGORY_LABEL[c] ?? c}
                           </span>
                         ))}
                       </span>
                     </td>
-                    <td className="p-4 text-xs text-moss/80">{LEAD_TYPE_LABEL[l.leadType as "shared_2"] ?? l.leadType}</td>
-                    <td className="p-4 text-xs font-semibold" style={{ color: l.state === "underfilled" ? "#b4720f" : "#315642" }}>
+                    <td className="p-4 text-xs text-moss/80">
+                      {LEAD_TYPE_LABEL[l.leadType as "shared_2"] ?? l.leadType}
+                    </td>
+                    <td
+                      className="p-4 text-xs font-semibold"
+                      style={{ color: l.state === "underfilled" ? "#b4720f" : "#315642" }}
+                    >
                       {STATE_LABEL[l.state] ?? l.state}
                     </td>
                     <td className="p-4 text-moss/80">
@@ -136,8 +159,8 @@ export function AdminLeadsTable({ filters }: { filters: LeadFilters }) {
                               <Phone size={12} /> {l.phone}
                             </p>
                             <p>
-                              {l.houseType ?? "woning onbekend"} · {l.consumption ?? "?"} kWh/jaar · contract{" "}
-                              {l.contractType ?? "onbekend"}
+                              {l.houseType ?? "woning onbekend"} · {l.consumption ?? "?"} kWh/jaar ·
+                              contract {l.contractType ?? "onbekend"}
                             </p>
                           </div>
                           <div className="space-y-1 text-xs text-moss/80">
@@ -153,9 +176,7 @@ export function AdminLeadsTable({ filters }: { filters: LeadFilters }) {
                             {l.riskReasons.length > 0 ? (
                               <p>
                                 Signalen:{" "}
-                                {l.riskReasons
-                                  .map((r) => RISK_SIGNAL_LABEL[r] ?? r)
-                                  .join(", ")}
+                                {l.riskReasons.map((r) => RISK_SIGNAL_LABEL[r] ?? r).join(", ")}
                               </p>
                             ) : null}
                             <p className="pt-2 font-semibold text-ink">Verdeeld naar</p>
@@ -182,8 +203,8 @@ export function AdminLeadsTable({ filters }: { filters: LeadFilters }) {
         </div>
       )}
       <p className="text-xs text-moss/60">
-        Categorieën: {CATEGORIES.map((c) => CATEGORY_LABEL[c]).join(" · ")}. Contactgegevens zijn alleen zichtbaar voor
-        platformbeheerders.
+        Categorieën: {CATEGORIES.map((c) => CATEGORY_LABEL[c]).join(" · ")}. Contactgegevens zijn
+        alleen zichtbaar voor platformbeheerders.
       </p>
     </div>
   );
