@@ -309,6 +309,11 @@ export const listMarketplace = createServerFn({ method: "GET" })
     };
   });
 
+/**
+ * Marktaankoop: gebruikt exact dezelfde gezaghebbende toewijzingsroute als de
+ * automatische verdeling. Geen eigen slot- of prijsberekening meer, dus twee
+ * gelijktijdige aankopen kunnen een lead nooit overvol maken.
+ */
 export const purchaseLead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ leadId: z.string().uuid() }).parse(data))
@@ -321,40 +326,34 @@ export const purchaseLead = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!profile?.company_id) throw new Error("Je hebt nog geen bedrijf.");
 
-    const { data: company } = await db
-      .from("companies")
-      .select("monthly_lead_limit")
-      .eq("id", profile.company_id)
-      .maybeSingle();
-    const { count: used } = await db
-      .from("lead_purchases")
-      .select("id", { count: "exact", head: true })
-      .eq("company_id", profile.company_id)
-      .gte("created_at", monthStart());
-
-    const { data: lead } = await db
-      .from("leads")
-      .select("purchase_count, max_partners, lead_type")
-      .eq("id", data.leadId)
-      .maybeSingle();
-    if (!lead) throw new Error("Lead niet gevonden.");
-    if (lead.purchase_count >= lead.max_partners) throw new Error("Deze lead is niet meer beschikbaar.");
-
-    const withinBundle = (used ?? 0) < (company?.monthly_lead_limit ?? 0);
-    const price = leadTypePrice(lead.lead_type);
-
-    const { error } = await db.from("lead_purchases").insert({
-      lead_id: data.leadId,
-      company_id: profile.company_id,
-      purchased_by: context.userId,
+    const { allocateLeadToCompany } = await import("@/lib/lead-allocation.server");
+    const allocation = await allocateLeadToCompany({
+      leadId: data.leadId,
+      companyId: profile.company_id,
       source: "market",
-      price_ex_vat: withinBundle ? 0 : price,
-      billable: !withinBundle,
+      purchasedBy: context.userId,
     });
-    if (error) throw new Error("Deze lead staat al in jullie dossier.");
 
-    return { ok: true, billed: !withinBundle, price: withinBundle ? 0 : price };
+    switch (allocation.result) {
+      case "allocated":
+        return { ok: true, billed: allocation.billable, price: allocation.priceExVat };
+      case "already_assigned":
+        throw new Error("Deze lead staat al in jullie dossier.");
+      case "lead_full":
+        throw new Error("Deze lead is niet meer beschikbaar.");
+      case "lead_not_verified":
+        throw new Error("Deze aanvraag is nog niet bevestigd door de consument.");
+      case "company_capacity_full":
+        throw new Error("Jullie maandcapaciteit voor deze categorie is bereikt.");
+      case "company_not_eligible":
+        throw new Error("Deze lead valt buiten jullie werkgebied of categorieën.");
+      case "lead_not_found":
+        throw new Error("Lead niet gevonden.");
+      default:
+        throw new Error("Deze lead is niet meer beschikbaar.");
+    }
   });
+
 
 /** Gekochte en toegewezen leads van het eigen bedrijf, met volledige contactgegevens. */
 export const listPurchasedLeads = createServerFn({ method: "GET" })
