@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_events: {
+        Row: {
+          actor_company_id: string | null
+          actor_role: string | null
+          actor_user_id: string | null
+          created_at: string
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["audit_entity"]
+          event_type: Database["public"]["Enums"]["audit_event_type"]
+          id: string
+          metadata: Json
+          source: Database["public"]["Enums"]["audit_source"]
+        }
+        Insert: {
+          actor_company_id?: string | null
+          actor_role?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["audit_entity"]
+          event_type: Database["public"]["Enums"]["audit_event_type"]
+          id?: string
+          metadata?: Json
+          source?: Database["public"]["Enums"]["audit_source"]
+        }
+        Update: {
+          actor_company_id?: string | null
+          actor_role?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: Database["public"]["Enums"]["audit_entity"]
+          event_type?: Database["public"]["Enums"]["audit_event_type"]
+          id?: string
+          metadata?: Json
+          source?: Database["public"]["Enums"]["audit_source"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_events_actor_company_id_fkey"
+            columns: ["actor_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           active: boolean
@@ -577,6 +624,60 @@ export type Database = {
           },
         ]
       }
+      lead_purchase_status_history: {
+        Row: {
+          changed_by: string | null
+          changed_by_role: string | null
+          company_id: string
+          created_at: string
+          from_status: Database["public"]["Enums"]["lead_status"] | null
+          id: string
+          lead_purchase_id: string
+          note: string | null
+          source: Database["public"]["Enums"]["audit_source"]
+          to_status: Database["public"]["Enums"]["lead_status"]
+        }
+        Insert: {
+          changed_by?: string | null
+          changed_by_role?: string | null
+          company_id: string
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["lead_status"] | null
+          id?: string
+          lead_purchase_id: string
+          note?: string | null
+          source?: Database["public"]["Enums"]["audit_source"]
+          to_status: Database["public"]["Enums"]["lead_status"]
+        }
+        Update: {
+          changed_by?: string | null
+          changed_by_role?: string | null
+          company_id?: string
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["lead_status"] | null
+          id?: string
+          lead_purchase_id?: string
+          note?: string | null
+          source?: Database["public"]["Enums"]["audit_source"]
+          to_status?: Database["public"]["Enums"]["lead_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_purchase_status_history_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_purchase_status_history_lead_purchase_id_fkey"
+            columns: ["lead_purchase_id"]
+            isOneToOne: false
+            referencedRelation: "lead_purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_purchases: {
         Row: {
           assigned_at: string
@@ -1098,6 +1199,25 @@ export type Database = {
         Args: { p_company_id: string; p_invoice_id: string }
         Returns: number
       }
+      audit_actor: { Args: never; Returns: string }
+      audit_actor_role: { Args: { _user: string }; Returns: string }
+      audit_partner_visible: {
+        Args: { _type: Database["public"]["Enums"]["audit_event_type"] }
+        Returns: boolean
+      }
+      audit_source_setting:
+        | {
+            Args: { _fallback?: Database["public"]["Enums"]["audit_source"] }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.audit_source_setting(_fallback => text), public.audit_source_setting(_fallback => audit_source). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+        | {
+            Args: { _fallback: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.audit_source_setting(_fallback => text), public.audit_source_setting(_fallback => audit_source). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
       current_company_id: { Args: never; Returns: string }
       ensure_credit_note_for_complaint: {
         Args: { p_actor?: string; p_complaint_id: string }
@@ -1113,6 +1233,35 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      log_audit_event:
+        | {
+            Args: {
+              p_actor?: string
+              p_company?: string
+              p_entity: Database["public"]["Enums"]["audit_entity"]
+              p_entity_id: string
+              p_event: Database["public"]["Enums"]["audit_event_type"]
+              p_metadata?: Json
+              p_source?: Database["public"]["Enums"]["audit_source"]
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_actor?: string
+              p_company?: string
+              p_entity: string
+              p_entity_id: string
+              p_event: string
+              p_metadata?: Json
+              p_source?: string
+            }
+            Returns: string
+          }
+      mark_purchase_opened: {
+        Args: { p_actor?: string; p_company_id: string; p_purchase_id: string }
         Returns: boolean
       }
       next_credit_number: { Args: never; Returns: string }
@@ -1131,10 +1280,78 @@ export type Database = {
           total_inc_vat: number
         }[]
       }
+      set_purchase_status: {
+        Args: {
+          p_actor?: string
+          p_company_id: string
+          p_note?: string
+          p_purchase_id: string
+          p_source?: Database["public"]["Enums"]["audit_source"]
+          p_status: Database["public"]["Enums"]["lead_status"]
+        }
+        Returns: {
+          changed: boolean
+          result: string
+        }[]
+      }
       trial_lead_allowance: { Args: never; Returns: number }
+      update_company_commercial: {
+        Args: {
+          p_active?: boolean
+          p_actor: string
+          p_company_id: string
+          p_monthly_fee_ex_vat?: number
+          p_monthly_lead_limit?: number
+          p_plan_name?: string
+        }
+        Returns: boolean
+      }
+      update_company_profile_audited: {
+        Args: {
+          p_actor: string
+          p_address?: string
+          p_billing_email?: string
+          p_company_id: string
+          p_name: string
+          p_vat_number?: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "owner" | "account_manager"
+      audit_entity:
+        | "lead"
+        | "lead_purchase"
+        | "company"
+        | "complaint"
+        | "invoice"
+        | "credit_note"
+        | "payment"
+      audit_event_type:
+        | "LEAD_CREATED"
+        | "PHONE_VERIFIED"
+        | "LEAD_FLAGGED"
+        | "LEAD_BLOCKED"
+        | "LEAD_ALLOCATED"
+        | "LEAD_OPENED"
+        | "LEAD_CONTACTED"
+        | "LEAD_STATUS_CHANGED"
+        | "COMPLAINT_CREATED"
+        | "COMPLAINT_APPROVED"
+        | "COMPLAINT_REJECTED"
+        | "INVOICE_CREATED"
+        | "PAYMENT_CREATED"
+        | "PAYMENT_STATUS_CHANGED"
+        | "INVOICE_PAID"
+        | "CREDIT_NOTE_CREATED"
+        | "CREDIT_APPLIED"
+        | "COMPANY_PROFILE_UPDATED"
+        | "COMPANY_COMMERCIAL_SETTINGS_UPDATED"
+        | "COMPANY_ACTIVATED"
+        | "COMPANY_DEACTIVATED"
+        | "CURRENT_STATUS_SNAPSHOT"
+      audit_source: "partner" | "admin" | "system" | "webhook"
       complaint_reason:
         | "unreachable"
         | "invalid_phone"
@@ -1292,6 +1509,40 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "owner", "account_manager"],
+      audit_entity: [
+        "lead",
+        "lead_purchase",
+        "company",
+        "complaint",
+        "invoice",
+        "credit_note",
+        "payment",
+      ],
+      audit_event_type: [
+        "LEAD_CREATED",
+        "PHONE_VERIFIED",
+        "LEAD_FLAGGED",
+        "LEAD_BLOCKED",
+        "LEAD_ALLOCATED",
+        "LEAD_OPENED",
+        "LEAD_CONTACTED",
+        "LEAD_STATUS_CHANGED",
+        "COMPLAINT_CREATED",
+        "COMPLAINT_APPROVED",
+        "COMPLAINT_REJECTED",
+        "INVOICE_CREATED",
+        "PAYMENT_CREATED",
+        "PAYMENT_STATUS_CHANGED",
+        "INVOICE_PAID",
+        "CREDIT_NOTE_CREATED",
+        "CREDIT_APPLIED",
+        "COMPANY_PROFILE_UPDATED",
+        "COMPANY_COMMERCIAL_SETTINGS_UPDATED",
+        "COMPANY_ACTIVATED",
+        "COMPANY_DEACTIVATED",
+        "CURRENT_STATUS_SNAPSHOT",
+      ],
+      audit_source: ["partner", "admin", "system", "webhook"],
       complaint_reason: [
         "unreachable",
         "invalid_phone",

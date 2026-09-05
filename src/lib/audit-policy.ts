@@ -1,0 +1,50 @@
+/** Gebeurtenissen die een partner over de eigen leads mag zien. */
+export const PARTNER_VISIBLE_EVENTS = new Set<string>([
+  "LEAD_ALLOCATED",
+  "LEAD_OPENED",
+  "LEAD_CONTACTED",
+  "LEAD_STATUS_CHANGED",
+  "COMPLAINT_CREATED",
+  "COMPLAINT_APPROVED",
+  "COMPLAINT_REJECTED",
+  "INVOICE_CREATED",
+  "PAYMENT_CREATED",
+  "PAYMENT_STATUS_CHANGED",
+  "INVOICE_PAID",
+  "CREDIT_NOTE_CREATED",
+  "CREDIT_APPLIED",
+  "COMPANY_PROFILE_UPDATED",
+  "CURRENT_STATUS_SNAPSHOT",
+]);
+
+export const AUDIT_EVENT_LABEL: Record<string, string> = {
+  LEAD_CREATED: "Aanvraag binnengekomen",
+  PHONE_VERIFIED: "Telefoonnummer geverifieerd",
+  LEAD_FLAGGED: "Aanvraag gemarkeerd voor controle",
+  LEAD_BLOCKED: "Aanvraag geblokkeerd",
+  LEAD_ALLOCATED: "Lead toegewezen",
+  LEAD_OPENED: "Lead geopend",
+  LEAD_CONTACTED: "Eerste contact",
+  LEAD_STATUS_CHANGED: "Status gewijzigd",
+  COMPLAINT_CREATED: "Reclamatie ingediend",
+  COMPLAINT_APPROVED: "Reclamatie goedgekeurd",
+  COMPLAINT_REJECTED: "Reclamatie afgewezen",
+  INVOICE_CREATED: "Factuur aangemaakt",
+  PAYMENT_CREATED: "Betaling gestart",
+  PAYMENT_STATUS_CHANGED: "Betaalstatus gewijzigd",
+  INVOICE_PAID: "Factuur betaald",
+  CREDIT_NOTE_CREATED: "Creditnota aangemaakt",
+  CREDIT_APPLIED: "Credit verrekend",
+  COMPANY_PROFILE_UPDATED: "Bedrijfsgegevens gewijzigd",
+  COMPANY_COMMERCIAL_SETTINGS_UPDATED: "Commerciële instellingen gewijzigd",
+  COMPANY_ACTIVATED: "Bedrijf geactiveerd",
+  COMPANY_DEACTIVATED: "Bedrijf gedeactiveerd",
+  CURRENT_STATUS_SNAPSHOT: "Beginstand vastgelegd",
+};
+
+export const AUDIT_SOURCE_LABEL: Record<string, string> = {
+  partner: "Partner",
+  admin: "Beheer",
+  system: "Systeem",
+  webhook: "Betaalprovider",
+};
