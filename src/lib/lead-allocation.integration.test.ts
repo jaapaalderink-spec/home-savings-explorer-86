@@ -412,3 +412,95 @@ suite("commerciele velden zijn admin-only (echte database)", () => {
     expect(rows).toHaveLength(4);
   });
 });
+
+suite("fraudepoort in de database (echte database)", () => {
+  it("een geblokkeerde aanvraag wordt nooit toegewezen", async () => {
+    const company = await createCompany(50);
+    const lead = await createLead({ type: "shared_2" });
+    await sb.from("leads").update({ fraud_status: "blocked", fraud_score: 90 }).eq("id", lead);
+
+    const r = await allocate(lead, company);
+    expect(r.result).toBe("lead_blocked");
+    expect(await purchaseCount(lead)).toBe(0);
+  });
+
+  it("een als dubbel gemarkeerde aanvraag wordt nooit toegewezen", async () => {
+    const company = await createCompany(50);
+    const original = await createLead({ type: "shared_2" });
+    const duplicate = await createLead({ type: "shared_2" });
+    await sb.from("leads").update({ duplicate_of_lead_id: original }).eq("id", duplicate);
+
+    const r = await allocate(duplicate, company);
+    expect(r.result).toBe("lead_duplicate");
+    expect(await purchaseCount(duplicate)).toBe(0);
+  });
+
+  it("een dubbele aanvraag verbruikt geen proeflead en levert geen factuurregel", async () => {
+    const company = await createCompany(50);
+    const original = await createLead({ type: "shared_2" });
+    await allocate(original, company); // proeflead 1
+    const duplicate = await createLead({ type: "shared_2" });
+    await sb.from("leads").update({ duplicate_of_lead_id: original }).eq("id", duplicate);
+    await allocate(duplicate, company);
+
+    const { rows } = await ctx.admin.query(
+      `SELECT count(*)::int AS n, coalesce(max(trial_sequence_number), 0)::int AS max_seq,
+              count(*) FILTER (WHERE billable)::int AS billable
+         FROM lead_purchases WHERE company_id = $1`,
+      [company],
+    );
+    expect(rows[0].n).toBe(1);
+    expect(rows[0].max_seq).toBe(1);
+    expect(rows[0].billable).toBe(0);
+  });
+
+  it("een aanvraag die alleen beoordeeld moet worden kan nog gewoon verdeeld worden", async () => {
+    const company = await createCompany(50);
+    const lead = await createLead({ type: "shared_2" });
+    await sb
+      .from("leads")
+      .update({ fraud_status: "review", fraud_score: 45, review_required: true })
+      .eq("id", lead);
+
+    const r = await allocate(lead, company);
+    expect(r.result).toBe("allocated");
+  });
+
+  it("een directe insert omzeilt de fraudepoort niet via de toewijzingsfunctie", async () => {
+    const company = await createCompany(50);
+    const lead = await createLead({ type: "shared_2" });
+    await sb.from("leads").update({ fraud_status: "blocked" }).eq("id", lead);
+
+    // Ook een tweede poging met een andere bron blijft geweigerd.
+    const r = await allocate(lead, company, "market");
+    expect(r.result).toBe("lead_blocked");
+    expect(await purchaseCount(lead)).toBe(0);
+  });
+
+  it("bestaande aanvragen zijn standaard schoon en blijven factuurveilig", async () => {
+    const { rows } = await ctx.admin.query(
+      `SELECT count(*)::int AS flagged FROM leads
+        WHERE fraud_status <> 'clean' AND created_at < now() - interval '1 day'`,
+    );
+    expect(rows[0].flagged).toBe(0);
+  });
+
+  it("de genormaliseerde velden worden automatisch gevuld", async () => {
+    const lead = await createLead({ type: "shared_2" });
+    const { rows } = await ctx.admin.query(
+      `SELECT email_normalized, identity_fingerprint FROM leads WHERE id = $1`,
+      [lead],
+    );
+    expect(rows[0].email_normalized).toBe("itest@example.com");
+    expect(rows[0].identity_fingerprint).toMatch(/^[0-9a-f]{32}$/);
+  });
+
+  it("er staat geen unieke regel op telefoon of e-mail", async () => {
+    const { rows } = await ctx.admin.query(
+      `SELECT indexdef FROM pg_indexes WHERE tablename = 'leads' AND indexdef ILIKE '%unique%'`,
+    );
+    const defs = rows.map((r: { indexdef: string }) => r.indexdef).join(" ");
+    expect(defs).not.toMatch(/\(phone\)/);
+    expect(defs).not.toMatch(/email/);
+  });
+});
