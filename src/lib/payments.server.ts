@@ -21,6 +21,8 @@ type InvoiceRow = {
   company_id: string;
   invoice_number: string;
   total_inc_vat: number | string;
+  credit_applied_inc_vat: number | string | null;
+  amount_due_inc_vat: number | string | null;
   status: string;
   payment_status: string;
   paid_at: string | null;
@@ -41,11 +43,20 @@ function logStatus(context: {
   );
 }
 
+/** Openstaand bedrag: altijd uit de database, nooit uit de browser. */
+function payableCents(invoice: InvoiceRow): number {
+  const due = invoice.amount_due_inc_vat;
+  if (due !== null && due !== undefined) return toCents(String(due));
+  const total = toCents(String(invoice.total_inc_vat));
+  const credited = toCents(String(invoice.credit_applied_inc_vat ?? 0));
+  return total - credited;
+}
+
 async function loadInvoice(invoiceId: string): Promise<InvoiceRow | null> {
   const db = await adminDb();
   const { data } = await db
     .from("invoices")
-    .select("id, company_id, invoice_number, total_inc_vat, status, payment_status, paid_at")
+    .select("id, company_id, invoice_number, total_inc_vat, credit_applied_inc_vat, amount_due_inc_vat, status, payment_status, paid_at")
     .eq("id", invoiceId)
     .maybeSingle();
   return (data as InvoiceRow | null) ?? null;
@@ -76,7 +87,8 @@ export async function startInvoicePayment(input: {
   const invoice = await loadInvoice(input.invoiceId);
   if (!invoice) throw new Error("INVOICE_NOT_FOUND");
 
-  const totalCents = toCents(String(invoice.total_inc_vat));
+  // Alleen het werkelijk openstaande bedrag (factuur minus verrekende credits).
+  const totalCents = payableCents(invoice);
   const existing = await latestPayment(invoice.id);
   const decision = paymentAction({
     invoiceStatus: invoice.status as InvoiceStatus,
@@ -185,7 +197,7 @@ export async function syncPayment(
   const check = verifyMolliePayment({
     currency: mollie.amount?.currency ?? "",
     amountValue: mollie.amount?.value ?? "",
-    expectedCents: toCents(String(invoice.total_inc_vat)),
+    expectedCents: payableCents(invoice),
     metadataInvoiceId: (mollie.metadata?.["invoiceId"] as string | undefined) ?? null,
     invoiceId: invoice.id,
   });
