@@ -109,6 +109,47 @@ export const createCompany = createServerFn({ method: "POST" })
     return { companyId: company.id, joinCode: company.join_code };
   });
 
+/**
+ * Bedrijfsgegevens bijwerken. Alleen deze vier velden zijn zelf aanpasbaar;
+ * commerciele velden (abonnement, maandlimiet, maandbedrag, actief, bedrijfscode)
+ * zijn admin-only en worden hier bewust niet geaccepteerd. De database blokkeert
+ * directe wijzigingen: eigenaren hebben geen UPDATE-policy meer op companies.
+ */
+export const updateCompanyProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        name: z.string().trim().min(2).max(80),
+        address: z.string().trim().max(160).optional(),
+        billingEmail: z.string().trim().email().max(160).optional(),
+        vatNumber: z.string().trim().max(24).optional(),
+      })
+      .strict()
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const db = await adminDb();
+    const [{ data: profile }, { data: isOwner }] = await Promise.all([
+      db.from("profiles").select("company_id").eq("id", context.userId).maybeSingle(),
+      db.rpc("has_role", { _user_id: context.userId, _role: "owner" }),
+    ]);
+    if (!profile?.company_id) throw new Error("Geen bedrijf gekoppeld.");
+    if (!isOwner) throw new Error("Alleen de eigenaar kan de bedrijfsgegevens wijzigen.");
+
+    const { error } = await db
+      .from("companies")
+      .update({
+        name: data.name,
+        address: data.address ?? null,
+        billing_email: data.billingEmail ?? null,
+        vat_number: data.vatNumber ?? null,
+      })
+      .eq("id", profile.company_id);
+    if (error) throw new Error("Bedrijfsgegevens opslaan is mislukt.");
+    return { ok: true };
+  });
+
 export const joinCompany = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
@@ -715,9 +756,7 @@ export const reviewComplaint = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!complaint) throw new Error("Reclamatie niet gevonden.");
 
-    const purchase = complaint.purchase as
-      | { price_ex_vat?: number; is_trial?: boolean }
-      | null;
+    const purchase = complaint.purchase as { price_ex_vat?: number; is_trial?: boolean } | null;
     // Een proeflead heeft geen geldwaarde: goedkeuren geeft dus nooit een credit
     // en herstelt ook geen gratis proefplek.
     const price = purchase?.is_trial ? 0 : Number(purchase?.price_ex_vat ?? 0);

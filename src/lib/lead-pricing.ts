@@ -30,7 +30,15 @@ export const CATEGORY_LABEL: Record<string, string> = {
   boiler: "Warmteboiler",
 };
 
-export const CATEGORIES = ["solar", "heatpump", "battery", "ev", "ehms", "airco", "boiler"] as const;
+export const CATEGORIES = [
+  "solar",
+  "heatpump",
+  "battery",
+  "ev",
+  "ehms",
+  "airco",
+  "boiler",
+] as const;
 
 /**
  * Abonnementen: een vast maandbedrag met een aantal leads inbegrepen.
@@ -50,7 +58,9 @@ export function planByName(name: string) {
 
 /** Prijs per lead voor dit leadtype (ex btw). */
 export function leadTypePrice(type: string | null | undefined): number {
-  return LEAD_TYPE_PRICE[(type as "shared_2" | "shared_4") ?? "shared_4"] ?? LEAD_TYPE_PRICE.shared_4;
+  return (
+    LEAD_TYPE_PRICE[(type as "shared_2" | "shared_4") ?? "shared_4"] ?? LEAD_TYPE_PRICE.shared_4
+  );
 }
 
 /** Aantal partners dat een lead maximaal mag ontvangen. */

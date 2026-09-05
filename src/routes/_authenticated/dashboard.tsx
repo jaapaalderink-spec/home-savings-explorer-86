@@ -12,7 +12,7 @@ import { Marketplace } from "@/components/dashboard/Marketplace";
 import { MyLeads } from "@/components/dashboard/MyLeads";
 import { TeamOverview } from "@/components/dashboard/TeamOverview";
 import { AdminOverview } from "@/components/dashboard/AdminOverview";
-import { planByName } from "@/lib/lead-pricing";
+import { TRIAL_LEAD_ALLOWANCE, planByName } from "@/lib/lead-pricing";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -20,7 +20,8 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
       { title: "Partnerdashboard — Onafhankelijke Offerte" },
       {
         name: "description",
-        content: "Koop leads in, volg je pipeline en beheer je account managers in het partnerdashboard.",
+        content:
+          "Koop leads in, volg je pipeline en beheer je account managers in het partnerdashboard.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -52,6 +53,9 @@ function DashboardPage() {
   const limit = data?.limit ?? 0;
   const used = data?.usedThisMonth ?? 0;
   const remaining = Math.max(limit - used, 0);
+  const trialUsed = data?.trialUsed ?? 0;
+  const trialRemaining = data?.trialRemaining ?? 0;
+  const trialActive = data?.trialActive ?? false;
 
   const tabs: Array<{ id: TabId; label: string; icon: typeof Store; show: boolean }> = [
     { id: "market", label: "Leadmarkt", icon: Store, show: true },
@@ -68,7 +72,10 @@ function DashboardPage() {
         </Link>
         <div className="flex items-center gap-3">
           {isAdmin && (
-            <Link to="/admin" className="text-sm font-semibold text-leaf underline-offset-4 hover:underline">
+            <Link
+              to="/admin"
+              className="text-sm font-semibold text-leaf underline-offset-4 hover:underline"
+            >
               Platformbeheer
             </Link>
           )}
@@ -88,18 +95,38 @@ function DashboardPage() {
           <>
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
-                <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">{data.company.name}</h1>
+                <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">
+                  {data.company.name}
+                </h1>
                 <p className="mt-1 text-sm text-moss/70">
-                  Abonnement {planByName(data.company.plan_name).name} · {isOwner ? "eigenaar" : "account manager"}
+                  Abonnement {planByName(data.company.plan_name).name} ·{" "}
+                  {isOwner ? "eigenaar" : "account manager"}
                 </p>
               </div>
-              <div className="w-full max-w-xs rounded-2xl bg-background p-4" style={{ boxShadow: "var(--shadow-panel)" }}>
-                <p className="text-xs font-medium uppercase tracking-wide text-moss/60">Leads deze maand</p>
+              <div
+                className="w-full max-w-xs rounded-2xl bg-background p-4"
+                style={{ boxShadow: "var(--shadow-panel)" }}
+              >
+                <p className="text-xs font-medium uppercase tracking-wide text-moss/60">
+                  Leads deze maand
+                </p>
                 <p className="mt-1 text-lg font-bold text-ink">
                   {used} <span className="text-sm font-normal text-moss/70">van {limit}</span>
                 </p>
-                <Progress value={limit === 0 ? 0 : Math.min((used / limit) * 100, 100)} className="mt-2 h-2" />
+                <Progress
+                  value={limit === 0 ? 0 : Math.min((used / limit) * 100, 100)}
+                  className="mt-2 h-2"
+                />
                 <p className="mt-1.5 text-xs text-moss/70">Nog {remaining} leads beschikbaar</p>
+                {trialActive ? (
+                  <p className="mt-2 border-t border-moss/10 pt-2 text-xs font-semibold text-leaf">
+                    Startaanbod: nog {trialRemaining} van {TRIAL_LEAD_ALLOWANCE} gratis leads
+                  </p>
+                ) : (
+                  <p className="mt-2 border-t border-moss/10 pt-2 text-xs text-moss/60">
+                    Startaanbod gebruikt ({trialUsed} gratis leads)
+                  </p>
+                )}
               </div>
             </div>
 
@@ -130,7 +157,9 @@ function DashboardPage() {
             <section className="mt-5">
               {tab === "market" && <Marketplace remaining={remaining} />}
               {tab === "leads" && <MyLeads />}
-              {tab === "team" && <TeamOverview joinCode={isOwner ? data.company.join_code : null} />}
+              {tab === "team" && (
+                <TeamOverview joinCode={isOwner ? data.company.join_code : null} />
+              )}
               {tab === "admin" && <AdminOverview />}
             </section>
           </>
