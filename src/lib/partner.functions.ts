@@ -661,7 +661,11 @@ export const updatePurchase = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!current) throw new Error("Lead niet gevonden.");
 
-    const check = checkStatusTransition(current.status as LeadStatus, data.status, isAdmin === true);
+    const check = checkStatusTransition(
+      current.status as LeadStatus,
+      data.status,
+      isAdmin === true,
+    );
     if (!check.ok) throw new Error(check.reason);
 
     const { data: rows, error } = await db.rpc("set_purchase_status", {
@@ -731,7 +735,15 @@ export const listAuditEvents = createServerFn({ method: "GET" })
     z
       .object({
         entityType: z
-          .enum(["lead", "lead_purchase", "company", "complaint", "invoice", "credit_note", "payment"])
+          .enum([
+            "lead",
+            "lead_purchase",
+            "company",
+            "complaint",
+            "invoice",
+            "credit_note",
+            "payment",
+          ])
           .optional(),
         entityId: z.string().uuid().optional(),
         companyId: z.string().uuid().optional(),
@@ -750,7 +762,9 @@ export const listAuditEvents = createServerFn({ method: "GET" })
 
     let query = db
       .from("audit_events")
-      .select("id, event_type, entity_type, entity_id, actor_user_id, actor_company_id, actor_role, source, metadata, created_at")
+      .select(
+        "id, event_type, entity_type, entity_id, actor_user_id, actor_company_id, actor_role, source, metadata, created_at",
+      )
       .order("created_at", { ascending: false })
       .limit(data.limit ?? 100);
     if (data.entityType) query = query.eq("entity_type", data.entityType);
@@ -761,7 +775,6 @@ export const listAuditEvents = createServerFn({ method: "GET" })
     if (error) throw new Error("Logboek laden is mislukt.");
     return rows ?? [];
   });
-
 
 /** Reclamatie indienen op een ingekochte lead. */
 export const fileComplaint = createServerFn({ method: "POST" })

@@ -25,9 +25,7 @@ export const STATUS_LABEL: Record<LeadStatus, string> = {
   lost: "Verloren",
 };
 
-export type TransitionCheck =
-  | { ok: true; changed: boolean }
-  | { ok: false; reason: string };
+export type TransitionCheck = { ok: true; changed: boolean } | { ok: false; reason: string };
 
 /**
  * @param isAdmin beheer mag corrigeren en dus elke overgang zetten.

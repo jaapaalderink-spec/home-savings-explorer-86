@@ -125,7 +125,10 @@ suite("audit trail en statusgeschiedenis (echte database)", () => {
 
   it("2. telefoonverificatie legt precies één gebeurtenis vast", async () => {
     const leadId = await makeLead(false);
-    await sb.from("leads").update({ phone_verified: true, phone_verified_at: new Date().toISOString() }).eq("id", leadId);
+    await sb
+      .from("leads")
+      .update({ phone_verified: true, phone_verified_at: new Date().toISOString() })
+      .eq("id", leadId);
     await sb.from("leads").update({ notes: "nogmaals opslaan" }).eq("id", leadId);
     const list = (await events(leadId)).filter((e) => e.event_type === "PHONE_VERIFIED");
     expect(list).toHaveLength(1);
@@ -161,7 +164,12 @@ suite("audit trail en statusgeschiedenis (echte database)", () => {
 
     const h = await history(purchaseId);
     expect(h).toHaveLength(1);
-    expect(h[0]).toMatchObject({ from_status: "new", to_status: "contacted", changed_by: actor, note: "gebeld" });
+    expect(h[0]).toMatchObject({
+      from_status: "new",
+      to_status: "contacted",
+      changed_by: actor,
+      note: "gebeld",
+    });
 
     const types = (await events(purchaseId)).map((e) => e.event_type);
     expect(types).toContain("LEAD_STATUS_CHANGED");
