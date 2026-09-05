@@ -16,6 +16,7 @@ import { Route as BedanktRouteImport } from './routes/bedankt'
 import { Route as OfferteRouteImport } from './routes/offerte'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as ApiPublicMollieWebhookRouteImport } from './routes/api/public/mollie-webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -51,6 +52,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicMollieWebhookRoute = ApiPublicMollieWebhookRouteImport.update({
+  id: '/api/public/mollie-webhook',
+  path: '/api/public/mollie-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/offerte': typeof OfferteRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/offerte': typeof OfferteRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -77,12 +85,27 @@ export interface FileRoutesById {
   '/offerte': typeof OfferteRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/bedankt' | '/offerte' | '/admin' | '/dashboard'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/bedankt'
+    | '/offerte'
+    | '/admin'
+    | '/dashboard'
+    | '/api/public/mollie-webhook'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/bedankt' | '/offerte' | '/admin' | '/dashboard'
+  to:
+    | '/'
+    | '/auth'
+    | '/bedankt'
+    | '/offerte'
+    | '/admin'
+    | '/dashboard'
+    | '/api/public/mollie-webhook'
   id:
     | '__root__'
     | '/'
@@ -92,6 +115,7 @@ export interface FileRouteTypes {
     | '/offerte'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
+    | '/api/public/mollie-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -100,6 +124,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BedanktRoute: typeof BedanktRoute
   OfferteRoute: typeof OfferteRoute
+  ApiPublicMollieWebhookRoute: typeof ApiPublicMollieWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -153,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/mollie-webhook': {
+      id: '/api/public/mollie-webhook'
+      path: '/api/public/mollie-webhook'
+      fullPath: '/api/public/mollie-webhook'
+      preLoaderRoute: typeof ApiPublicMollieWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -175,6 +207,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BedanktRoute: BedanktRoute,
   OfferteRoute: OfferteRoute,
+  ApiPublicMollieWebhookRoute: ApiPublicMollieWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
