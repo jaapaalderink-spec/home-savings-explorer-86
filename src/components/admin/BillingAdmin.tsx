@@ -34,6 +34,30 @@ const STATUS_LABEL: Record<string, string> = {
   rejected: "Afgewezen",
 };
 
+/** Financiële uitkomst van een reclamatie, in gewone taal. */
+function financialResult(c: Record<string, unknown>): string {
+  const status = c["status"] as string;
+  if (status === "pending") return "Nog te beoordelen";
+  if (status === "rejected") return "Afgewezen — geen creditering";
+  const note = (c["credit_note"] ?? null) as {
+    credit_number?: string;
+    total_inc_vat?: number;
+    status?: CreditNoteStatus;
+  } | null;
+  if (note?.credit_number) {
+    return `Creditnota ${note.credit_number} · −${formatEuro(Number(note.total_inc_vat ?? 0))} · ${
+      CREDIT_STATUS_LABEL[(note.status ?? "open") as CreditNoteStatus]
+    }`;
+  }
+  const purchase = (c["purchase"] ?? null) as {
+    is_trial?: boolean;
+    invoice_id?: string | null;
+  } | null;
+  if (purchase?.is_trial) return "Proeflead — geen creditering nodig";
+  if (!purchase?.invoice_id) return "Nog niet gefactureerd — van facturatie uitgesloten";
+  return "Goedgekeurd";
+}
+
 export function BillingAdmin() {
   const queryClient = useQueryClient();
   const now = new Date();
@@ -97,6 +121,7 @@ export function BillingAdmin() {
                     {Number(c.credit_ex_vat ?? 0) > 0 &&
                       ` · credit ${formatEuro(Number(c.credit_ex_vat))}`}
                   </p>
+                  <p className="text-xs text-moss/70">{financialResult(c)}</p>
                   {c.details && (
                     <p className="mt-1 max-w-xl text-xs text-moss/80">{c.details as string}</p>
                   )}

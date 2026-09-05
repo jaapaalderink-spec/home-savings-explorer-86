@@ -723,7 +723,7 @@ export const listComplaints = createServerFn({ method: "GET" })
     let query = db
       .from("complaints")
       .select(
-        "id, reason, details, status, review_note, credit_ex_vat, created_at, reviewed_at, company:companies(name), purchase:lead_purchases(price_ex_vat, lead:leads(first_name, last_name, postcode, categories))",
+        "id, reason, details, status, review_note, credit_ex_vat, created_at, reviewed_at, company:companies(name), credit_note:credit_notes(credit_number, total_inc_vat, status), purchase:lead_purchases(price_ex_vat, is_trial, invoice_id, lead:leads(first_name, last_name, postcode, categories))",
       )
       .order("created_at", { ascending: false });
 
