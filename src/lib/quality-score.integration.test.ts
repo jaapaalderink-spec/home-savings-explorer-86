@@ -182,6 +182,7 @@ suite("kwaliteitsscore tegen de echte database", () => {
     await storeScore(other);
 
     const userId = crypto.randomUUID();
+    await db.query(`BEGIN`);
     await db.query(`SET LOCAL ROLE authenticated`);
     await db.query(`SELECT set_config('request.jwt.claims', $1, true)`, [
       JSON.stringify({ sub: userId, role: "authenticated" }),
@@ -191,7 +192,7 @@ suite("kwaliteitsscore tegen de echte database", () => {
       .then((r) => r.rowCount)
       .catch(() => 0);
     const visible = await db.query(`SELECT company_id FROM company_quality_scores`);
-    await db.query(`RESET ROLE`);
+    await db.query(`ROLLBACK`);
 
     expect(writable).toBe(0);
     expect(visible.rows.map((r: { company_id: string }) => r.company_id)).not.toContain(other);
