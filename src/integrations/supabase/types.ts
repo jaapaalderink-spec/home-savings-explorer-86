@@ -147,6 +147,59 @@ export type Database = {
           },
         ]
       }
+      company_quality_scores: {
+        Row: {
+          calculated_at: string
+          company_id: string
+          complaint_score: number
+          conversion_score: number
+          created_at: string
+          engagement_score: number
+          metrics: Json
+          overall_score: number
+          quality_warning: boolean
+          response_score: number
+          sample_size: number
+          updated_at: string
+        }
+        Insert: {
+          calculated_at?: string
+          company_id: string
+          complaint_score?: number
+          conversion_score?: number
+          created_at?: string
+          engagement_score?: number
+          metrics?: Json
+          overall_score?: number
+          quality_warning?: boolean
+          response_score?: number
+          sample_size?: number
+          updated_at?: string
+        }
+        Update: {
+          calculated_at?: string
+          company_id?: string
+          complaint_score?: number
+          conversion_score?: number
+          created_at?: string
+          engagement_score?: number
+          metrics?: Json
+          overall_score?: number
+          quality_warning?: boolean
+          response_score?: number
+          sample_size?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_quality_scores_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_regions: {
         Row: {
           company_id: string
@@ -1218,6 +1271,25 @@ export type Database = {
               error: true
             } & "Could not choose the best candidate function between: public.audit_source_setting(_fallback => text), public.audit_source_setting(_fallback => audit_source). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
           }
+      company_quality_metrics: {
+        Args: { p_company_id?: string }
+        Returns: {
+          approved_complaints: number
+          closed_count: number
+          company_id: string
+          contacted_count: number
+          last_assigned_at: string
+          leads_sla_eligible: number
+          leads_total: number
+          opened_count: number
+          quoted_plus_count: number
+          recent_7d: number
+          untouched_count: number
+          within_24h: number
+          within_48h: number
+          won_count: number
+        }[]
+      }
       current_company_id: { Args: never; Returns: string }
       ensure_credit_note_for_complaint: {
         Args: { p_actor?: string; p_complaint_id: string }
