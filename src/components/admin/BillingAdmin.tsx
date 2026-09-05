@@ -6,11 +6,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   generateInvoices,
   listComplaints,
+  listCreditNotes,
   listInvoices,
   reviewComplaint,
 } from "@/lib/partner.functions";
 import { formatEuro } from "@/lib/home-savings";
 import { PAYMENT_STATUS_LABEL, type PaymentStatus } from "@/lib/payments-policy";
+import {
+  COMPLAINT_OUTCOME_LABEL,
+  CREDIT_STATUS_LABEL,
+  type ComplaintOutcome,
+  type CreditNoteStatus,
+} from "@/lib/credit-policy";
 
 const REASON_LABEL: Record<string, string> = {
   unreachable: "Niet bereikbaar",
@@ -35,13 +42,19 @@ export function BillingAdmin() {
 
   const complaints = useQuery({ queryKey: ["complaints"], queryFn: () => listComplaints() });
   const invoices = useQuery({ queryKey: ["invoices"], queryFn: () => listInvoices() });
+  const creditNotes = useQuery({ queryKey: ["credit-notes"], queryFn: () => listCreditNotes() });
 
   const review = useMutation({
     mutationFn: (input: { complaintId: string; approve: boolean }) =>
       reviewComplaint({ data: input }),
-    onSuccess: () => {
-      toast.success("Reclamatie beoordeeld.");
+    onSuccess: (result) => {
+      const outcome = COMPLAINT_OUTCOME_LABEL[result.result as ComplaintOutcome] ?? "Beoordeeld";
+      toast.success(
+        result.creditNumber ? `${outcome}: ${result.creditNumber}` : `Reclamatie: ${outcome}`,
+      );
       void queryClient.invalidateQueries({ queryKey: ["complaints"] });
+      void queryClient.invalidateQueries({ queryKey: ["credit-notes"] });
+      void queryClient.invalidateQueries({ queryKey: ["invoices"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -180,6 +193,17 @@ export function BillingAdmin() {
                     </td>
                     <td className="p-2 font-semibold text-leaf">
                       {formatEuro(Number(i.total_inc_vat ?? 0))}
+                      {Number(i.credit_applied_inc_vat ?? 0) > 0 && (
+                        <span className="block text-[11px] font-normal text-moss/70">
+                          credit −{formatEuro(Number(i.credit_applied_inc_vat))} · te betalen{" "}
+                          {formatEuro(Number(i.amount_due_inc_vat ?? i.total_inc_vat ?? 0))}
+                        </span>
+                      )}
+                      {((i.credit_notes ?? []) as Array<{ credit_number: string }>).map((cn) => (
+                        <span key={cn.credit_number} className="block text-[11px] font-normal text-moss/60">
+                          {cn.credit_number}
+                        </span>
+                      ))}
                     </td>
                     <td className="p-2 text-xs text-moss/80">{i.status as string}</td>
                     <td className="p-2 text-xs text-moss/80">
@@ -205,6 +229,70 @@ export function BillingAdmin() {
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+      <section
+        className="rounded-2xl bg-background p-4"
+        style={{ boxShadow: "var(--shadow-panel)" }}
+      >
+        <p className="text-sm font-semibold text-ink">Creditnota's</p>
+        {creditNotes.isLoading ? (
+          <Skeleton className="mt-3 h-24 w-full rounded-xl" />
+        ) : !creditNotes.data || creditNotes.data.items.length === 0 ? (
+          <p className="mt-2 text-sm text-moss/70">Nog geen creditnota's.</p>
+        ) : (
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs uppercase tracking-wide text-moss/60">
+                <tr>
+                  <th className="p-2">Creditnummer</th>
+                  <th className="p-2">Bedrijf</th>
+                  <th className="p-2">Oorspronkelijke factuur</th>
+                  <th className="p-2">Lead</th>
+                  <th className="p-2">Excl. btw</th>
+                  <th className="p-2">Btw</th>
+                  <th className="p-2">Incl. btw</th>
+                  <th className="p-2">Status</th>
+                  <th className="p-2">Datum</th>
+                </tr>
+              </thead>
+              <tbody>
+                {creditNotes.data.items.map((cn) => {
+                  const lead = (cn.purchase as { lead?: { first_name?: string; last_name?: string; postcode?: string } } | null)?.lead;
+                  return (
+                    <tr key={cn.id as string} className="border-t border-moss/10">
+                      <td className="p-2 font-semibold text-ink">{cn.credit_number as string}</td>
+                      <td className="p-2 text-moss/80">
+                        {(cn.company as { name?: string } | null)?.name ?? "—"}
+                      </td>
+                      <td className="p-2 text-xs text-moss/70">
+                        {(cn.invoice as { invoice_number?: string } | null)?.invoice_number ?? "—"}
+                      </td>
+                      <td className="p-2 text-xs text-moss/70">
+                        {lead ? `${lead.first_name ?? ""} ${lead.last_name ?? ""} · ${lead.postcode ?? ""}` : "—"}
+                      </td>
+                      <td className="p-2 text-moss/80">
+                        −{formatEuro(Number(cn.subtotal_ex_vat ?? 0))}
+                      </td>
+                      <td className="p-2 text-xs text-moss/70">
+                        −{formatEuro(Number(cn.vat_amount ?? 0))} (
+                        {Math.round(Number(cn.vat_rate ?? 0) * 100)}%)
+                      </td>
+                      <td className="p-2 font-semibold text-leaf">
+                        −{formatEuro(Number(cn.total_inc_vat ?? 0))}
+                      </td>
+                      <td className="p-2 text-xs text-moss/80">
+                        {CREDIT_STATUS_LABEL[(cn.status ?? "open") as CreditNoteStatus]}
+                      </td>
+                      <td className="p-2 text-xs text-moss/70">
+                        {new Date(cn.issued_at as string).toLocaleDateString("nl-NL")}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
