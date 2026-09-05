@@ -1,5 +1,5 @@
 import { CATEGORIES, CATEGORY_LABEL } from "@/lib/lead-pricing";
-import { PERIODS, STATE_LABEL, type LeadFilters } from "@/components/admin/filters";
+import { PERIODS, RISK_LABEL, STATE_LABEL, type LeadFilters } from "@/components/admin/filters";
 
 const STATES: Array<LeadFilters["state"]> = ["new", "assigned", "underfilled", "cancelled"];
 
@@ -61,6 +61,21 @@ export function FilterBar({
       {STATES.map((s) => (
         <Chip key={s} active={value.state === s} onClick={() => onChange({ ...value, state: value.state === s ? undefined : s })}>
           {STATE_LABEL[s as string]}
+        </Chip>
+      ))}
+      <span className="ml-2 text-xs font-semibold uppercase tracking-wide text-moss/60">
+        Kwaliteit
+      </span>
+      <Chip active={!value.risk} onClick={() => onChange({ ...value, risk: undefined })}>
+        Alle
+      </Chip>
+      {(["review", "duplicate", "blocked"] as const).map((r) => (
+        <Chip
+          key={r}
+          active={value.risk === r}
+          onClick={() => onChange({ ...value, risk: value.risk === r ? undefined : r })}
+        >
+          {RISK_LABEL[r]}
         </Chip>
       ))}
     </div>
