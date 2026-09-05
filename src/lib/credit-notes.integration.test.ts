@@ -61,19 +61,21 @@ async function makePurchase(opts: {
   invoiceId?: string | null;
 }) {
   const leadId = await makeLead();
-  const { rows } = await db.query(
-    `INSERT INTO lead_purchases (lead_id, company_id, price_ex_vat, billable, is_trial, invoice_id)
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-    [
-      leadId,
-      opts.companyId,
-      opts.price,
-      !opts.trial && opts.price > 0,
-      opts.trial ?? false,
-      opts.invoiceId ?? null,
-    ],
-  );
-  return rows[0].id as string;
+  // Via de serverrol: de aankooptriggers lezen de leadtabel.
+  const { data, error } = await sb
+    .from("lead_purchases")
+    .insert({
+      lead_id: leadId,
+      company_id: opts.companyId,
+      price_ex_vat: opts.price,
+      billable: !opts.trial && opts.price > 0,
+      is_trial: opts.trial ?? false,
+      invoice_id: opts.invoiceId ?? null,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  return data.id as string;
 }
 
 async function makeInvoice(companyId: string, total: number, paid = false, vatRate = 0.21) {
