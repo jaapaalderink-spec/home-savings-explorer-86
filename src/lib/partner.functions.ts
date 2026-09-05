@@ -891,6 +891,18 @@ export const reviewComplaint = createServerFn({ method: "POST" })
     const row = (rows ?? [])[0];
     if (!row || row.result === "complaint_not_found") throw new Error("Reclamatie niet gevonden.");
 
+    // Alleen een goedgekeurde reclamatie verandert de kwaliteitsscore; toch
+    // herberekenen we in beide gevallen zodat de cijfers actueel blijven.
+    const { data: complaint } = await db
+      .from("complaints")
+      .select("company_id")
+      .eq("id", data.complaintId)
+      .maybeSingle();
+    if (complaint?.company_id) {
+      const { recalculateQualityScores } = await import("@/lib/quality.server");
+      await recalculateQualityScores(complaint.company_id).catch(() => undefined);
+    }
+
     return {
       ok: true,
       result: row.result,
