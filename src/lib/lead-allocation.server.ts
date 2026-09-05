@@ -52,8 +52,9 @@ export async function allocateLeadToCompany(params: {
     p_lead_id: params.leadId,
     p_company_id: params.companyId,
     p_source: params.source ?? "assigned",
-    p_purchased_by: params.purchasedBy ?? undefined,
+    ...(params.purchasedBy ? { p_purchased_by: params.purchasedBy } : {}),
   });
+
 
   if (error) {
     // Het databasevangnet (trigger) meldt een volle lead als uitzondering.
