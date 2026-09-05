@@ -239,12 +239,16 @@ export type Database = {
       }
       invoices: {
         Row: {
+          active_payment_id: string | null
           company_id: string
           created_at: string
           due_date: string
           id: string
           invoice_number: string
+          last_payment_attempt_at: string | null
           paid_at: string | null
+          payment_review_required: boolean
+          payment_status: Database["public"]["Enums"]["payment_status"]
           period_end: string
           period_start: string
           status: Database["public"]["Enums"]["invoice_status"]
@@ -254,12 +258,16 @@ export type Database = {
           vat_amount: number
         }
         Insert: {
+          active_payment_id?: string | null
           company_id: string
           created_at?: string
           due_date?: string
           id?: string
           invoice_number: string
+          last_payment_attempt_at?: string | null
           paid_at?: string | null
+          payment_review_required?: boolean
+          payment_status?: Database["public"]["Enums"]["payment_status"]
           period_end: string
           period_start: string
           status?: Database["public"]["Enums"]["invoice_status"]
@@ -269,12 +277,16 @@ export type Database = {
           vat_amount?: number
         }
         Update: {
+          active_payment_id?: string | null
           company_id?: string
           created_at?: string
           due_date?: string
           id?: string
           invoice_number?: string
+          last_payment_attempt_at?: string | null
           paid_at?: string | null
+          payment_review_required?: boolean
+          payment_status?: Database["public"]["Enums"]["payment_status"]
           period_end?: string
           period_start?: string
           status?: Database["public"]["Enums"]["invoice_status"]
@@ -284,6 +296,13 @@ export type Database = {
           vat_amount?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "invoices_active_payment_id_fkey"
+            columns: ["active_payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invoices_company_id_fkey"
             columns: ["company_id"]
@@ -563,6 +582,78 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount: number
+          amount_mismatch: boolean
+          checkout_url: string | null
+          company_id: string
+          created_at: string
+          currency: string
+          expires_at: string | null
+          failed_at: string | null
+          id: string
+          invoice_id: string
+          metadata: Json
+          paid_at: string | null
+          provider: string
+          provider_payment_id: string
+          status: Database["public"]["Enums"]["payment_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          amount_mismatch?: boolean
+          checkout_url?: string | null
+          company_id: string
+          created_at?: string
+          currency?: string
+          expires_at?: string | null
+          failed_at?: string | null
+          id?: string
+          invoice_id: string
+          metadata?: Json
+          paid_at?: string | null
+          provider?: string
+          provider_payment_id: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          amount_mismatch?: boolean
+          checkout_url?: string | null
+          company_id?: string
+          created_at?: string
+          currency?: string
+          expires_at?: string | null
+          failed_at?: string | null
+          id?: string
+          invoice_id?: string
+          metadata?: Json
+          paid_at?: string | null
+          provider?: string
+          provider_payment_id?: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       phone_verifications: {
         Row: {
           attempts: number
@@ -765,10 +856,18 @@ export type Database = {
         | "overdue"
         | "cancelled"
         | "credited"
+        | "open"
       lead_fraud_status: "clean" | "review" | "blocked"
       lead_state: "new" | "assigned" | "underfilled" | "cancelled"
       lead_status: "new" | "contacted" | "quoted" | "won" | "lost"
       lead_type: "shared_2" | "shared_4"
+      payment_status:
+        | "open"
+        | "pending"
+        | "paid"
+        | "failed"
+        | "expired"
+        | "canceled"
       purchase_source: "assigned" | "market"
     }
     CompositeTypes: {
@@ -914,11 +1013,20 @@ export const Constants = {
         "overdue",
         "cancelled",
         "credited",
+        "open",
       ],
       lead_fraud_status: ["clean", "review", "blocked"],
       lead_state: ["new", "assigned", "underfilled", "cancelled"],
       lead_status: ["new", "contacted", "quoted", "won", "lost"],
       lead_type: ["shared_2", "shared_4"],
+      payment_status: [
+        "open",
+        "pending",
+        "paid",
+        "failed",
+        "expired",
+        "canceled",
+      ],
       purchase_source: ["assigned", "market"],
     },
   },
