@@ -23,7 +23,10 @@ function ms(value: string | Date): number {
 }
 
 /** Mag er nog een code op deze challenge ingevuld worden? */
-export function checkChallenge(state: ChallengeState, now: Date = new Date()): ChallengeError | null {
+export function checkChallenge(
+  state: ChallengeState,
+  now: Date = new Date(),
+): ChallengeError | null {
   if (state.verifiedAt || state.consumedAt) return "ALREADY_USED";
   if (state.attempts >= MAX_ATTEMPTS) return "TOO_MANY_ATTEMPTS";
   if (ms(state.expiresAt) <= now.getTime()) return "EXPIRED";

@@ -139,7 +139,10 @@ export async function verifyChallenge(token: string, code: string): Promise<Veri
     const attemptsLeft = Math.max(0, 5 - attempts);
     return {
       ok: false,
-      error: attemptsLeft === 0 ? CHALLENGE_MESSAGE.TOO_MANY_ATTEMPTS : "Onjuiste code. Probeer het opnieuw.",
+      error:
+        attemptsLeft === 0
+          ? CHALLENGE_MESSAGE.TOO_MANY_ATTEMPTS
+          : "Onjuiste code. Probeer het opnieuw.",
       attemptsLeft,
     };
   }

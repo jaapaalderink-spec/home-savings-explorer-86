@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-
 const leadSchema = z.object({
   firstName: z.string().trim().min(2).max(60),
   lastName: z.string().trim().min(2).max(60),
@@ -59,4 +58,3 @@ export const submitLead = createServerFn({ method: "POST" })
       phoneMasked: maskPhone(phone),
     };
   });
-

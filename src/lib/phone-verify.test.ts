@@ -38,26 +38,45 @@ describe("telefoonnummer normaliseren", () => {
 
 describe("challenge-regels", () => {
   it("laat een geldige challenge door", () => {
-    expect(checkChallenge({ expiresAt: future, attempts: 1, verifiedAt: null, consumedAt: null })).toBeNull();
+    expect(
+      checkChallenge({ expiresAt: future, attempts: 1, verifiedAt: null, consumedAt: null }),
+    ).toBeNull();
   });
 
   it("weigert een verlopen code", () => {
-    expect(checkChallenge({ expiresAt: past, attempts: 0, verifiedAt: null, consumedAt: null })).toBe("EXPIRED");
+    expect(
+      checkChallenge({ expiresAt: past, attempts: 0, verifiedAt: null, consumedAt: null }),
+    ).toBe("EXPIRED");
   });
 
   it("weigert na het maximale aantal pogingen (zesde poging kan niet slagen)", () => {
     expect(
-      checkChallenge({ expiresAt: future, attempts: MAX_ATTEMPTS, verifiedAt: null, consumedAt: null }),
+      checkChallenge({
+        expiresAt: future,
+        attempts: MAX_ATTEMPTS,
+        verifiedAt: null,
+        consumedAt: null,
+      }),
     ).toBe("TOO_MANY_ATTEMPTS");
     expect(MAX_ATTEMPTS).toBe(5);
   });
 
   it("weigert hergebruik van een gebruikte code", () => {
     expect(
-      checkChallenge({ expiresAt: future, attempts: 0, verifiedAt: new Date().toISOString(), consumedAt: null }),
+      checkChallenge({
+        expiresAt: future,
+        attempts: 0,
+        verifiedAt: new Date().toISOString(),
+        consumedAt: null,
+      }),
     ).toBe("ALREADY_USED");
     expect(
-      checkChallenge({ expiresAt: future, attempts: 0, verifiedAt: null, consumedAt: new Date().toISOString() }),
+      checkChallenge({
+        expiresAt: future,
+        attempts: 0,
+        verifiedAt: null,
+        consumedAt: new Date().toISOString(),
+      }),
     ).toBe("ALREADY_USED");
   });
 });
@@ -98,6 +117,8 @@ describe("code en hash", () => {
     expect(hashesMatch(hash, hashCode(id, phone, "123456"))).toBe(true);
     expect(hashesMatch(hash, hashCode(id, phone, "123457"))).toBe(false);
     expect(hashesMatch(hash, hashCode(id, "+31600000000", "123456"))).toBe(false);
-    expect(hashesMatch(hash, hashCode("22222222-2222-2222-2222-222222222222", phone, "123456"))).toBe(false);
+    expect(
+      hashesMatch(hash, hashCode("22222222-2222-2222-2222-222222222222", phone, "123456")),
+    ).toBe(false);
   });
 });
