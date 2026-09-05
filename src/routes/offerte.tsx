@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { submitLead } from "@/lib/leads.functions";
+import { startPhoneVerification, verifyPhoneCode } from "@/lib/phone-verify.functions";
 import { CATEGORY_LABEL } from "@/lib/lead-pricing";
 import { formatEuro } from "@/lib/home-savings";
 
@@ -153,6 +154,7 @@ function OffertePage() {
           ))}
         </ol>
 
+        {!verify && (
         <form
           onSubmit={handleSubmit}
           className="mt-5 rounded-3xl bg-background p-6 sm:p-8"
@@ -298,6 +300,53 @@ function OffertePage() {
             )}
           </div>
         </form>
+        )}
+
+        {verify && (
+          <section
+            className="mt-5 rounded-3xl bg-background p-6 sm:p-8"
+            style={{ boxShadow: "var(--shadow-panel-lg)" }}
+          >
+            <h2 className="font-display text-lg font-bold text-ink">Bevestig je telefoonnummer</h2>
+            <p className="mt-1.5 text-sm text-moss/75">
+              We hebben een code van 6 cijfers gestuurd naar {verify.phoneMasked}. Je aanvraag gaat pas
+              naar installateurs nadat je het nummer bevestigt.
+            </p>
+
+            <div className="mt-5 max-w-xs space-y-1.5">
+              <Label htmlFor="code">Verificatiecode</Label>
+              <Input
+                id="code"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                placeholder="123456"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              />
+            </div>
+
+            {verifyError && (
+              <p className="mt-3 text-sm font-medium" style={{ color: "#b3261e" }} role="alert">
+                {verifyError}
+              </p>
+            )}
+
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                onClick={handleVerify}
+                disabled={busy || code.length !== 6}
+                style={{ backgroundColor: "#4f8f62", color: "white" }}
+              >
+                {busy ? "Controleren…" : "Bevestig en verstuur"}
+              </Button>
+              <Button type="button" variant="ghost" className="text-moss" onClick={handleResend} disabled={busy}>
+                Nieuwe code sturen
+              </Button>
+            </div>
+          </section>
+        )}
 
         <p className="mt-6 text-center text-sm text-moss/70">
           Installateur? <Link to="/auth" className="font-semibold text-leaf hover:underline">Log in op het partnerdashboard</Link>
