@@ -419,6 +419,7 @@ export type Database = {
           panel_count: number | null
           phone: string
           phone_verified: boolean
+          phone_verified_at: string | null
           postcode: string
           purchase_count: number
           region_code: string | null
@@ -452,6 +453,7 @@ export type Database = {
           panel_count?: number | null
           phone: string
           phone_verified?: boolean
+          phone_verified_at?: string | null
           postcode: string
           purchase_count?: number
           region_code?: string | null
@@ -485,6 +487,7 @@ export type Database = {
           panel_count?: number | null
           phone?: string
           phone_verified?: boolean
+          phone_verified_at?: string | null
           postcode?: string
           purchase_count?: number
           region_code?: string | null
@@ -496,35 +499,58 @@ export type Database = {
       phone_verifications: {
         Row: {
           attempts: number
+          code_hash: string | null
+          consumed_at: string | null
           created_at: string
           expires_at: string
           id: string
+          last_sent_at: string
+          lead_id: string | null
           phone: string
+          send_count: number
           token: string
           updated_at: string
           verified_at: string | null
         }
         Insert: {
           attempts?: number
+          code_hash?: string | null
+          consumed_at?: string | null
           created_at?: string
           expires_at?: string
           id?: string
+          last_sent_at?: string
+          lead_id?: string | null
           phone: string
+          send_count?: number
           token?: string
           updated_at?: string
           verified_at?: string | null
         }
         Update: {
           attempts?: number
+          code_hash?: string | null
+          consumed_at?: string | null
           created_at?: string
           expires_at?: string
           id?: string
+          last_sent_at?: string
+          lead_id?: string | null
           phone?: string
+          send_count?: number
           token?: string
           updated_at?: string
           verified_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "phone_verifications_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       postcode_geo: {
         Row: {

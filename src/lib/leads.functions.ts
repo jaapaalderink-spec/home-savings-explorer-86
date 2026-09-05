@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-
 const leadSchema = z.object({
   firstName: z.string().trim().min(2).max(60),
   lastName: z.string().trim().min(2).max(60),
@@ -32,12 +31,30 @@ const leadSchema = z.object({
 
 export type LeadInput = z.infer<typeof leadSchema>;
 
+/**
+ * Slaat de aanvraag op en start de sms-verificatie.
+ * De lead wordt hier NIET verdeeld; dat gebeurt pas na een geslaagde verificatie.
+ */
 export const submitLead = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => leadSchema.parse(data))
   .handler(async ({ data }) => {
-    const { insertLead, distributeLead } = await import("@/lib/leads.server");
-    const leadId = await insertLead(data);
-    const result = await distributeLead(leadId);
-    return { ok: true, assigned: result.assigned, state: result.state };
-  });
+    const { normalizeDutchMobile } = await import("@/lib/phone");
+    const phone = normalizeDutchMobile(data.phone);
+    if (!phone) {
+      throw new Error("Vul een geldig Nederlands mobiel nummer in, bijvoorbeeld 06 12345678.");
+    }
 
+    const { insertLead } = await import("@/lib/leads.server");
+    const { createChallenge } = await import("@/lib/phone-verify.server");
+    const leadId = await insertLead({ ...data, phone });
+    const challenge = await createChallenge(leadId, phone);
+
+    const { maskPhone } = await import("@/lib/phone");
+    return {
+      ok: true,
+      needsVerification: true as const,
+      token: challenge.token,
+      expiresAt: challenge.expiresAt,
+      phoneMasked: maskPhone(phone),
+    };
+  });

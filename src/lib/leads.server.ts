@@ -58,10 +58,15 @@ export async function distributeLead(leadId: string) {
 
   const { data: lead } = await db
     .from("leads")
-    .select("id, categories, region_code, lead_type, max_partners")
+    .select("id, categories, region_code, lead_type, max_partners, phone_verified")
     .eq("id", leadId)
     .maybeSingle();
   if (!lead) return { assigned: 0, state: "new" as const };
+
+  // Verdedigende poort: een lead zonder geverifieerd telefoonnummer wordt nooit verdeeld.
+  if (lead.phone_verified !== true) {
+    throw new Error("LEAD_PHONE_NOT_VERIFIED");
+  }
 
   const categories = lead.categories ?? [];
   const price = leadTypePrice(lead.lead_type);
@@ -72,7 +77,10 @@ export async function distributeLead(leadId: string) {
       db.from("companies").select("id, monthly_lead_limit, active"),
       db.from("company_regions").select("company_id, region_code"),
       db.from("company_products").select("company_id, category, active, monthly_max"),
-      db.from("lead_purchases").select("company_id, created_at, lead:leads(categories)").gte("created_at", since),
+      db
+        .from("lead_purchases")
+        .select("company_id, created_at, lead:leads(categories)")
+        .gte("created_at", since),
     ]);
 
   const usedThisMonth = new Map<string, number>();
@@ -120,7 +128,8 @@ export async function distributeLead(leadId: string) {
     if (error) console.error("assign failed", company.id, error.message);
   }
 
-  const state = winners.length === 0 ? "new" : winners.length < lead.max_partners ? "underfilled" : "assigned";
+  const state =
+    winners.length === 0 ? "new" : winners.length < lead.max_partners ? "underfilled" : "assigned";
   await db
     .from("leads")
     .update({ state, distributed_at: new Date().toISOString() })
