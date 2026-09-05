@@ -99,8 +99,15 @@ suite("betalingen (echte database, nagebootste Mollie)", () => {
   });
 
   afterAll(async () => {
-    if (created.invoices.length)
+    if (created.invoices.length) {
+      await admin.query(`UPDATE invoices SET active_payment_id = NULL WHERE id = ANY($1::uuid[])`, [
+        created.invoices,
+      ]);
+      await admin.query(`DELETE FROM payments WHERE invoice_id = ANY($1::uuid[])`, [
+        created.invoices,
+      ]);
       await admin.query(`DELETE FROM invoices WHERE id = ANY($1::uuid[])`, [created.invoices]);
+    }
     if (created.companies.length)
       await admin.query(`DELETE FROM companies WHERE id = ANY($1::uuid[])`, [created.companies]);
     await admin.end();
