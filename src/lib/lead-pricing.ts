@@ -8,6 +8,13 @@ export const LEAD_TYPE_PRICE: Record<"shared_2" | "shared_4", number> = {
   shared_4: 40,
 };
 
+/**
+ * Proefperiode: de eerste N leads die een bedrijf ooit toegewezen krijgt zijn
+ * gratis. Levenslang, niet per maand. De database is hierin gezaghebbend
+ * (`public.trial_lead_allowance()`); deze constante is alleen voor weergave.
+ */
+export const TRIAL_LEAD_ALLOWANCE = 10;
+
 export const LEAD_TYPE_LABEL: Record<"shared_2" | "shared_4", string> = {
   shared_2: "Exclusief (max 2 partners)",
   shared_4: "Gedeeld (max 4 partners)",
@@ -23,7 +30,15 @@ export const CATEGORY_LABEL: Record<string, string> = {
   boiler: "Warmteboiler",
 };
 
-export const CATEGORIES = ["solar", "heatpump", "battery", "ev", "ehms", "airco", "boiler"] as const;
+export const CATEGORIES = [
+  "solar",
+  "heatpump",
+  "battery",
+  "ev",
+  "ehms",
+  "airco",
+  "boiler",
+] as const;
 
 /**
  * Abonnementen: een vast maandbedrag met een aantal leads inbegrepen.
@@ -43,7 +58,9 @@ export function planByName(name: string) {
 
 /** Prijs per lead voor dit leadtype (ex btw). */
 export function leadTypePrice(type: string | null | undefined): number {
-  return LEAD_TYPE_PRICE[(type as "shared_2" | "shared_4") ?? "shared_4"] ?? LEAD_TYPE_PRICE.shared_4;
+  return (
+    LEAD_TYPE_PRICE[(type as "shared_2" | "shared_4") ?? "shared_4"] ?? LEAD_TYPE_PRICE.shared_4
+  );
 }
 
 /** Aantal partners dat een lead maximaal mag ontvangen. */

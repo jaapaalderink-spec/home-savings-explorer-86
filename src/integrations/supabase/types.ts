@@ -306,6 +306,7 @@ export type Database = {
           first_contact_at: string | null
           id: string
           invoice_id: string | null
+          is_trial: boolean
           lead_id: string
           note: string | null
           opened_at: string | null
@@ -314,6 +315,7 @@ export type Database = {
           response_score: number
           source: Database["public"]["Enums"]["purchase_source"]
           status: Database["public"]["Enums"]["lead_status"]
+          trial_sequence_number: number | null
           updated_at: string
         }
         Insert: {
@@ -328,6 +330,7 @@ export type Database = {
           first_contact_at?: string | null
           id?: string
           invoice_id?: string | null
+          is_trial?: boolean
           lead_id: string
           note?: string | null
           opened_at?: string | null
@@ -336,6 +339,7 @@ export type Database = {
           response_score?: number
           source?: Database["public"]["Enums"]["purchase_source"]
           status?: Database["public"]["Enums"]["lead_status"]
+          trial_sequence_number?: number | null
           updated_at?: string
         }
         Update: {
@@ -350,6 +354,7 @@ export type Database = {
           first_contact_at?: string | null
           id?: string
           invoice_id?: string | null
+          is_trial?: boolean
           lead_id?: string
           note?: string | null
           opened_at?: string | null
@@ -358,6 +363,7 @@ export type Database = {
           response_score?: number
           source?: Database["public"]["Enums"]["purchase_source"]
           status?: Database["public"]["Enums"]["lead_status"]
+          trial_sequence_number?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -664,9 +670,11 @@ export type Database = {
         }
         Returns: {
           billable: boolean
+          is_trial: boolean
           price_ex_vat: number
           purchase_id: string
           result: string
+          trial_sequence_number: number
         }[]
       }
       current_company_id: { Args: never; Returns: string }
@@ -677,6 +685,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      trial_lead_allowance: { Args: never; Returns: number }
     }
     Enums: {
       app_role: "admin" | "owner" | "account_manager"

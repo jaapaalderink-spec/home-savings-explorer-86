@@ -28,6 +28,8 @@ export type Allocation = {
   purchaseId: string | null;
   priceExVat: number;
   billable: boolean;
+  isTrial: boolean;
+  trialSequenceNumber: number | null;
 };
 
 /** Uitkomsten waarbij verder zoeken naar een volgende partner zinloos is. */
@@ -58,7 +60,14 @@ export async function allocateLeadToCompany(params: {
   if (error) {
     // Het databasevangnet (trigger) meldt een volle lead als uitzondering.
     if (error.message?.includes("LEAD_FULL")) {
-      return { result: "lead_full", purchaseId: null, priceExVat: 0, billable: false };
+      return {
+        result: "lead_full",
+        purchaseId: null,
+        priceExVat: 0,
+        billable: false,
+        isTrial: false,
+        trialSequenceNumber: null,
+      };
     }
     console.error("allocate_lead_to_company failed", error.message);
     throw new Error("Toewijzen van de lead is mislukt.");
@@ -70,6 +79,8 @@ export async function allocateLeadToCompany(params: {
         purchase_id: string | null;
         price_ex_vat: number | null;
         billable: boolean | null;
+        is_trial: boolean | null;
+        trial_sequence_number: number | null;
       }
     | null
     | undefined;
@@ -81,5 +92,7 @@ export async function allocateLeadToCompany(params: {
     purchaseId: row.purchase_id ?? null,
     priceExVat: Number(row.price_ex_vat ?? 0),
     billable: row.billable === true,
+    isTrial: row.is_trial === true,
+    trialSequenceNumber: row.trial_sequence_number ?? null,
   };
 }

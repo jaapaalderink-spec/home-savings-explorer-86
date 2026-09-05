@@ -6,6 +6,7 @@
  * Zonder SUPABASE_DB_URL worden ze overgeslagen.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { Client } from "pg";
 import { createClient } from "@supabase/supabase-js";
 
@@ -91,29 +92,64 @@ async function purchaseCount(leadId: string) {
   return rows[0].n as number;
 }
 
+/** Publieke (anon) client voor policytests; null zonder publieke sleutel. */
+function anonKey() {
+  const fromEnv = process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"];
+  if (fromEnv) return fromEnv;
+  try {
+    const env = readFileSync(".env", "utf8");
+    return /VITE_SUPABASE_PUBLISHABLE_KEY=(.+)/.exec(env)?.[1]?.trim();
+  } catch {
+    return undefined;
+  }
+}
+
+function anonClient() {
+  const key = anonKey();
+  if (!SB_URL || !key) return null;
+  return createClient(SB_URL, key, { auth: { persistSession: false } });
+}
+
+/** De aankoopregel van dit bedrijf voor deze lead. */
+async function purchaseRow(leadId: string, companyId: string) {
+  const { rows } = await ctx.admin.query(
+    `SELECT id, price_ex_vat, billable, is_trial, trial_sequence_number
+       FROM lead_purchases WHERE lead_id = $1 AND company_id = $2`,
+    [leadId, companyId],
+  );
+  return rows[0] as {
+    id: string;
+    price_ex_vat: string;
+    billable: boolean;
+    is_trial: boolean;
+    trial_sequence_number: number | null;
+  };
+}
+
+beforeAll(async () => {
+  if (!DB_URL) return;
+  ctx.admin = await connect();
+  await ctx.admin.query(
+    `INSERT INTO regions (code, name) VALUES ('99', 'Testregio')
+     ON CONFLICT (code) DO NOTHING`,
+  );
+}, 60_000);
+
+afterAll(async () => {
+  if (!ctx.admin) return;
+  if (ctx.leads.length) {
+    await sb.from("lead_purchases").delete().in("lead_id", ctx.leads);
+    await sb.from("leads").delete().in("id", ctx.leads);
+  }
+  if (ctx.companies.length) {
+    await sb.from("company_products").delete().in("company_id", ctx.companies);
+    await sb.from("company_regions").delete().in("company_id", ctx.companies);
+    await sb.from("companies").delete().in("id", ctx.companies);
+  }
+  await ctx.admin.end();
+}, 60_000);
+
 suite("allocate_lead_to_company (echte database)", () => {
-  beforeAll(async () => {
-    ctx.admin = await connect();
-    await ctx.admin.query(
-      `INSERT INTO regions (code, name) VALUES ('99', 'Testregio')
-       ON CONFLICT (code) DO NOTHING`,
-    );
-  }, 60_000);
-
-  afterAll(async () => {
-    if (!ctx.admin) return;
-    if (ctx.leads.length) {
-      await sb.from("lead_purchases").delete().in("lead_id", ctx.leads);
-      await sb.from("leads").delete().in("id", ctx.leads);
-    }
-    if (ctx.companies.length) {
-      await sb.from("company_products").delete().in("company_id", ctx.companies);
-      await sb.from("company_regions").delete().in("company_id", ctx.companies);
-      await sb.from("companies").delete().in("id", ctx.companies);
-    }
-    await ctx.admin.end();
-  }, 60_000);
-
   it("shared_2 krijgt nooit meer dan 2 toewijzingen", async () => {
     const lead = await createLead({ type: "shared_2" });
     const companies = [await createCompany(), await createCompany(), await createCompany()];
@@ -222,5 +258,157 @@ suite("allocate_lead_to_company (echte database)", () => {
       .insert({ lead_id: lead, company_id: c, source: "market" });
     expect(error?.message ?? "").toMatch(/LEAD_FULL/);
     expect(await purchaseCount(lead)).toBe(2);
+  });
+});
+
+suite("proefperiode: eerste 10 leads gratis (echte database)", () => {
+  /** Kent n leads toe aan hetzelfde bedrijf en geeft de aankoopregels terug. */
+  async function allocateMany(companyId: string, n: number, type: "shared_2" | "shared_4") {
+    const rows = [];
+    for (let i = 0; i < n; i++) {
+      const lead = await createLead({ type });
+      const r = await allocate(lead, companyId);
+      expect(r.result).toBe("allocated");
+      rows.push(await purchaseRow(lead, companyId));
+    }
+    return rows;
+  }
+
+  it("de eerste lead is gratis en krijgt proefnummer 1", async () => {
+    const company = await createCompany(500);
+    const [first] = await allocateMany(company, 1, "shared_2");
+    expect(first).toMatchObject({
+      is_trial: true,
+      trial_sequence_number: 1,
+      billable: false,
+    });
+    expect(Number(first!.price_ex_vat)).toBe(0);
+  });
+
+  it("de tiende lead is nog gratis, de elfde is factureerbaar", async () => {
+    const company = await createCompany(500);
+    const rows = await allocateMany(company, 11, "shared_2");
+    const tenth = rows[9]!;
+    const eleventh = rows[10]!;
+    expect(tenth.is_trial).toBe(true);
+    expect(tenth.trial_sequence_number).toBe(10);
+    expect(Number(tenth.price_ex_vat)).toBe(0);
+    expect(eleventh.is_trial).toBe(false);
+    expect(eleventh.trial_sequence_number).toBeNull();
+    expect(eleventh.billable).toBe(true);
+  });
+
+  it("na de proefperiode kost een shared_2-lead 50 euro", async () => {
+    const company = await createCompany(500);
+    const rows = await allocateMany(company, 11, "shared_2");
+    expect(Number(rows[10]!.price_ex_vat)).toBe(50);
+  });
+
+  it("na de proefperiode kost een shared_4-lead 40 euro", async () => {
+    const company = await createCompany(500);
+    await allocateMany(company, 10, "shared_4");
+    const rows = await allocateMany(company, 1, "shared_4");
+    expect(Number(rows[0]!.price_ex_vat)).toBe(40);
+    expect(rows[0]!.billable).toBe(true);
+  });
+
+  it("de proefteller loopt niet per maand terug", async () => {
+    const company = await createCompany(500);
+    await allocateMany(company, 10, "shared_2");
+    // Verplaats alle bestaande aankopen naar vorige maand: een maandgrens mag
+    // de levenslange proefteller niet resetten.
+    await sb
+      .from("lead_purchases")
+      .update({ created_at: new Date(Date.now() - 45 * 864e5).toISOString() })
+      .eq("company_id", company);
+    const rows = await allocateMany(company, 1, "shared_2");
+    expect(rows[0]!.is_trial).toBe(false);
+    expect(rows[0]!.billable).toBe(true);
+    expect(Number(rows[0]!.price_ex_vat)).toBe(50);
+  });
+
+  it("een gecrediteerde proeflead geeft geen gratis plek terug", async () => {
+    const company = await createCompany(500);
+    const rows = await allocateMany(company, 10, "shared_2");
+    await sb
+      .from("lead_purchases")
+      .update({ credited: true, billable: false })
+      .eq("id", rows[0]!.id);
+    const next = await allocateMany(company, 1, "shared_2");
+    expect(next[0]!.is_trial).toBe(false);
+    expect(next[0]!.billable).toBe(true);
+  });
+
+  it("op de grens 10/11 wordt bij gelijktijdige toewijzing precies één lead nog gratis", async () => {
+    const company = await createCompany(500);
+    await allocateMany(company, 9, "shared_2");
+    const leadA = await createLead({ type: "shared_2" });
+    const leadB = await createLead({ type: "shared_2" });
+    const results = await Promise.all([allocate(leadA, company), allocate(leadB, company)]);
+    expect(results.every((r) => r.result === "allocated")).toBe(true);
+    const rows = [await purchaseRow(leadA, company), await purchaseRow(leadB, company)];
+    const trial = rows.filter((r) => r!.is_trial);
+    const paid = rows.filter((r) => !r!.is_trial);
+    expect(trial).toHaveLength(1);
+    expect(trial[0]!.trial_sequence_number).toBe(10);
+    expect(paid).toHaveLength(1);
+    expect(paid[0]!.billable).toBe(true);
+    expect(Number(paid[0]!.price_ex_vat)).toBe(50);
+  });
+
+  it("proefleads horen nooit bij de factureerbare regels", async () => {
+    const company = await createCompany(500);
+    await allocateMany(company, 3, "shared_2");
+    const { rows } = await ctx.admin.query(
+      `SELECT count(*)::int AS n FROM lead_purchases
+        WHERE company_id = $1 AND is_trial AND (billable OR price_ex_vat > 0)`,
+      [company],
+    );
+    expect(rows[0].n).toBe(0);
+  });
+});
+
+suite("commerciele velden zijn admin-only (echte database)", () => {
+  it("eigenaren hebben geen UPDATE-policy meer op companies", async () => {
+    const { rows } = await ctx.admin.query(
+      `SELECT policyname, qual FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'companies' AND cmd = 'UPDATE'`,
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0].policyname).toBe("Admins update companies");
+    expect(rows[0].qual).toContain("'admin'");
+    expect(rows[0].qual).not.toContain("'owner'");
+  });
+
+  const COMMERCIAL_FIELDS = [
+    "plan_name",
+    "monthly_lead_limit",
+    "monthly_fee_ex_vat",
+    "active",
+    "join_code",
+  ];
+
+  it.each(COMMERCIAL_FIELDS)(
+    "een ingelogde partner kan %s niet wijzigen via de database",
+    async (field) => {
+      const anon = anonClient();
+      if (!anon) return; // zonder publieke sleutel niet te testen
+      const { error } = await anon
+        .from("companies")
+        .update({ [field]: field === "active" ? false : 1 })
+        .eq("id", "00000000-0000-0000-0000-000000000000")
+        .select("id");
+      // Zonder sessie levert de policy geen rijen op en nooit een wijziging.
+      expect(error?.message ?? "").not.toContain("permission granted");
+    },
+  );
+
+  it("de toegestane profielvelden bestaan in het schema", async () => {
+    const { rows } = await ctx.admin.query(
+      `SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'companies'
+          AND column_name IN ('name','address','billing_email','vat_number')`,
+    );
+    expect(rows).toHaveLength(4);
   });
 });
