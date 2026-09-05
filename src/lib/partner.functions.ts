@@ -679,6 +679,15 @@ export const updatePurchase = createServerFn({ method: "POST" })
     if (error) throw new Error("Bijwerken is mislukt.");
     const row = Array.isArray(rows) ? rows[0] : rows;
     if (row?.result === "not_found") throw new Error("Lead niet gevonden.");
+
+    // Kwaliteitsscore bijwerken: direct bij een eindstatus, anders alleen als verouderd.
+    const quality = await import("@/lib/quality.server");
+    if (data.status === "won" || data.status === "lost") {
+      await quality.recalculateQualityScores(profile.company_id).catch(() => undefined);
+    } else {
+      await quality.refreshQualityScoreIfStale(profile.company_id);
+    }
+
     return { ok: true, changed: row?.changed === true };
   });
 
