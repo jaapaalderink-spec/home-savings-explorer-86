@@ -109,6 +109,11 @@ function OffertePage() {
     setBusy(true);
     try {
       const result = await submitLead({ data: form });
+      if (!result.needsVerification) {
+        // Geen verificatiestap: toon een normale bevestiging.
+        navigate({ to: "/bedankt", replace: true });
+        return;
+      }
       setVerify({ token: result.token, phoneMasked: result.phoneMasked });
       setCode("");
       setVerifyError(null);

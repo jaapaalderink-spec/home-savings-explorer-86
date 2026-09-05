@@ -65,7 +65,9 @@ export async function distributeLead(leadId: string) {
 
   const { data: lead } = await db
     .from("leads")
-    .select("id, categories, region_code, lead_type, max_partners, phone_verified, state")
+    .select(
+      "id, categories, region_code, lead_type, max_partners, phone_verified, state, fraud_status, duplicate_of_lead_id",
+    )
     .eq("id", leadId)
     .maybeSingle();
   if (!lead) return { assigned: 0, state: "new" as const, outcome: "lead_not_found" as const };
@@ -73,6 +75,14 @@ export async function distributeLead(leadId: string) {
   // Verdedigende poort: een lead zonder geverifieerd telefoonnummer wordt nooit verdeeld.
   if (lead.phone_verified !== true) {
     throw new Error("LEAD_PHONE_NOT_VERIFIED");
+  }
+
+  // Fraudepoort (de database weigert dit ook zelf, dit voorkomt nutteloos werk).
+  if (lead.fraud_status === "blocked") {
+    return { assigned: 0, state: lead.state, outcome: "lead_blocked" as const };
+  }
+  if (lead.duplicate_of_lead_id) {
+    return { assigned: 0, state: lead.state, outcome: "lead_duplicate" as const };
   }
 
   const categories = lead.categories ?? [];

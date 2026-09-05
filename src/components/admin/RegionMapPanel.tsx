@@ -30,7 +30,10 @@ export function RegionMapPanel({ filters }: { filters: LeadFilters }) {
   if (isLoading) return <Skeleton className="h-[26rem] w-full rounded-2xl" />;
   if (error || !data) {
     return (
-      <p className="rounded-2xl bg-background p-6 text-sm text-moss/70" style={{ boxShadow: "var(--shadow-panel)" }}>
+      <p
+        className="rounded-2xl bg-background p-6 text-sm text-moss/70"
+        style={{ boxShadow: "var(--shadow-panel)" }}
+      >
         Regio-data kon niet worden geladen.
       </p>
     );
@@ -44,7 +47,10 @@ export function RegionMapPanel({ filters }: { filters: LeadFilters }) {
         </Suspense>
       </ClientOnly>
 
-      <div className="overflow-x-auto rounded-2xl bg-background" style={{ boxShadow: "var(--shadow-panel)" }}>
+      <div
+        className="overflow-x-auto rounded-2xl bg-background"
+        style={{ boxShadow: "var(--shadow-panel)" }}
+      >
         <table className="w-full text-sm">
           <thead className="text-left text-xs uppercase tracking-wide text-moss/60">
             <tr>

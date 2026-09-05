@@ -5,7 +5,10 @@ import { listCoverageGaps } from "@/lib/admin.functions";
 import { CATEGORY_LABEL } from "@/lib/lead-pricing";
 
 export function CoverageGaps() {
-  const { data, isLoading } = useQuery({ queryKey: ["coverage-gaps"], queryFn: () => listCoverageGaps() });
+  const { data, isLoading } = useQuery({
+    queryKey: ["coverage-gaps"],
+    queryFn: () => listCoverageGaps(),
+  });
 
   if (isLoading) return <Skeleton className="h-48 w-full rounded-2xl" />;
 
@@ -18,11 +21,16 @@ export function CoverageGaps() {
         Combinaties van gebied en categorie met aanvragen, maar zonder actieve partner.
       </p>
       {!data || data.length === 0 ? (
-        <p className="mt-3 text-sm text-moss/70">Alle aanvragen hebben minstens één passende partner.</p>
+        <p className="mt-3 text-sm text-moss/70">
+          Alle aanvragen hebben minstens één passende partner.
+        </p>
       ) : (
         <ul className="mt-3 divide-y divide-moss/10">
           {data.slice(0, 25).map((g) => (
-            <li key={`${g.region}-${g.category}`} className="flex items-center justify-between gap-3 py-2 text-sm">
+            <li
+              key={`${g.region}-${g.category}`}
+              className="flex items-center justify-between gap-3 py-2 text-sm"
+            >
               <span className="font-semibold text-ink">
                 {g.region} · {g.regionName}
               </span>

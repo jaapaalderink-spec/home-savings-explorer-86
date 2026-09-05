@@ -15,6 +15,8 @@ export const ALLOCATION_RESULTS = [
   "already_assigned",
   "lead_full",
   "lead_not_verified",
+  "lead_blocked",
+  "lead_duplicate",
   "lead_not_eligible",
   "lead_not_found",
   "company_not_eligible",
@@ -37,6 +39,8 @@ export function isLeadTerminal(result: AllocationResult): boolean {
   return (
     result === "lead_full" ||
     result === "lead_not_verified" ||
+    result === "lead_blocked" ||
+    result === "lead_duplicate" ||
     result === "lead_not_eligible" ||
     result === "lead_not_found"
   );

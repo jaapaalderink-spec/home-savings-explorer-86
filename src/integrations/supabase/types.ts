@@ -397,6 +397,41 @@ export type Database = {
           },
         ]
       }
+      lead_risk_events: {
+        Row: {
+          created_at: string
+          id: string
+          lead_id: string
+          metadata: Json
+          score: number
+          signal: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_id: string
+          metadata?: Json
+          score?: number
+          signal: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_id?: string
+          metadata?: Json
+          score?: number
+          signal?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_risk_events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           airco_rooms: number | null
@@ -411,13 +446,18 @@ export type Database = {
           created_at: string
           current_heating: string | null
           distributed_at: string | null
+          duplicate_of_lead_id: string | null
           email: string
+          email_normalized: string | null
           estimated_savings: number
           ev_status: string | null
           first_name: string
+          fraud_score: number
+          fraud_status: Database["public"]["Enums"]["lead_fraud_status"]
           house_number: string | null
           house_type: string | null
           id: string
+          identity_fingerprint: string | null
           last_name: string
           lead_type: Database["public"]["Enums"]["lead_type"]
           max_partners: number
@@ -429,6 +469,7 @@ export type Database = {
           postcode: string
           purchase_count: number
           region_code: string | null
+          review_required: boolean
           smart_devices: string[]
           state: Database["public"]["Enums"]["lead_state"]
         }
@@ -445,13 +486,18 @@ export type Database = {
           created_at?: string
           current_heating?: string | null
           distributed_at?: string | null
+          duplicate_of_lead_id?: string | null
           email: string
+          email_normalized?: string | null
           estimated_savings?: number
           ev_status?: string | null
           first_name: string
+          fraud_score?: number
+          fraud_status?: Database["public"]["Enums"]["lead_fraud_status"]
           house_number?: string | null
           house_type?: string | null
           id?: string
+          identity_fingerprint?: string | null
           last_name: string
           lead_type?: Database["public"]["Enums"]["lead_type"]
           max_partners?: number
@@ -463,6 +509,7 @@ export type Database = {
           postcode: string
           purchase_count?: number
           region_code?: string | null
+          review_required?: boolean
           smart_devices?: string[]
           state?: Database["public"]["Enums"]["lead_state"]
         }
@@ -479,13 +526,18 @@ export type Database = {
           created_at?: string
           current_heating?: string | null
           distributed_at?: string | null
+          duplicate_of_lead_id?: string | null
           email?: string
+          email_normalized?: string | null
           estimated_savings?: number
           ev_status?: string | null
           first_name?: string
+          fraud_score?: number
+          fraud_status?: Database["public"]["Enums"]["lead_fraud_status"]
           house_number?: string | null
           house_type?: string | null
           id?: string
+          identity_fingerprint?: string | null
           last_name?: string
           lead_type?: Database["public"]["Enums"]["lead_type"]
           max_partners?: number
@@ -497,10 +549,19 @@ export type Database = {
           postcode?: string
           purchase_count?: number
           region_code?: string | null
+          review_required?: boolean
           smart_devices?: string[]
           state?: Database["public"]["Enums"]["lead_state"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "leads_duplicate_of_lead_id_fkey"
+            columns: ["duplicate_of_lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       phone_verifications: {
         Row: {
@@ -704,6 +765,7 @@ export type Database = {
         | "overdue"
         | "cancelled"
         | "credited"
+      lead_fraud_status: "clean" | "review" | "blocked"
       lead_state: "new" | "assigned" | "underfilled" | "cancelled"
       lead_status: "new" | "contacted" | "quoted" | "won" | "lost"
       lead_type: "shared_2" | "shared_4"
@@ -853,6 +915,7 @@ export const Constants = {
         "cancelled",
         "credited",
       ],
+      lead_fraud_status: ["clean", "review", "blocked"],
       lead_state: ["new", "assigned", "underfilled", "cancelled"],
       lead_status: ["new", "contacted", "quoted", "won", "lost"],
       lead_type: ["shared_2", "shared_4"],

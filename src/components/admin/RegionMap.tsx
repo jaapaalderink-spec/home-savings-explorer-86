@@ -125,7 +125,6 @@ export default function RegionMap({
     (p) => (p.lng === null || p.lat === null) && !geocoded[p.postcode],
   ).length;
 
-
   useEffect(() => {
     if (!container.current || !TOKEN || map.current) return;
     mapboxgl.accessToken = TOKEN;
@@ -208,7 +207,10 @@ export default function RegionMap({
 
   if (!TOKEN) {
     return (
-      <p className="rounded-2xl bg-background p-6 text-sm text-moss/80" style={{ boxShadow: "var(--shadow-panel)" }}>
+      <p
+        className="rounded-2xl bg-background p-6 text-sm text-moss/80"
+        style={{ boxShadow: "var(--shadow-panel)" }}
+      >
         Koppel Mapbox om de kaart te tonen. Zonder kaart zie je de regio's in de tabel hieronder.
       </p>
     );
@@ -256,7 +258,10 @@ export default function RegionMap({
           className="h-[26rem] w-full overflow-hidden rounded-2xl"
           style={{ boxShadow: "var(--shadow-panel)" }}
         />
-        <aside className="rounded-2xl bg-background p-4" style={{ boxShadow: "var(--shadow-panel)" }}>
+        <aside
+          className="rounded-2xl bg-background p-4"
+          style={{ boxShadow: "var(--shadow-panel)" }}
+        >
           {mode === "postcode" ? (
             !selectedPostcode ? (
               <p className="text-sm text-moss/70">
@@ -273,7 +278,9 @@ export default function RegionMap({
                   {selectedPostcode.leads} aanvragen · {selectedPostcode.distributed} verdeeld
                 </p>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-moss/60">Categorieën</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-moss/60">
+                    Categorieën
+                  </p>
                   <ul className="mt-1 space-y-0.5 text-moss/80">
                     {Object.entries(selectedPostcode.categories).map(([cat, n]) => (
                       <li key={cat}>
@@ -301,7 +308,9 @@ export default function RegionMap({
                 {selectedRegion.partners} partners
               </p>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-moss/60">Categorieën</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-moss/60">
+                  Categorieën
+                </p>
                 <ul className="mt-1 space-y-0.5 text-moss/80">
                   {Object.entries(selectedRegion.categories).map(([cat, n]) => (
                     <li key={cat}>
@@ -311,7 +320,10 @@ export default function RegionMap({
                 </ul>
               </div>
               {selectedRegion.missingCategories.length > 0 && (
-                <p className="rounded-xl p-2 text-xs font-semibold text-ink" style={{ backgroundColor: "#f7e3bd" }}>
+                <p
+                  className="rounded-xl p-2 text-xs font-semibold text-ink"
+                  style={{ backgroundColor: "#f7e3bd" }}
+                >
                   Geen partner voor:{" "}
                   {selectedRegion.missingCategories.map((c) => CATEGORY_LABEL[c] ?? c).join(", ")}
                 </p>
