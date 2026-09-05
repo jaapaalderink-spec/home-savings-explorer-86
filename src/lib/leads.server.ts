@@ -58,10 +58,16 @@ export async function distributeLead(leadId: string) {
 
   const { data: lead } = await db
     .from("leads")
-    .select("id, categories, region_code, lead_type, max_partners")
+    .select("id, categories, region_code, lead_type, max_partners, phone_verified")
     .eq("id", leadId)
     .maybeSingle();
   if (!lead) return { assigned: 0, state: "new" as const };
+
+  // Verdedigende poort: een lead zonder geverifieerd telefoonnummer wordt nooit verdeeld.
+  if (lead.phone_verified !== true) {
+    throw new Error("LEAD_PHONE_NOT_VERIFIED");
+  }
+
 
   const categories = lead.categories ?? [];
   const price = leadTypePrice(lead.lead_type);
