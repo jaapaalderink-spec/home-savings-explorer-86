@@ -52,6 +52,9 @@ function OffertePage() {
 
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [verify, setVerify] = useState<{ token: string; phoneMasked: string } | null>(null);
+  const [code, setCode] = useState("");
+  const [verifyError, setVerifyError] = useState<string | null>(null);
   const [form, setForm] = useState(() => ({
     categories: (search.get("cats") ?? "")
       .split(",")
@@ -101,14 +104,50 @@ function OffertePage() {
     e.preventDefault();
     setBusy(true);
     try {
-      await submitLead({ data: form });
-      navigate({ to: "/bedankt", replace: true });
+      const result = await submitLead({ data: form });
+      setVerify({ token: result.token, phoneMasked: result.phoneMasked });
+      setCode("");
+      setVerifyError(null);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Verzenden mislukt");
     } finally {
       setBusy(false);
     }
   }
+
+  async function handleVerify() {
+    if (!verify) return;
+    setBusy(true);
+    setVerifyError(null);
+    try {
+      const result = await verifyPhoneCode({ data: { token: verify.token, code } });
+      if (result.ok) {
+        navigate({ to: "/bedankt", replace: true });
+      } else {
+        setVerifyError(result.error);
+      }
+    } catch (error) {
+      setVerifyError(error instanceof Error ? error.message : "Controleren mislukt");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleResend() {
+    if (!verify) return;
+    setBusy(true);
+    setVerifyError(null);
+    try {
+      await startPhoneVerification({ data: { token: verify.token } });
+      setCode("");
+      toast.success("We hebben een nieuwe code gestuurd.");
+    } catch (error) {
+      setVerifyError(error instanceof Error ? error.message : "Nieuwe code aanvragen mislukt");
+    } finally {
+      setBusy(false);
+    }
+  }
+
 
   return (
     <main className="min-h-dvh" style={{ backgroundColor: "var(--color-cloud)" }}>
