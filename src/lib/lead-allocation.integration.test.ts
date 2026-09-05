@@ -6,6 +6,7 @@
  * Zonder SUPABASE_DB_URL worden ze overgeslagen.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { Client } from "pg";
 import { createClient } from "@supabase/supabase-js";
 
@@ -92,8 +93,19 @@ async function purchaseCount(leadId: string) {
 }
 
 /** Publieke (anon) client voor policytests; null zonder publieke sleutel. */
+function anonKey() {
+  const fromEnv = process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"];
+  if (fromEnv) return fromEnv;
+  try {
+    const env = readFileSync(".env", "utf8");
+    return /VITE_SUPABASE_PUBLISHABLE_KEY=(.+)/.exec(env)?.[1]?.trim();
+  } catch {
+    return undefined;
+  }
+}
+
 function anonClient() {
-  const key = process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"];
+  const key = anonKey();
   if (!SB_URL || !key) return null;
   return createClient(SB_URL, key, { auth: { persistSession: false } });
 }
@@ -114,29 +126,30 @@ async function purchaseRow(leadId: string, companyId: string) {
   };
 }
 
+beforeAll(async () => {
+  if (!DB_URL) return;
+  ctx.admin = await connect();
+  await ctx.admin.query(
+    `INSERT INTO regions (code, name) VALUES ('99', 'Testregio')
+     ON CONFLICT (code) DO NOTHING`,
+  );
+}, 60_000);
+
+afterAll(async () => {
+  if (!ctx.admin) return;
+  if (ctx.leads.length) {
+    await sb.from("lead_purchases").delete().in("lead_id", ctx.leads);
+    await sb.from("leads").delete().in("id", ctx.leads);
+  }
+  if (ctx.companies.length) {
+    await sb.from("company_products").delete().in("company_id", ctx.companies);
+    await sb.from("company_regions").delete().in("company_id", ctx.companies);
+    await sb.from("companies").delete().in("id", ctx.companies);
+  }
+  await ctx.admin.end();
+}, 60_000);
+
 suite("allocate_lead_to_company (echte database)", () => {
-  beforeAll(async () => {
-    ctx.admin = await connect();
-    await ctx.admin.query(
-      `INSERT INTO regions (code, name) VALUES ('99', 'Testregio')
-       ON CONFLICT (code) DO NOTHING`,
-    );
-  }, 60_000);
-
-  afterAll(async () => {
-    if (!ctx.admin) return;
-    if (ctx.leads.length) {
-      await sb.from("lead_purchases").delete().in("lead_id", ctx.leads);
-      await sb.from("leads").delete().in("id", ctx.leads);
-    }
-    if (ctx.companies.length) {
-      await sb.from("company_products").delete().in("company_id", ctx.companies);
-      await sb.from("company_regions").delete().in("company_id", ctx.companies);
-      await sb.from("companies").delete().in("id", ctx.companies);
-    }
-    await ctx.admin.end();
-  }, 60_000);
-
   it("shared_2 krijgt nooit meer dan 2 toewijzingen", async () => {
     const lead = await createLead({ type: "shared_2" });
     const companies = [await createCompany(), await createCompany(), await createCompany()];
@@ -249,14 +262,6 @@ suite("allocate_lead_to_company (echte database)", () => {
 });
 
 suite("proefperiode: eerste 10 leads gratis (echte database)", () => {
-  beforeAll(async () => {
-    ctx.admin = ctx.admin ?? (await connect());
-    await ctx.admin.query(
-      `INSERT INTO regions (code, name) VALUES ('99', 'Testregio')
-       ON CONFLICT (code) DO NOTHING`,
-    );
-  }, 60_000);
-
   /** Kent n leads toe aan hetzelfde bedrijf en geeft de aankoopregels terug. */
   async function allocateMany(companyId: string, n: number, type: "shared_2" | "shared_4") {
     const rows = [];
@@ -364,10 +369,6 @@ suite("proefperiode: eerste 10 leads gratis (echte database)", () => {
 });
 
 suite("commerciele velden zijn admin-only (echte database)", () => {
-  beforeAll(async () => {
-    ctx.admin = ctx.admin ?? (await connect());
-  }, 60_000);
-
   it("eigenaren hebben geen UPDATE-policy meer op companies", async () => {
     const { rows } = await ctx.admin.query(
       `SELECT policyname, qual FROM pg_policies
