@@ -3,14 +3,14 @@
  * Zonder SUPABASE_DB_URL / servicesleutel worden ze overgeslagen.
  */
 import { afterAll, describe, expect, it } from "vitest";
-import { Client } from "pg";
 import { createClient } from "@supabase/supabase-js";
 import { computeQualityScore, rankEligibleCompaniesForLead } from "@/lib/quality-policy";
 
-const DB_URL = process.env["SUPABASE_DB_URL"];
 const SB_URL = process.env["SUPABASE_URL"];
 const SB_KEY = process.env["SUPABASE_SERVICE_ROLE_KEY"];
-const suite = DB_URL && SB_URL && SB_KEY ? describe : describe.skip;
+const ANON_KEY =
+  process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+const suite = SB_URL && SB_KEY && ANON_KEY ? describe : describe.skip;
 
 const sb = createClient(SB_URL ?? "http://localhost", SB_KEY ?? "none", {
   auth: { persistSession: false },
