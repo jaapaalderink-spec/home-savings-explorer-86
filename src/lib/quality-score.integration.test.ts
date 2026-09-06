@@ -3,14 +3,14 @@
  * Zonder SUPABASE_DB_URL / servicesleutel worden ze overgeslagen.
  */
 import { afterAll, describe, expect, it } from "vitest";
-import { Client } from "pg";
 import { createClient } from "@supabase/supabase-js";
 import { computeQualityScore, rankEligibleCompaniesForLead } from "@/lib/quality-policy";
 
-const DB_URL = process.env["SUPABASE_DB_URL"];
 const SB_URL = process.env["SUPABASE_URL"];
 const SB_KEY = process.env["SUPABASE_SERVICE_ROLE_KEY"];
-const suite = DB_URL && SB_URL && SB_KEY ? describe : describe.skip;
+const ANON_KEY =
+  process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+const suite = SB_URL && SB_KEY && ANON_KEY ? describe : describe.skip;
 
 const sb = createClient(SB_URL ?? "http://localhost", SB_KEY ?? "none", {
   auth: { persistSession: false },
@@ -162,9 +162,12 @@ suite("kwaliteitsscore tegen de echte database", () => {
       for (let i = 0; i < 4; i++) {
         const { purchaseId } = await makePurchase(company);
         if (i === 0) {
-          const { error } = await sb
-            .from("complaints")
-            .insert({ purchase_id: purchaseId, company_id: company, reason: "unreachable", status });
+          const { error } = await sb.from("complaints").insert({
+            purchase_id: purchaseId,
+            company_id: company,
+            reason: "unreachable",
+            status,
+          });
           if (error) throw new Error(error.message);
         }
       }
@@ -188,35 +191,27 @@ suite("kwaliteitsscore tegen de echte database", () => {
     await storeScore(mine);
     await storeScore(other);
 
-    const db = new Client({ connectionString: DB_URL, ssl: { rejectUnauthorized: false } });
-    await db.connect();
-    let writable = 0;
-    let visible: string[] = [];
-    try {
-      await db.query("BEGIN");
-      await db.query("SET LOCAL ROLE authenticated");
-      await db.query("SELECT set_config('request.jwt.claims', $1, true)", [
-        JSON.stringify({ sub: crypto.randomUUID(), role: "authenticated" }),
-      ]);
-      try {
-        const res = await db.query(
-          "UPDATE company_quality_scores SET overall_score = 100 WHERE company_id = $1",
-          [mine],
-        );
-        writable = res.rowCount ?? 0;
-      } catch {
-        writable = 0;
-      }
-      const rows = await db.query("SELECT company_id FROM company_quality_scores");
-      visible = rows.rows.map((r: { company_id: string }) => r.company_id);
-    } finally {
-      await db.query("ROLLBACK").catch(() => undefined);
-      await db.end();
-    }
+    // Client zonder sessie (anon): mag niets zien en niets wijzigen.
+    const anon = createClient(SB_URL!, ANON_KEY!, { auth: { persistSession: false } });
+    const { data: visible } = await anon
+      .from("company_quality_scores")
+      .select("company_id")
+      .in("company_id", [mine, other]);
+    const { data: updated } = await anon
+      .from("company_quality_scores")
+      .update({ overall_score: 100 })
+      .eq("company_id", mine)
+      .select("company_id");
 
-    expect(writable).toBe(0);
-    expect(visible).not.toContain(other);
-    expect(visible).not.toContain(mine);
+    expect(visible ?? []).toHaveLength(0);
+    expect(updated ?? []).toHaveLength(0);
+
+    const { data: after } = await sb
+      .from("company_quality_scores")
+      .select("overall_score")
+      .eq("company_id", mine)
+      .single();
+    expect(Number(after!.overall_score)).not.toBe(100);
   });
 
   it("16. beheer ziet alle deelscores", async () => {

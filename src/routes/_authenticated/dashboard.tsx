@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LogOut, Store, Inbox, Users, ShieldCheck } from "lucide-react";
+import { LogOut, Store, Inbox, Users, ShieldCheck, Gauge } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,6 +12,7 @@ import { Marketplace } from "@/components/dashboard/Marketplace";
 import { MyLeads } from "@/components/dashboard/MyLeads";
 import { TeamOverview } from "@/components/dashboard/TeamOverview";
 import { AdminOverview } from "@/components/dashboard/AdminOverview";
+import { MyPerformance } from "@/components/dashboard/MyPerformance";
 import { TRIAL_LEAD_ALLOWANCE, planByName } from "@/lib/lead-pricing";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -29,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
-type TabId = "market" | "leads" | "team" | "admin";
+type TabId = "market" | "leads" | "performance" | "team" | "admin";
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -60,6 +61,7 @@ function DashboardPage() {
   const tabs: Array<{ id: TabId; label: string; icon: typeof Store; show: boolean }> = [
     { id: "market", label: "Leadmarkt", icon: Store, show: true },
     { id: "leads", label: "Mijn leads", icon: Inbox, show: true },
+    { id: "performance", label: "Prestaties", icon: Gauge, show: true },
     { id: "team", label: "Team", icon: Users, show: isOwner || isAdmin },
     { id: "admin", label: "Platform", icon: ShieldCheck, show: isAdmin },
   ];
@@ -164,6 +166,7 @@ function DashboardPage() {
             <section className="mt-5">
               {tab === "market" && <Marketplace remaining={remaining} />}
               {tab === "leads" && <MyLeads />}
+              {tab === "performance" && <MyPerformance />}
               {tab === "team" && (
                 <TeamOverview joinCode={isOwner ? data.company.join_code : null} />
               )}

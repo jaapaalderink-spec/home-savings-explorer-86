@@ -69,7 +69,7 @@ async function logQualityAudit(
   metadata: Record<string, unknown>,
 ) {
   const db = await adminDb();
-  const { error } = await db.rpc("log_audit_event", {
+  const { error } = await db.rpc("log_audit_event_api", {
     p_event: event,
     p_entity: "company",
     p_entity_id: companyId,
