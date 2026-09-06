@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
-type TabId = "market" | "leads" | "team" | "admin";
+type TabId = "market" | "leads" | "performance" | "team" | "admin";
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -61,6 +61,7 @@ function DashboardPage() {
   const tabs: Array<{ id: TabId; label: string; icon: typeof Store; show: boolean }> = [
     { id: "market", label: "Leadmarkt", icon: Store, show: true },
     { id: "leads", label: "Mijn leads", icon: Inbox, show: true },
+    { id: "performance", label: "Prestaties", icon: Gauge, show: true },
     { id: "team", label: "Team", icon: Users, show: isOwner || isAdmin },
     { id: "admin", label: "Platform", icon: ShieldCheck, show: isAdmin },
   ];
@@ -165,6 +166,7 @@ function DashboardPage() {
             <section className="mt-5">
               {tab === "market" && <Marketplace remaining={remaining} />}
               {tab === "leads" && <MyLeads />}
+              {tab === "performance" && <MyPerformance />}
               {tab === "team" && (
                 <TeamOverview joinCode={isOwner ? data.company.join_code : null} />
               )}

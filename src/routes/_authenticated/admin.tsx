@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { BarChart3, FileText, Map, Table } from "lucide-react";
+import { BarChart3, FileText, Gauge, Map, Table } from "lucide-react";
 import { PlatformStats } from "@/components/admin/PlatformStats";
 import { AdminLeadsTable } from "@/components/admin/AdminLeadsTable";
 import { RegionMapPanel } from "@/components/admin/RegionMapPanel";
 import { CoverageGaps } from "@/components/admin/CoverageGaps";
 import { BillingAdmin } from "@/components/admin/BillingAdmin";
+import { QualityScores } from "@/components/admin/QualityScores";
 import { AdminOverview } from "@/components/dashboard/AdminOverview";
 import { FilterBar } from "@/components/admin/FilterBar";
 import type { LeadFilters } from "@/components/admin/filters";
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type TabId = "overview" | "leads" | "map" | "billing";
+type TabId = "overview" | "leads" | "map" | "quality" | "billing";
 
 function AdminPage() {
   const [tab, setTab] = useState<TabId>("overview");
@@ -38,6 +39,7 @@ function AdminPage() {
     { id: "overview", label: "Overzicht", icon: BarChart3 },
     { id: "leads", label: "Aanvragen", icon: Table },
     { id: "map", label: "Kaart & regio's", icon: Map },
+    { id: "quality", label: "Kwaliteit", icon: Gauge },
     { id: "billing", label: "Facturatie", icon: FileText },
   ];
 
@@ -81,6 +83,7 @@ function AdminPage() {
         )}
         {tab === "leads" && <AdminLeadsTable filters={filters} />}
         {tab === "map" && <RegionMapPanel filters={filters} />}
+        {tab === "quality" && <QualityScores />}
         {tab === "billing" && <BillingAdmin />}
       </div>
     </main>
