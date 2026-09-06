@@ -12,6 +12,7 @@ import { Marketplace } from "@/components/dashboard/Marketplace";
 import { MyLeads } from "@/components/dashboard/MyLeads";
 import { TeamOverview } from "@/components/dashboard/TeamOverview";
 import { AdminOverview } from "@/components/dashboard/AdminOverview";
+import { MyPerformance } from "@/components/dashboard/MyPerformance";
 import { TRIAL_LEAD_ALLOWANCE, planByName } from "@/lib/lead-pricing";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
