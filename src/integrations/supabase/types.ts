@@ -1332,6 +1332,18 @@ export type Database = {
             }
             Returns: string
           }
+      log_audit_event_api: {
+        Args: {
+          p_actor?: string
+          p_company?: string
+          p_entity: string
+          p_entity_id: string
+          p_event: string
+          p_metadata?: Json
+          p_source?: string
+        }
+        Returns: string
+      }
       mark_purchase_opened: {
         Args: { p_actor?: string; p_company_id: string; p_purchase_id: string }
         Returns: boolean
