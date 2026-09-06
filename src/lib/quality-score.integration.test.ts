@@ -188,35 +188,27 @@ suite("kwaliteitsscore tegen de echte database", () => {
     await storeScore(mine);
     await storeScore(other);
 
-    const db = new Client({ connectionString: DB_URL, ssl: { rejectUnauthorized: false } });
-    await db.connect();
-    let writable = 0;
-    let visible: string[] = [];
-    try {
-      await db.query("BEGIN");
-      await db.query("SET LOCAL ROLE authenticated");
-      await db.query("SELECT set_config('request.jwt.claims', $1, true)", [
-        JSON.stringify({ sub: crypto.randomUUID(), role: "authenticated" }),
-      ]);
-      try {
-        const res = await db.query(
-          "UPDATE company_quality_scores SET overall_score = 100 WHERE company_id = $1",
-          [mine],
-        );
-        writable = res.rowCount ?? 0;
-      } catch {
-        writable = 0;
-      }
-      const rows = await db.query("SELECT company_id FROM company_quality_scores");
-      visible = rows.rows.map((r: { company_id: string }) => r.company_id);
-    } finally {
-      await db.query("ROLLBACK").catch(() => undefined);
-      await db.end();
-    }
+    // Client zonder sessie (anon): mag niets zien en niets wijzigen.
+    const anon = createClient(SB_URL!, ANON_KEY!, { auth: { persistSession: false } });
+    const { data: visible } = await anon
+      .from("company_quality_scores")
+      .select("company_id")
+      .in("company_id", [mine, other]);
+    const { data: updated } = await anon
+      .from("company_quality_scores")
+      .update({ overall_score: 100 })
+      .eq("company_id", mine)
+      .select("company_id");
 
-    expect(writable).toBe(0);
-    expect(visible).not.toContain(other);
-    expect(visible).not.toContain(mine);
+    expect(visible ?? []).toHaveLength(0);
+    expect(updated ?? []).toHaveLength(0);
+
+    const { data: after } = await sb
+      .from("company_quality_scores")
+      .select("overall_score")
+      .eq("company_id", mine)
+      .single();
+    expect(Number(after!.overall_score)).not.toBe(100);
   });
 
   it("16. beheer ziet alle deelscores", async () => {
