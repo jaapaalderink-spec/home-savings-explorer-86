@@ -50,8 +50,8 @@ export function MyPerformance() {
     <section className="rounded-3xl bg-background p-5" style={{ boxShadow: "var(--shadow-panel)" }}>
       <h2 className="font-display text-lg font-bold text-ink">Jouw prestaties</h2>
       <p className="mt-1 text-sm text-moss/70">
-        Deze cijfers gaan alleen over je eigen aanvragen. Snel reageren en aanvragen netjes
-        afronden helpt je het meest.
+        Deze cijfers gaan alleen over je eigen aanvragen. Snel reageren en aanvragen netjes afronden
+        helpt je het meest.
       </p>
 
       {!score ? (

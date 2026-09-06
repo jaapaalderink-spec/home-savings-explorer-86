@@ -162,9 +162,12 @@ suite("kwaliteitsscore tegen de echte database", () => {
       for (let i = 0; i < 4; i++) {
         const { purchaseId } = await makePurchase(company);
         if (i === 0) {
-          const { error } = await sb
-            .from("complaints")
-            .insert({ purchase_id: purchaseId, company_id: company, reason: "unreachable", status });
+          const { error } = await sb.from("complaints").insert({
+            purchase_id: purchaseId,
+            company_id: company,
+            reason: "unreachable",
+            status,
+          });
           if (error) throw new Error(error.message);
         }
       }

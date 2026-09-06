@@ -17,10 +17,14 @@ export const Route = createFileRoute("/_authenticated/admin")({
       { title: "Platformbeheer — Onafhankelijke Offerte" },
       {
         name: "description",
-        content: "Overzicht van alle aanvragen, regio's, partners, dekkingsgaten en facturatie op het platform.",
+        content:
+          "Overzicht van alle aanvragen, regio's, partners, dekkingsgaten en facturatie op het platform.",
       },
       { property: "og:title", content: "Platformbeheer — Onafhankelijke Offerte" },
-      { property: "og:description", content: "Alle aanvragen, regio's, partners en facturatie in één beheerdashboard." },
+      {
+        property: "og:description",
+        content: "Alle aanvragen, regio's, partners en facturatie in één beheerdashboard.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
@@ -50,7 +54,10 @@ function AdminPage() {
           <h1 className="font-display text-2xl font-bold text-ink">Platformbeheer</h1>
           <p className="text-sm text-moss/70">Alle aanvragen, regio's, partners en facturatie.</p>
         </div>
-        <Link to="/dashboard" className="text-sm font-semibold text-leaf underline-offset-4 hover:underline">
+        <Link
+          to="/dashboard"
+          className="text-sm font-semibold text-leaf underline-offset-4 hover:underline"
+        >
           Naar partnerdashboard
         </Link>
       </header>
