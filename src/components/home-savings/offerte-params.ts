@@ -1,7 +1,7 @@
 import type { AdviceResult } from "@/lib/home-savings";
-import { combineSavings } from "@/lib/home-savings";
 import { CATEGORIES, CONTRACT_META } from "./categories";
 import type { HomeInputs } from "./CategoryPanel";
+import { calculateScenario } from "@/lib/home-savings/scenario";
 
 /** bouw een /offerte-link die álle ingevulde hotspot-gegevens meeneemt */
 export function buildOfferteHref(
@@ -12,37 +12,27 @@ export function buildOfferteHref(
   const owned: Record<string, boolean> = inputs?.owned ?? {};
   const items = [...CATEGORIES, CONTRACT_META];
 
-  const counted: string[] = items
-    .map((c) => c.id as string)
-    .filter((id) => results[id] != null && !owned[id]);
-  if (extraCat && !counted.includes(extraCat) && !owned[extraCat] && extraCat !== "contract") {
+  const counted: string[] = items.map((c) => c.id as string).filter((id) => results[id] != null);
+  if (extraCat && !counted.includes(extraCat) && extraCat !== "contract") {
     counted.push(extraCat);
   }
 
-  const total = combineSavings(
-    Object.fromEntries(counted.map((id) => [id, results[id]?.practicalSavings ?? 0])),
-  );
-
-  // warmtepomp gebruikt gas/elektrisch/anders; het offerteformulier gebruikt gasketel/hybride/stadswarmte/warmtepomp
-  const heatingMap: Record<string, string> = { gas: "gasketel", elektrisch: "warmtepomp" };
-  const heating = heatingMap[inputs.heatpump.currentHeating] ?? "";
+  const total = calculateScenario(inputs.profile, counted).savings;
 
   const params = new URLSearchParams({
     cats: counted.join(","),
-    owned: Object.keys(owned).filter((k) => owned[k]).join(","),
-    houseType: inputs.heatpump.houseType,
+    owned: Object.keys(owned)
+      .filter((k) => owned[k])
+      .join(","),
     contract: inputs.contract.type,
-    consumption: String(inputs.solar.annualConsumptionKwh),
-    feedin: String(inputs.battery.annualFeedInKwh),
-    panels: String(inputs.solar.panelCount),
-    heating,
-    buildYear: String(inputs.heatpump.buildYear),
-    energyLabel: inputs.heatpump.energyLabel,
-    evStatus: inputs.ev.evStatus,
-    evKm: String(inputs.ev.annualKm),
-    aircoRooms: String(inputs.airco.roomCount),
-    batteryGoals: inputs.battery.goals.join(","),
-    total: String(total),
+    consumption: String(inputs.profile.consumption),
+    feedin: String(Math.round(calculateScenario(inputs.profile, []).before.exports)),
+    panels: String(inputs.profile.existingPanels),
+    heating: inputs.profile.heating,
+    evStatus: inputs.profile.hasEv ? "nu" : "nogniet",
+    evKm: String(inputs.profile.evKm),
+    total: String(Math.round(total)),
+    energyProfile: JSON.stringify(inputs.profile),
   });
 
   return `/offerte?${params.toString()}`;

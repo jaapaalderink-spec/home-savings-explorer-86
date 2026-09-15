@@ -33,7 +33,9 @@ export async function insertLead(data: LeadInput): Promise<string> {
       smart_devices: data.smartDevices ?? [],
       battery_goals: data.batteryGoals ?? [],
       estimated_savings: data.estimatedSavings ?? 0,
-      notes: data.notes || null,
+      notes: data.energyProfile
+        ? `${data.notes || ""}\n\nEnergieprofiel (maandmodel v1):\n${JSON.stringify(data.energyProfile, null, 2)}`
+        : data.notes || null,
       region_code: regionFromPostcode(postcode),
       lead_type: leadType,
       max_partners: maxPartnersFor(leadType),

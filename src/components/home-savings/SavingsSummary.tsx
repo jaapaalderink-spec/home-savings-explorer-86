@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Wand2, Check, Circle, Home } from "lucide-react";
 import { CATEGORIES, CONTRACT_META } from "./categories";
-import { AdviceResult, formatEuro, combineSavings } from "@/lib/home-savings";
+import { AdviceResult, formatEuro } from "@/lib/home-savings";
 import { CountUp } from "./CountUp";
 import { buildOfferteHref } from "./offerte-params";
 import type { HomeInputs } from "./CategoryPanel";
+import { calculateScenario } from "@/lib/home-savings/scenario";
 
 interface Props {
   results: Record<string, AdviceResult | null>;
@@ -16,16 +17,16 @@ export function SavingsSummary({ results, inputs, onPick }: Props) {
   const owned: Record<string, boolean> = inputs?.owned ?? {};
   const items = [...CATEGORIES, CONTRACT_META];
 
-  const counted = items
-    .map((c) => c.id)
-    .filter((id) => results[id] != null && !owned[id]);
+  const counted = items.map((c) => c.id).filter((id) => results[id] != null);
 
-  const total = combineSavings(
-    Object.fromEntries(counted.map((id) => [id, results[id]?.practicalSavings ?? 0])),
-  );
+  const scenario = calculateScenario(inputs.profile, counted);
+  const total = scenario.savings;
 
   const doneCount = items.filter(
-    (c) => results[c.id] != null || owned[c.id] || (c.id === "contract" && inputs.contract.type !== "onbekend"),
+    (c) =>
+      results[c.id] != null ||
+      owned[c.id] ||
+      (c.id === "contract" && inputs.contract.type !== "onbekend"),
   ).length;
 
   const offerteHref = buildOfferteHref(inputs, results);
@@ -53,6 +54,26 @@ export function SavingsSummary({ results, inputs, onPick }: Props) {
       </div>
 
       <h2 className="mt-6 text-sm font-semibold text-ink">Checklist</h2>
+      {counted.length > 0 && (
+        <div className="mt-3 space-y-2 text-sm text-moss">
+          <p>
+            Huidige energiekosten: {formatEuro(scenario.before.cost)}/jaar. Na maatregelen:{" "}
+            {formatEuro(scenario.after.cost)}/jaar.
+          </p>
+          <p>
+            Gevoeligheidsbereik: {formatEuro(scenario.range.min)} tot{" "}
+            {formatEuro(scenario.range.max)}/jaar.
+          </p>
+          <p>
+            Netafname: {Math.round(scenario.before.imports)} naar{" "}
+            {Math.round(scenario.after.imports)} kWh. Gas: {Math.round(scenario.before.gas)} naar{" "}
+            {Math.round(scenario.after.gas)} m3.
+          </p>
+          {scenario.notes.map((note) => (
+            <p key={note}>{note}</p>
+          ))}
+        </div>
+      )}
       <ul className="mt-2 space-y-2">
         {items.map((c) => {
           const r = results[c.id];
@@ -91,7 +112,7 @@ export function SavingsSummary({ results, inputs, onPick }: Props) {
                   </span>
                 </span>
                 <span className="shrink-0 text-sm font-bold text-leaf">
-                  {isOwned || !r ? (
+                  {!r ? (
                     <span className="text-xs font-normal text-moss/50">—</span>
                   ) : (
                     <>
@@ -107,12 +128,20 @@ export function SavingsSummary({ results, inputs, onPick }: Props) {
       </ul>
 
       <div className="mt-6 flex flex-col items-center gap-3">
-        <Button asChild size="lg" className="w-full sm:w-auto" style={{ backgroundColor: "#4f8f62", color: "white" }}>
+        <Button
+          asChild
+          size="lg"
+          className="w-full sm:w-auto"
+          style={{ backgroundColor: "#4f8f62", color: "white" }}
+        >
           <a href={offerteHref}>
             Vraag gratis offertes aan voor jouw situatie <ArrowRight size={18} className="ml-1.5" />
           </a>
         </Button>
-        <a href="/offerte" className="inline-flex items-center gap-1 text-sm text-moss/70 underline-offset-2 hover:text-moss hover:underline">
+        <a
+          href="/offerte"
+          className="inline-flex items-center gap-1 text-sm text-moss/70 underline-offset-2 hover:text-moss hover:underline"
+        >
           <Wand2 size={14} /> Liever alles achter elkaar invullen? Start de volledige wizard
         </a>
       </div>

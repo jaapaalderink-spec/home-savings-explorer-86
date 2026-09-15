@@ -3,17 +3,14 @@ import { useState, useCallback } from "react";
 import { ShieldCheck } from "lucide-react";
 import { HouseScene } from "@/components/home-savings/HouseScene";
 import { MobileTiles } from "@/components/home-savings/MobileTiles";
-import { CategoryPanel, EMPTY_INPUTS, type HomeInputs } from "@/components/home-savings/CategoryPanel";
+import {
+  CategoryPanel,
+  EMPTY_INPUTS,
+  type HomeInputs,
+} from "@/components/home-savings/CategoryPanel";
 import { ContractCard } from "@/components/home-savings/ContractCard";
 import { SavingsSummary } from "@/components/home-savings/SavingsSummary";
-import {
-  AdviceResult,
-  calculateSolarAdvice,
-  calculateHeatPumpAdvice,
-  calculateBatteryAdvice,
-  calculateEVAdvice,
-  calculateAircoAdvice,
-} from "@/lib/home-savings";
+import { calculateScenario } from "@/lib/home-savings/scenario";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -40,54 +37,46 @@ export const Route = createFileRoute("/")({
 function HomePage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [inputs, setInputs] = useState<HomeInputs>(EMPTY_INPUTS);
-  const [results, setResults] = useState<Record<string, AdviceResult | null>>({});
+  const [selected, setSelected] = useState<string[]>([]);
+  const results = calculateScenario(inputs.profile, selected).results;
 
   const handleChange = useCallback((patch: Partial<HomeInputs>) => {
     setInputs((prev) => {
       const next = { ...prev, ...patch };
-      // woningtype hergebruiken tussen warmtepomp en airco
-      if (patch.heatpump?.houseType && patch.heatpump.houseType !== prev.heatpump.houseType) {
-        next.airco = { ...next.airco, houseType: patch.heatpump.houseType };
-      } else if (patch.airco?.houseType && patch.airco.houseType !== prev.airco.houseType) {
-        next.heatpump = { ...next.heatpump, houseType: patch.airco.houseType };
+      if (patch.owned) {
+        const p = { ...next.profile };
+        if (patch.owned["solar"] !== prev.owned["solar"]) {
+          p.existingPanels = patch.owned["solar"] ? Math.max(p.existingPanels, 8) : 0;
+          p.newPanels = patch.owned["solar"] ? 0 : 8;
+        }
+        if (patch.owned["battery"] !== prev.owned["battery"]) {
+          p.existingBattery = patch.owned["battery"] ? Math.max(p.existingBattery, 5) : 0;
+          p.newBattery = patch.owned["battery"] ? 0 : 5;
+        }
+        if (patch.owned["heatpump"] !== prev.owned["heatpump"])
+          p.heating = patch.owned["heatpump"] ? "hybrid" : "gas";
+        if (patch.owned["ev"] !== prev.owned["ev"]) p.hasCharger = !!patch.owned["ev"];
+        if (patch.owned["airco"] !== prev.owned["airco"]) p.hasAirco = !!patch.owned["airco"];
+        next.profile = p;
       }
-      // stroomverbruik hergebruiken tussen zonnepanelen en thuisbatterij
-      if (
-        patch.solar?.annualConsumptionKwh !== undefined &&
-        patch.solar.annualConsumptionKwh !== prev.solar.annualConsumptionKwh
-      ) {
-        next.battery = { ...next.battery, annualConsumptionKwh: patch.solar.annualConsumptionKwh };
-      } else if (
-        patch.battery?.annualConsumptionKwh !== undefined &&
-        patch.battery.annualConsumptionKwh !== prev.battery.annualConsumptionKwh
-      ) {
-        next.solar = { ...next.solar, annualConsumptionKwh: patch.battery.annualConsumptionKwh };
-      }
-      // "heb ik al" doorgeven aan de zonnepanelen-berekening
-      if (patch.owned && patch.owned["solar"] !== prev.owned["solar"]) {
-        next.solar = { ...next.solar, alreadyHasSolar: !!patch.owned["solar"] };
-      }
+      next.owned = {
+        ...next.owned,
+        solar: next.profile.existingPanels > 0,
+        battery: next.profile.existingBattery > 0,
+        heatpump: ["hybrid", "heatpump"].includes(next.profile.heating),
+        ev: next.profile.hasCharger,
+        airco: next.profile.hasAirco,
+      };
       return next;
     });
   }, []);
 
-  const handleCalculate = useCallback(
-    (id: string) => {
-      let res: AdviceResult | null = null;
-
-      if (id === "solar") res = calculateSolarAdvice(inputs.solar);
-      else if (id === "heatpump")
-        res = calculateHeatPumpAdvice({ ...inputs.heatpump, contract: inputs.contract.type });
-      else if (id === "battery")
-        res = calculateBatteryAdvice({ ...inputs.battery, contract: inputs.contract.type });
-      else if (id === "ev") res = calculateEVAdvice(inputs.ev);
-      else if (id === "airco") res = calculateAircoAdvice(inputs.airco);
-      // contract zelf levert geen apart bespaarbedrag op; het weegt mee in andere berekeningen.
-      if (!res) return;
-      setResults((prev) => ({ ...prev, [id]: res }));
-    },
-    [inputs],
-  );
+  const handleCalculate = useCallback((id: string) => {
+    if (id !== "contract")
+      setSelected((prev) =>
+        prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+      );
+  }, []);
 
   const doneFlags = Object.fromEntries(
     [...new Set([...Object.keys(results), ...Object.keys(inputs.owned)])].map((id) => [
@@ -102,10 +91,17 @@ function HomePage() {
       <header className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-5">
         <span className="font-display text-lg font-bold text-moss">Onafhankelijke Offerte</span>
         <span className="flex items-center gap-3">
-          <span className="hidden shrink-0 items-center gap-1.5 rounded-full bg-background px-3 py-1.5 text-xs font-medium text-moss sm:inline-flex" style={{ boxShadow: "var(--shadow-panel)" }}>
-            <ShieldCheck size={14} style={{ color: "#4f8f62" }} /> Vergelijk offertes van gecontroleerde installateurs
+          <span
+            className="hidden shrink-0 items-center gap-1.5 rounded-full bg-background px-3 py-1.5 text-xs font-medium text-moss sm:inline-flex"
+            style={{ boxShadow: "var(--shadow-panel)" }}
+          >
+            <ShieldCheck size={14} style={{ color: "#4f8f62" }} /> Vergelijk offertes van
+            gecontroleerde installateurs
           </span>
-          <Link to="/auth" className="shrink-0 text-xs font-semibold text-moss/80 underline-offset-2 hover:text-moss hover:underline">
+          <Link
+            to="/auth"
+            className="shrink-0 text-xs font-semibold text-moss/80 underline-offset-2 hover:text-moss hover:underline"
+          >
             Voor installateurs
           </Link>
         </span>
@@ -117,23 +113,26 @@ function HomePage() {
           Zie in één oogopslag hoeveel je kunt besparen
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-base text-moss/80 sm:text-lg">
-          Klik op je huis en ontdek per maatregel wat het jou oplevert — vrijblijvend en binnen 2 minuten.
+          Klik op je huis en ontdek per maatregel wat het jou oplevert — vrijblijvend en binnen 2
+          minuten.
         </p>
       </section>
 
       {/* lichte social proof, net onder de hero */}
       <ul className="mx-auto mt-4 flex max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-1.5 px-5 text-center text-xs font-medium text-moss sm:mt-5 sm:text-sm">
         <li className="inline-flex items-center gap-1.5">
-          <ShieldCheck size={14} style={{ color: "#4f8f62" }} aria-hidden="true" /> Gecontroleerde installateurs
+          <ShieldCheck size={14} style={{ color: "#4f8f62" }} aria-hidden="true" /> Gecontroleerde
+          installateurs
         </li>
         <li className="inline-flex items-center gap-1.5">
-          <ShieldCheck size={14} style={{ color: "#4f8f62" }} aria-hidden="true" /> Gratis en vrijblijvend vergelijken
+          <ShieldCheck size={14} style={{ color: "#4f8f62" }} aria-hidden="true" /> Gratis en
+          vrijblijvend vergelijken
         </li>
         <li className="hidden items-center gap-1.5 sm:inline-flex">
-          <ShieldCheck size={14} style={{ color: "#4f8f62" }} aria-hidden="true" /> Geen verplichtingen
+          <ShieldCheck size={14} style={{ color: "#4f8f62" }} aria-hidden="true" /> Geen
+          verplichtingen
         </li>
       </ul>
-
 
       {/* house scene */}
       <section className="mx-auto mt-6 max-w-5xl px-4 sm:px-5">
