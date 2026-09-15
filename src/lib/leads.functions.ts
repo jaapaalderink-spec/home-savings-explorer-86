@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { energyProfileSchema, calculateScenario } from "./home-savings/scenario";
 
 const leadSchema = z.object({
   firstName: z.string().trim().min(2).max(60),
@@ -17,15 +18,16 @@ const leadSchema = z.object({
   houseType: z.string().max(24).optional().default(""),
   currentHeating: z.string().max(24).optional().default(""),
   buildYear: z.number().int().min(1850).max(2035).optional(),
-  annualConsumptionKwh: z.number().int().min(0).max(30000).optional(),
-  annualFeedInKwh: z.number().int().min(0).max(30000).optional(),
-  panelCount: z.number().int().min(0).max(60).optional(),
+  annualConsumptionKwh: z.number().int().min(0).max(100000).optional(),
+  annualFeedInKwh: z.number().int().min(0).max(300000).optional(),
+  panelCount: z.number().int().min(0).max(100).optional(),
   evStatus: z.string().max(24).optional().default(""),
   annualKm: z.number().int().min(0).max(120000).optional(),
   aircoRooms: z.number().int().min(0).max(12).optional(),
   smartDevices: z.array(z.string().max(24)).max(12).optional().default([]),
   batteryGoals: z.array(z.string().max(24)).max(12).optional().default([]),
-  estimatedSavings: z.number().int().min(0).max(20000).optional().default(0),
+  estimatedSavings: z.number().int().min(-2000000).max(2000000).optional().default(0),
+  energyProfile: energyProfileSchema.optional(),
   notes: z.string().trim().max(1000).optional().default(""),
 });
 
@@ -38,6 +40,10 @@ export type LeadInput = z.infer<typeof leadSchema>;
 export const submitLead = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => leadSchema.parse(data))
   .handler(async ({ data }) => {
+    if (data.energyProfile)
+      data.estimatedSavings = Math.round(
+        calculateScenario(data.energyProfile, data.categories).savings,
+      );
     const { normalizeDutchMobile } = await import("@/lib/phone");
     const phone = normalizeDutchMobile(data.phone);
     if (!phone) {

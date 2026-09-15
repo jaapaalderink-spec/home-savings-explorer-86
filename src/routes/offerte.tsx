@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, Check, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -10,6 +10,8 @@ import { submitLead } from "@/lib/leads.functions";
 import { startPhoneVerification, verifyPhoneCode } from "@/lib/phone-verify.functions";
 import { CATEGORY_LABEL } from "@/lib/lead-pricing";
 import { formatEuro } from "@/lib/home-savings";
+import { calculateScenario, profileFromSearch } from "@/lib/home-savings/scenario";
+import { EnergyProfileForm } from "@/components/home-savings/EnergyProfileForm";
 
 export const Route = createFileRoute("/offerte")({
   head: () => ({
@@ -36,7 +38,6 @@ export const Route = createFileRoute("/offerte")({
 const CATEGORY_IDS = ["solar", "heatpump", "battery", "ev", "airco"] as const;
 
 const HOUSE_TYPES = ["rijtjeshuis", "hoekwoning", "vrijstaand", "appartement"];
-const HEATING = ["gasketel", "hybride", "stadswarmte", "warmtepomp"];
 const CONTRACTS = ["vast", "variabel", "dynamisch", "onbekend"];
 
 const selectClass =
@@ -49,16 +50,15 @@ function num(value: string | null, fallback: number): number {
 
 function OffertePage() {
   const navigate = useNavigate();
-  const search =
-    typeof window === "undefined"
-      ? new URLSearchParams()
-      : new URLSearchParams(window.location.search);
+  const searchString = useLocation({ select: (location) => location.searchStr });
+  const search = new URLSearchParams(searchString);
 
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
   const [verify, setVerify] = useState<{ token: string; phoneMasked: string } | null>(null);
   const [code, setCode] = useState("");
   const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [profile, setProfile] = useState(() => profileFromSearch(search));
   const [form, setForm] = useState(() => ({
     categories: (search.get("cats") ?? "")
       .split(",")
@@ -88,6 +88,7 @@ function OffertePage() {
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
+  const scenario = calculateScenario(profile, form.categories);
 
   const toggleCategory = (id: string) =>
     setForm((prev) => ({
@@ -108,7 +109,19 @@ function OffertePage() {
     e.preventDefault();
     setBusy(true);
     try {
-      const result = await submitLead({ data: form });
+      const result = await submitLead({
+        data: {
+          ...form,
+          energyProfile: profile,
+          annualConsumptionKwh: Math.round(profile.consumption),
+          annualFeedInKwh: Math.round(scenario.before.exports),
+          panelCount: Math.round(profile.existingPanels),
+          annualKm: Math.round(profile.evKm),
+          evStatus: profile.hasEv ? "nu" : "nogniet",
+          currentHeating: profile.heating,
+          estimatedSavings: Math.round(scenario.savings),
+        },
+      });
       if (!result.needsVerification) {
         // Geen verificatiestap: toon een normale bevestiging.
         navigate({ to: "/bedankt", replace: true });
@@ -176,12 +189,12 @@ function OffertePage() {
           Je aanvraag gaat naar maximaal 3 gecontroleerde installateurs. Je zit nergens aan vast.
         </p>
 
-        {form.estimatedSavings > 0 && (
+        {form.categories.length > 0 && (
           <p
             className="mt-4 inline-flex items-center gap-2 rounded-full bg-background px-4 py-2 text-sm font-semibold text-leaf"
             style={{ boxShadow: "var(--shadow-panel)" }}
           >
-            Geschat bespaarpotentieel: {formatEuro(form.estimatedSavings)} per jaar
+            Geschat bespaarpotentieel: {formatEuro(scenario.savings)} per jaar
           </p>
         )}
 
@@ -241,6 +254,18 @@ function OffertePage() {
 
             {step === 1 && (
               <div className="grid gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <EnergyProfileForm value={profile} onChange={setProfile} />
+                  <div className="mt-4 space-y-2 text-sm">
+                    <p>
+                      Energiekosten: {formatEuro(scenario.before.cost)} naar{" "}
+                      {formatEuro(scenario.after.cost)} per jaar.
+                    </p>
+                    {scenario.notes.map((note) => (
+                      <p key={note}>{note}</p>
+                    ))}
+                  </div>
+                </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="postcode">Postcode</Label>
                   <Input
@@ -283,21 +308,6 @@ function OffertePage() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="heating">Huidige verwarming</Label>
-                  <select
-                    id="heating"
-                    className={selectClass}
-                    value={form.currentHeating}
-                    onChange={(e) => set("currentHeating", e.target.value)}
-                  >
-                    {HEATING.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
                   <Label htmlFor="contract">Energiecontract</Label>
                   <select
                     id="contract"
@@ -321,39 +331,6 @@ function OffertePage() {
                     max={2035}
                     value={form.buildYear}
                     onChange={(e) => set("buildYear", Number(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="consumption">Stroomverbruik (kWh/jaar)</Label>
-                  <Input
-                    id="consumption"
-                    type="number"
-                    min={0}
-                    max={30000}
-                    value={form.annualConsumptionKwh}
-                    onChange={(e) => set("annualConsumptionKwh", Number(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="panels">Aantal zonnepanelen (nu)</Label>
-                  <Input
-                    id="panels"
-                    type="number"
-                    min={0}
-                    max={60}
-                    value={form.panelCount}
-                    onChange={(e) => set("panelCount", Number(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="feedin">Teruglevering (kWh/jaar)</Label>
-                  <Input
-                    id="feedin"
-                    type="number"
-                    min={0}
-                    max={30000}
-                    value={form.annualFeedInKwh}
-                    onChange={(e) => set("annualFeedInKwh", Number(e.target.value))}
                   />
                 </div>
               </div>
