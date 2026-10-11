@@ -1,16 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { ShieldCheck } from "lucide-react";
 import { HouseScene } from "@/components/home-savings/HouseScene";
 import { MobileTiles } from "@/components/home-savings/MobileTiles";
 import {
   CategoryPanel,
-  EMPTY_INPUTS,
   type HomeInputs,
 } from "@/components/home-savings/CategoryPanel";
 import { ContractCard } from "@/components/home-savings/ContractCard";
 import { SavingsSummary } from "@/components/home-savings/SavingsSummary";
 import { calculateScenario } from "@/lib/home-savings/scenario";
+import {
+  sessionStore,
+  useCalculatorSession,
+  removeMeasure,
+  resetMeasure,
+  toggleMeasure,
+} from "@/lib/home-savings/session";
+import { ResetCalculation } from "@/components/home-savings/ResetCalculation";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -31,17 +38,30 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>): { open?: string } =>
+    typeof search.open === "string" ? { open: search.open } : {},
   component: HomePage,
 });
 
 function HomePage() {
   const [openId, setOpenId] = useState<string | null>(null);
-  const [inputs, setInputs] = useState<HomeInputs>(EMPTY_INPUTS);
-  const [selected, setSelected] = useState<string[]>([]);
+  const session = useCalculatorSession();
+  const inputs: HomeInputs = session;
+  const selected = session.selected;
   const results = calculateScenario(inputs.profile, selected).results;
+  const { open } = Route.useSearch();
+  const navigate = Route.useNavigate();
+
+  // "Aanpassen" vanuit het totaaloverzicht opent direct de juiste hotspot
+  useEffect(() => {
+    if (!open) return;
+    setOpenId(open);
+    navigate({ search: {}, replace: true });
+  }, [open, navigate]);
 
   const handleChange = useCallback((patch: Partial<HomeInputs>) => {
-    setInputs((prev) => {
+    sessionStore.set((session) => {
+      const prev: HomeInputs = session;
       const next = { ...prev, ...patch };
       if (patch.contract)
         next.profile = {
@@ -73,23 +93,27 @@ function HomePage() {
         ev: next.profile.hasCharger,
         airco: next.profile.hasAirco,
       };
-      return next;
+      return { ...session, profile: next.profile, contract: next.contract, owned: next.owned };
     });
   }, []);
 
   const handleCalculate = useCallback((id: string) => {
-    if (id !== "contract")
-      setSelected((prev) =>
-        prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
-      );
+    if (id !== "contract") sessionStore.set((s) => toggleMeasure(s, id));
   }, []);
+  const handleRemove = useCallback((id: string) => sessionStore.set((s) => removeMeasure(s, id)), []);
+  const handleReset = useCallback((id: string) => sessionStore.set((s) => resetMeasure(s, id)), []);
 
-  const doneFlags = Object.fromEntries(
-    [...new Set([...Object.keys(results), ...Object.keys(inputs.owned)])].map((id) => [
+  const status = Object.fromEntries(
+    ["solar", "heatpump", "battery", "ev", "airco", "contract"].map((id) => [
       id,
-      results[id] != null || !!inputs.owned[id],
+      selected.includes(id) || (id === "contract" && inputs.contract.type !== "onbekend")
+        ? "selected"
+        : inputs.owned[id]
+          ? "owned"
+          : "none",
     ]),
-  );
+  ) as Record<string, "selected" | "owned" | "none">;
+  const doneFlags = Object.fromEntries(Object.entries(status).map(([k, v]) => [k, v !== "none"]));
 
   return (
     <main className="min-h-dvh" style={{ backgroundColor: "var(--color-cloud)" }}>
@@ -142,14 +166,17 @@ function HomePage() {
 
       {/* house scene */}
       <section className="mx-auto mt-6 max-w-5xl px-4 sm:px-5">
-        <HouseScene activeId={openId} results={doneFlags} onPick={setOpenId} />
-        <MobileTiles results={doneFlags} onPick={setOpenId} />
+        <HouseScene activeId={openId} status={status} onPick={setOpenId} />
+        <MobileTiles status={status} onPick={setOpenId} />
         <ContractCard done={!!results["contract"]} onPick={setOpenId} />
       </section>
 
       {/* total summary (Fase 4) */}
       <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-5">
         <SavingsSummary results={results} inputs={inputs} onPick={setOpenId} />
+        <div className="mt-6 text-center">
+          <ResetCalculation />
+        </div>
       </section>
 
       {/* panel */}
@@ -160,6 +187,9 @@ function HomePage() {
         onChange={handleChange}
         results={results}
         onCalculate={handleCalculate}
+        selected={selected}
+        onRemove={handleRemove}
+        onReset={handleReset}
       />
     </main>
   );
