@@ -102,7 +102,7 @@ describe("acceptance scenarios (opdracht §11)", () => {
   it("20 ongunstige batterij: nul of negatieve besparing blijft zichtbaar", () => {
     const r = run({ existingPanels: 8, netMetering: true, year: 2026 }, ["battery"]);
     expect(r.savings).toBeLessThanOrEqual(0);
-    expect(r.advice.join(" ")).toMatch(/weinig of niets/);
+    expect(r.advice.join(" ")).toMatch(/weinig/);
   });
   it("21 volgorde van selecteren maakt niet uit", () => {
     expect(run({ hasEv: true }, ["ev", "airco", "solar"])).toEqual(

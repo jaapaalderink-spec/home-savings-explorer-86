@@ -133,7 +133,7 @@ describe("household energy scenarios", () => {
     expect(r.before.demand).toBeCloseTo(6000);
   });
   it("makes saldering affect solar and battery economics", () => {
-    const p = { ...DEFAULT_PROFILE, existingPanels: 8, netMetering: true };
+    const p = { ...DEFAULT_PROFILE, existingPanels: 8, netMetering: true, year: 2026 };
     expect(calculateScenario(p, ["battery"]).savings).toBeLessThanOrEqual(0);
   });
   it("rejects invalid numeric profiles and safely handles broken URLs", () => {
