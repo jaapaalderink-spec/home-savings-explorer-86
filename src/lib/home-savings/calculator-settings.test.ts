@@ -73,10 +73,10 @@ describe("centrale calculatorinstellingen", () => {
       "ev.chargeLoss": 0.2,
       "airco.seer": 6,
     });
-    expect(calc(["solar"]).savings).not.toBeCloseTo(base.solar!, 2);
-    expect(calc(["heatpump"]).savings).not.toBeCloseTo(base.heatpump!, 2);
-    expect(calc(["ev"]).savings).not.toBeCloseTo(base.ev!, 2);
-    expect(calc(["airco"]).savings).not.toBeCloseTo(base.airco!, 2);
+    expect(calc(["solar"]).savings).not.toBeCloseTo(base["solar"]!, 2);
+    expect(calc(["heatpump"]).savings).not.toBeCloseTo(base["heatpump"]!, 2);
+    expect(calc(["ev"]).savings).not.toBeCloseTo(base["ev"]!, 2);
+    expect(calc(["airco"]).savings).not.toBeCloseTo(base["airco"]!, 2);
   });
 
   it("een expliciet ingevulde consumentwaarde wint van de beheerinstelling", () => {
