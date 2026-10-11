@@ -77,7 +77,7 @@ export function EnergyProfileForm({ value: p, onChange, category }: Props) {
       <select
         className="h-10 w-full rounded-md border border-input bg-background px-2"
         value={String(p[key])}
-        onChange={(e) => set(key, e.target.value)}
+        onChange={(e) => set(key, typeof p[key] === "number" ? Number(e.target.value) : e.target.value)}
       >
         {Object.entries(options).map(([id, text]) => (
           <option key={id} value={id}>
@@ -112,7 +112,7 @@ export function EnergyProfileForm({ value: p, onChange, category }: Props) {
     </div>
   );
 
-  const myData = details(
+  const myData = category ? null : details(
     "Mijn energiegegevens",
     <>
       {number("consumption", "Totaal stroomverbruik incl. eigen zonnestroom (kWh/jaar)", 0, 100000)}
@@ -135,10 +135,9 @@ export function EnergyProfileForm({ value: p, onChange, category }: Props) {
       </p>
     </>,
   );
-  const fixYear = (v: EnergyProfile) => ({ ...v, year: Number(v.year) });
 
   return (
-    <div className="space-y-4 text-ink" onChangeCapture={() => undefined}>
+    <div className="space-y-4 text-ink">
       {category && INTRO[category] && <p className="text-sm text-moss">{INTRO[category]}</p>}
 
       {category === "solar" && (
@@ -300,15 +299,20 @@ export function EnergyProfileForm({ value: p, onChange, category }: Props) {
         </>
       )}
 
-      {!category ? (
-        <EnergyProfileFullFields>{myData}</EnergyProfileFullFields>
-      ) : (
-        <div onChange={() => onChange(fixYear(p))}>{myData}</div>
-      )}
+      {myData}
     </div>
   );
 }
 
-function EnergyProfileFullFields({ children }: { children: ReactNode }) {
-  return <div>{children}</div>;
+/** Full editor ("Pas mijn gegevens aan"): every measure section plus shared energy data. */
+export function FullEnergyProfileForm({ value, onChange }: Omit<Props, "category">) {
+  return (
+    <div className="space-y-6">
+      {(["solar", "battery", "heatpump", "ev", "airco"] as const).map((c) => (
+        <section key={c}>
+          <EnergyProfileForm value={value} onChange={onChange} category={c} />
+        </section>
+      ))}
+    </div>
+  );
 }
