@@ -3,8 +3,7 @@ import type { BatteryYear, EnergyProfile, batteryLifetime } from "@/lib/home-sav
 const eur = (n: number) =>
   `${n >= 0 ? "+" : "−"} € ${Math.abs(Math.round(n)).toLocaleString("nl-NL")}`;
 // Long-term figures rounded to €10: no false precision.
-const eur10 = (n: number) =>
-  `€ ${(Math.round(n / 10) * 10).toLocaleString("nl-NL")}`;
+const eur10 = (n: number) => `€ ${(Math.round(n / 10) * 10).toLocaleString("nl-NL")}`;
 const kwh = (n: number) => `${Math.round(n).toLocaleString("nl-NL")} kWh`;
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 const CONTRACT: Record<EnergyProfile["contractType"], string> = {
@@ -36,7 +35,11 @@ export function BatteryBreakdown({
         het later zelf gebruikt in plaats van het terug te leveren.
       </p>
       <dl className="grid gap-x-6 gap-y-1 rounded-xl bg-background p-3 text-sm sm:grid-cols-2">
-        <Row label={`Jaarlijkse besparing vanaf ${main.year}`} value={`${eur(main.net)}/jr`} strong />
+        <Row
+          label={`Jaarlijkse besparing vanaf ${main.year}`}
+          value={`${eur(main.net)}/jr`}
+          strong
+        />
         <Row label="Extra eigen zonnestroom gebruikt" value={kwh(main.extraSelfKwh)} />
         <Row label="Minder stroom ingekocht" value={kwh(main.importReductionKwh)} />
         <Row label="Minder stroom teruggeleverd" value={kwh(main.exportReductionKwh)} />
@@ -53,9 +56,9 @@ export function BatteryBreakdown({
         <p className="text-[11px] leading-relaxed text-moss/70">
           {lifetime.horizonYears}-jaarsindicatie: eerste jaar {eur(lifetime.firstYear)}, gemiddeld{" "}
           {eur(lifetime.average)} per jaar, bandbreedte {eur10(lifetime.range.min)} tot{" "}
-          {eur10(lifetime.range.max)}. Gerekend met {(lifetime.degradationPerYear * 100).toFixed(1)}%
-          capaciteitsverlies per jaar ({lifetime.degradationSource}; na {lifetime.horizonYears} jaar
-          nog ongeveer {Math.round(lifetime.finalHealth * 100)}% capaciteit) en de huidige
+          {eur10(lifetime.range.max)}. Gerekend met {(lifetime.degradationPerYear * 100).toFixed(1)}
+          % capaciteitsverlies per jaar ({lifetime.degradationSource}; na {lifetime.horizonYears}{" "}
+          jaar nog ongeveer {Math.round(lifetime.finalHealth * 100)}% capaciteit) en de huidige
           aangenomen tarieven, zonder prijsvoorspelling. Dit is geen nettowinst: aanschaf,
           installatie en eventuele vervangingskosten zijn niet meegerekend. De levensduur van{" "}
           {lifetime.horizonYears} jaar is een rekenaanname, geen garantie.

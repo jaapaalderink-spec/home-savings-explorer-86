@@ -198,7 +198,10 @@ export function EnergyProfileForm({ value: p, onChange, category, hideShared }: 
       {number("gasPrice", "Gasprijs incl. belasting (euro/m3)", 0, 10, 0.01)}
       {number("exportPrice", "Terugleververgoeding (euro/kWh)", -1, 2, 0.01)}
       {exportCostFields}
-      {select("year", "Rekenjaar", { "2027": "2027 en later (geen saldering)", "2026": "2026 (ter vergelijking)" })}
+      {select("year", "Rekenjaar", {
+        "2027": "2027 en later (geen saldering)",
+        "2026": "2026 (ter vergelijking)",
+      })}
       {p.year <= 2026 && check("netMetering", "Rekenen met saldering in 2026")}
       <p className="text-xs text-moss/70">
         Velden met "geschat" gebruiken een standaardaanname. Vervang ze door je jaarafrekening voor

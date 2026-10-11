@@ -78,7 +78,10 @@ function ResultPage() {
         ) : (
           <>
             <div className="mt-6 grid gap-3 sm:grid-cols-4">
-              <Stat label="Energiekosten huidige woning" value={`${formatEuro(r.before.cost)}/jr`} />
+              <Stat
+                label="Energiekosten huidige woning"
+                value={`${formatEuro(r.before.cost)}/jr`}
+              />
               <Stat label="Na de gekozen maatregelen" value={`${formatEuro(r.after.cost)}/jr`} />
               <Stat
                 label={`Samen bespaard ${r.profile.year >= 2027 ? `vanaf ${r.profile.year}` : `in ${r.profile.year}`}`}
