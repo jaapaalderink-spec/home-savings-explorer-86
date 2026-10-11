@@ -54,6 +54,33 @@ export const energyProfileSchema = z.object({
   aircoScop: z.number().min(1).max(7).default(C.airco.scop),
   coolingKwh: amount(10000, 200),
   provided: z.array(z.string()).default([]),
+  // Contract terms (all optional; empty means: use labelled assumptions).
+  supplier: z.string().max(80).default(""),
+  contractName: z.string().max(120).default(""),
+  contractEndDate: z.string().max(10).default(""),
+  electricityPriceLow: z.number().finite().min(0).max(2).nullable().default(null),
+  exportCostModel: z.enum(["none", "perKwh", "tiers", "fixed", "timeOfUse"]).default("perKwh"),
+  exportCostNight: z.number().finite().min(0).max(1).nullable().default(null),
+  exportCostTiers: z
+    .array(z.object({ upToKwh: z.number().min(0).max(100000).nullable(), annualCost: z.number().min(0).max(5000) }))
+    .max(20)
+    .default([]),
+  exportCostFixed: amount(5000, 0),
+  tariffPeriods: z
+    .array(
+      z.object({
+        from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        electricityPrice: z.number().finite().min(0).max(2),
+        exportPrice: z.number().finite().min(-1).max(2).optional(),
+        exportCost: z.number().finite().min(0).max(1).optional(),
+      }),
+    )
+    .max(24)
+    .default([]),
+  consumptionBasis: z.enum(["gross", "net"]).default("gross"),
+  batteryStrategy: z.enum(["self", "smart"]).default("self"),
+  gridCharging: z.boolean().default(false),
+  batteryStandbyW: amount(200, C.battery.standbyW),
 });
 export type EnergyProfile = z.infer<typeof energyProfileSchema>;
 export const DEFAULT_PROFILE = energyProfileSchema.parse({});
