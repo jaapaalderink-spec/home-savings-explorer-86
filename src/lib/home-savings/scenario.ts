@@ -132,6 +132,70 @@ const existingSolarKwh = (p: EnergyProfile) =>
 const newBatteryKwh = (p: EnergyProfile) =>
   p.adviseBattery ? (p.consumption > 5000 ? 10 : 5) : p.newBattery;
 
+// Representative dynamic price shape per month (mean 1 over the day). Not historical data.
+const DYN_SHAPE = SUN.map((sunM, m) => {
+  const D = C.dynamic;
+  const peak = Math.max(...SUN_SHAPE[m]!);
+  const raw = H.map(
+    (h) =>
+      (h >= 17 && h <= 21 ? 1 + D.eveningPeak : h < 6 ? 1 - D.nightDip : 1) -
+      D.solarDip * (peak > 0 ? SUN_SHAPE[m]![h]! / peak : 0) * (sunM / Math.max(...SUN)),
+  );
+  const mean = raw.reduce((x, y) => x + y, 0) / 24;
+  return raw.map((v) => v - mean + 1);
+});
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/** Contract terms that apply in a month (tariff periods override from their start date). */
+export function termsFor(p: EnergyProfile, month: number) {
+  const date = `${p.year}-${pad(month + 1)}-01`;
+  const period = [...p.tariffPeriods]
+    .sort((a, b) => a.from.localeCompare(b.from))
+    .filter((t) => t.from <= date)
+    .pop();
+  return {
+    electricityPrice: period?.electricityPrice ?? p.electricityPrice,
+    exportPrice: period?.exportPrice ?? p.exportPrice,
+    exportCost: period?.exportCost ?? p.exportCost,
+  };
+}
+/** Legal minimum feed-in compensation (2027-2030) for fixed/variable contracts. */
+export function exportFloor(p: EnergyProfile) {
+  const L = C.legalMinExport;
+  return p.contractType !== "dynamisch" && p.year >= L.fromYear && p.year <= L.toYear
+    ? L.share * L.bareSupplyPrice
+    : -Infinity;
+}
+/** Hourly import/export price and per-kWh export charge for a month and hour. */
+export function hourlyTariff(p: EnergyProfile, month: number, hour: number) {
+  const t = termsFor(p, month);
+  const dynamic = p.contractType === "dynamisch";
+  const low = !dynamic && p.electricityPriceLow !== null && C.tariffs.lowTariffHours.includes(hour as never);
+  const spotDev = C.dynamic.spotAvg * (DYN_SHAPE[month]![hour]! - 1);
+  const night = C.tariffs.lowTariffHours.includes(hour as never);
+  const exportCostRate =
+    p.exportCostModel === "perKwh"
+      ? t.exportCost
+      : p.exportCostModel === "timeOfUse"
+        ? night
+          ? (p.exportCostNight ?? t.exportCost)
+          : t.exportCost
+        : 0;
+  return {
+    bucket: dynamic ? "d" : low ? "l" : "n",
+    importPrice: dynamic ? t.electricityPrice + C.dynamic.vat * spotDev : low ? p.electricityPriceLow! : t.electricityPrice,
+    exportPrice: dynamic ? t.exportPrice + spotDev : Math.max(t.exportPrice, exportFloor(p)),
+    exportCostRate,
+  };
+}
+/** Annual export charge that depends on the full-year export volume (tiers/fixed). */
+export function annualExportCharge(p: EnergyProfile, grossExportKwh: number) {
+  if (p.exportCostModel === "fixed") return p.exportCostFixed;
+  if (p.exportCostModel !== "tiers" || !p.exportCostTiers.length) return 0;
+  const tiers = [...p.exportCostTiers].sort((a, b) => (a.upToKwh ?? Infinity) - (b.upToKwh ?? Infinity));
+  return (tiers.find((t) => grossExportKwh <= (t.upToKwh ?? Infinity)) ?? tiers[tiers.length - 1]!).annualCost;
+}
+
 type Options = { performance?: number; cooling?: boolean };
 function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
   const performance = opt.performance ?? 1;
@@ -175,15 +239,33 @@ function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
   // Existing home charging is already inside measured consumption: subtract, then re-add once.
   const currentHomeEv = p.hasCharger ? (evEnergy * p.homeChargeShare) / 100 : 0;
   const homeEv = p.hasCharger || selected.has("ev") ? (evEnergy * p.homeChargeShare) / 100 : 0;
-  const base = Math.max(0, p.consumption - currentHeatElectricity - currentHomeEv);
   const existingProd = existingSolarKwh(p);
-  const production =
-    existingProd + (selected.has("solar") ? newSolarKwh(p) * performance : 0);
-  const capacity = p.existingBattery + (selected.has("battery") ? newBatteryKwh(p) : 0);
+  // A "net" meter reading (import minus export) hides self-consumed existing solar.
+  const grossConsumption = p.consumption + (p.consumptionBasis === "net" ? existingProd : 0);
+  const base = Math.max(0, grossConsumption - currentHeatElectricity - currentHomeEv);
+  const newProd = selected.has("solar") ? newSolarKwh(p) * performance : 0;
+  const production = existingProd + newProd;
+  const newCapacity = selected.has("battery") ? newBatteryKwh(p) : 0;
+  const capacity = p.existingBattery + newCapacity;
   const power = capacity * C.battery.powerPerKwh;
   const eff = p.batteryEfficiency;
+  const minE = capacity * C.battery.minSoc;
+  const maxE = capacity * C.battery.maxSoc;
+  const dynamic = p.contractType === "dynamisch";
+  const gridChargeAllowed = p.batteryStrategy === "smart" && p.gridCharging && dynamic && capacity > 0;
   const evShape = p.smartCharging && production > 0 ? EV_SOLAR : EV_EVENING;
-  const t = { demand: 0, direct: 0, charged: 0, discharged: 0, imports: 0, exports: 0 };
+  const t = {
+    demand: 0,
+    direct: 0,
+    charged: 0, // from solar
+    gridCharged: 0,
+    discharged: 0,
+    dischargedSolar: 0,
+    imports: 0,
+    exports: 0,
+  };
+  const buckets: Record<string, { i: number; e: number; ic: number; er: number }> = {};
+  let exportCostVariable = 0;
   let evSolar = 0;
   let balanceError = 0;
   for (let m = 0; m < 12; m++) {
@@ -196,10 +278,8 @@ function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
       ev: homeEv / 365,
       cool: (cooling * SUN[m]!) / d,
     };
-    let soc = 0;
-    const day = { demand: 0, direct: 0, charged: 0, discharged: 0, imports: 0, exports: 0 };
-    // Day runs 06:00 → 05:59 so evening/night use of daytime storage stays within one cycle.
-    for (let i = 0; i < 24; i++) {
+    // Day runs 06:00 -> 05:59 so evening/night use of daytime storage stays within one cycle.
+    const hours = H.map((i) => {
       const h = (i + 6) % 24;
       const evLoad = parts.ev * evShape[h]!;
       const load =
@@ -208,49 +288,141 @@ function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
         parts.water * BASE_SHAPE[h]! +
         evLoad +
         parts.cool * COOL_SHAPE[h]!;
-      const sun = sunDay * SUN_SHAPE[m]![h]!;
+      return { h, load, evLoad, sun: sunDay * SUN_SHAPE[m]![h]!, tariff: hourlyTariff(p, m, h) };
+    });
+    let gridBudget = 0;
+    let gridThreshold = -Infinity;
+    if (gridChargeAllowed) {
+      // Only charge from the grid what the evening needs beyond expected solar surplus.
+      const deficit = hours.reduce((s, x) => s + Math.max(0, x.load - x.sun), 0);
+      const surplus = hours.reduce((s, x) => s + Math.max(0, x.sun - x.load), 0);
+      const room = maxE - minE;
+      gridBudget = Math.max(0, Math.min(room, deficit) - Math.min(surplus * eff, room)) / eff;
+      const top = hours.map((x) => x.tariff.importPrice).sort((a, b) => b - a).slice(0, 4);
+      gridThreshold = (top.reduce((a, b) => a + b, 0) / top.length) * eff - C.battery.cycleCostPerKwh;
+    }
+    let socSolar = 0;
+    let socGrid = 0;
+    const day = { ...t, demand: 0, direct: 0, charged: 0, gridCharged: 0, discharged: 0, dischargedSolar: 0, imports: 0, exports: 0 };
+    const hourly: { imp: number; exp: number; tariff: (typeof hours)[number]["tariff"] }[] = [];
+    for (const { load, evLoad, sun, tariff } of hours) {
       const direct = Math.min(sun, load);
       if (evLoad > 0 && load > 0) evSolar += ((direct * evLoad) / load) * d;
       const surplus = sun - direct;
       const deficit = load - direct;
+      const soc = minE + socSolar + socGrid;
+      // Physical storage: only real solar surplus, unless grid charging is enabled.
+      const charge = surplus > 0 ? Math.min(surplus, power, Math.max(0, maxE - soc) / eff) : 0;
+      let gridCharge = 0;
+      if (gridChargeAllowed && gridBudget > 0 && deficit > 0 && tariff.importPrice < gridThreshold)
+        gridCharge = Math.min(power - charge, Math.max(0, maxE - soc - charge * eff) / eff, gridBudget);
+      gridBudget -= gridCharge;
       // Never charge and discharge in the same hour.
-      const charge = surplus > 0 ? Math.min(surplus, power, (capacity - soc) / eff) : 0;
-      const discharge = deficit > 0 ? Math.min(deficit, power, soc) : 0;
-      soc += charge * eff - discharge;
-      const imp = deficit - discharge;
+      const avail = socSolar + socGrid;
+      const discharge = deficit > 0 && charge + gridCharge === 0 ? Math.min(deficit, power, avail) : 0;
+      const fromSolar = avail > 0 ? (discharge * socSolar) / avail : 0;
+      socSolar += charge * eff - fromSolar;
+      socGrid += gridCharge * eff - (discharge - fromSolar);
+      const imp = deficit - discharge + gridCharge;
       const exp = surplus - charge;
       balanceError = Math.max(
         balanceError,
         Math.abs(sun - direct - charge - exp),
-        Math.abs(load - direct - discharge - imp),
+        Math.abs(load + gridCharge - direct - discharge - imp),
       );
+      hourly.push({ imp, exp, tariff });
       day.demand += load;
       day.direct += direct;
       day.charged += charge;
+      day.gridCharged += gridCharge;
       day.discharged += discharge;
+      day.dischargedSolar += fromSolar;
       day.imports += imp;
       day.exports += exp;
     }
-    // Energy left in the battery at the end of the cycle was never useful: book it as export.
-    const unused = soc / eff;
-    day.charged -= unused;
-    day.exports += unused;
+    // Energy left at the end of the cycle was never useful: unwind it.
+    // Solar leftover is booked as export (hour 14), grid leftover as not imported.
+    const unusedSolar = socSolar / eff;
+    const unusedGrid = socGrid / eff;
+    day.charged -= unusedSolar;
+    day.exports += unusedSolar;
+    day.gridCharged -= unusedGrid;
+    day.imports -= unusedGrid;
+    if (unusedSolar > 0) hourly[8]!.exp += unusedSolar;
+    if (unusedGrid > 0) {
+      const last = hourly.filter((x) => x.imp > 0);
+      let rest = unusedGrid;
+      for (const x of last) {
+        const take = Math.min(rest, x.imp);
+        x.imp -= take;
+        rest -= take;
+      }
+    }
+    for (const { imp, exp, tariff } of hourly) {
+      const b = (buckets[tariff.bucket] ??= { i: 0, e: 0, ic: 0, er: 0 });
+      b.i += imp * d;
+      b.e += exp * d;
+      b.ic += imp * tariff.importPrice * d;
+      b.er += exp * tariff.exportPrice * d;
+      exportCostVariable += exp * tariff.exportCostRate * d;
+    }
     for (const k of Object.keys(t) as (keyof typeof t)[]) t[k] += day[k] * d;
   }
-  const offset = usesNetMetering(p) ? Math.min(t.imports, t.exports) : 0;
+  // Saldering is an invoice-level offset of kWh, first within a tariff period, then across.
+  const netMetering = usesNetMetering(p);
+  let netted = 0;
+  let importCost = 0;
+  let exportRevenue = 0;
+  const left: { i: number; e: number; ip: number; ep: number }[] = [];
+  for (const b of Object.values(buckets)) {
+    const ip = b.i > 0 ? b.ic / b.i : 0;
+    const ep = b.e > 0 ? b.er / b.e : 0;
+    const off = netMetering ? Math.min(b.i, b.e) : 0;
+    netted += off;
+    importCost += b.ic - off * ip;
+    exportRevenue += b.er - off * ep;
+    left.push({ i: b.i - off, e: b.e - off, ip, ep });
+  }
+  if (netMetering)
+    for (const a of left)
+      for (const b of left) {
+        const off = Math.min(a.i, b.e);
+        if (off <= 0) continue;
+        netted += off;
+        importCost -= off * a.ip;
+        exportRevenue -= off * b.ep;
+        a.i -= off;
+        b.e -= off;
+      }
+  const exportCosts = exportCostVariable + annualExportCharge(p, t.exports);
+  const avgImportPrice = t.imports > 0 ? Object.values(buckets).reduce((s, b) => s + b.ic, 0) / t.imports : p.electricityPrice;
+  const standbyKwh = newCapacity > 0 ? (p.batteryStandbyW * 8760) / 1000 : 0;
+  const standbyCost = standbyKwh * (avgImportPrice || p.electricityPrice);
   const gasDisconnected =
     wantsHeat && p.target === "electric" && p.canDisconnectGas && gas <= 1e-9;
-  const cost =
-    (t.imports - offset) * p.electricityPrice -
-    (t.exports - offset) * (p.exportPrice - p.exportCost) +
-    gas * p.gasPrice +
-    (gasDisconnected ? 0 : p.gas > 0 ? p.gasConnectionFixed : 0) +
-    (evEnergy - homeEv) * p.publicChargePrice;
+  const gasCost = gas * p.gasPrice;
+  const fixedCost = gasDisconnected ? 0 : p.gas > 0 ? p.gasConnectionFixed : 0;
+  const publicChargeCost = (evEnergy - homeEv) * p.publicChargePrice;
+  const cost = importCost - exportRevenue + exportCosts + standbyCost + gasCost + fixedCost + publicChargeCost;
   return {
     cost,
     gas,
     ...t,
     production,
+    existingProduction: existingProd,
+    newProduction: newProd,
+    grossConsumption,
+    losses: t.charged + t.gridCharged - t.discharged,
+    netted,
+    importCost,
+    exportRevenue,
+    exportCosts,
+    standbyKwh,
+    standbyCost,
+    gasCost,
+    fixedCost,
+    publicChargeCost,
+    selfConsumption: production > 0 ? (t.direct + t.dischargedSolar) / production : 0,
     heatpumpKwh: wantsHeat ? spaceElectricity + waterElectricity : 0,
     aircoKwh: aircoHeat + cooling,
     evHomeKwh: homeEv,
@@ -258,6 +430,7 @@ function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
     balanceError,
   };
 }
+export { simulate };
 export type Simulation = ReturnType<typeof simulate>;
 
 export function calculateScenario(input: EnergyProfile, categories: readonly string[]) {
