@@ -266,7 +266,8 @@ export function annualExportCharge(p: EnergyProfile, grossExportKwh: number) {
 }
 
 type Options = { performance?: number; cooling?: boolean; batteryHealth?: number };
-function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
+function simulate(input: EnergyProfile, selected: Set<string>, opt: Options = {}) {
+  const p = withLiveDefaults(input);
   const performance = opt.performance ?? 1;
   const spaceGas = Math.max(0, p.gas - p.hotWaterGas - p.cookingGas);
   const hotGas = Math.min(p.hotWaterGas, p.gas);
