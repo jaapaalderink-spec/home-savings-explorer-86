@@ -254,7 +254,7 @@ export function calculateScenario(input: EnergyProfile, categories: readonly str
   ) as Partial<Record<Measure, number>>;
   const synergy = savings - Object.values(standalone).reduce((a, b) => a + b, 0);
   const comfortCost = selected.includes("airco")
-    ? simulate(p, new Set(selected), { cooling: false }).cost - after.cost
+    ? after.cost - simulate(p, new Set(selected), { cooling: false }).cost
     : 0;
   const notes = [
     "Vergelijking met je huidige installaties; bedragen zijn energiekosten, exclusief aanschaf, onderhoud en subsidies.",
