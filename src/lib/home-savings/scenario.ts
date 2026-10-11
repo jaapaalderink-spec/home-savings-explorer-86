@@ -695,14 +695,68 @@ export type BatteryYear = {
   net: number;
   range: { min: number; max: number };
   extraSelfKwh: number;
+  importReductionKwh: number;
+  exportReductionKwh: number;
   selfShareBefore: number;
   selfShareAfter: number;
   gridChargedKwh: number;
 };
 
+/** Annual capacity loss used for the long-term horizon (manufacturer value wins). */
+export function batteryDegradation(p: EnergyProfile) {
+  if (p.batteryDegradationPct !== null) return p.batteryDegradationPct / 100;
+  const intensive = p.batteryStrategy === "smart" && p.gridCharging;
+  return C.battery.degradationByType[p.batteryType] + (intensive ? C.battery.intensiveUseExtra : 0);
+}
+
+/**
+ * Indicative energy-cost saving of the new battery over the configured horizon,
+ * with declining capacity and the legal rules of each calendar year. Purchase,
+ * installation and replacement are NOT included: this is never a net profit.
+ */
+export function batteryLifetime(p: EnergyProfile, selected: readonly string[]) {
+  const rest = new Set(selected.filter((x) => x !== "battery"));
+  const withB = new Set([...rest, "battery"]);
+  const d = batteryDegradation(p);
+  const H0 = C.horizon;
+  const years = Array.from({ length: H0.years }, (_, i) => {
+    const f = (1 + H0.tariffChangePerYear) ** i;
+    const q: EnergyProfile = {
+      ...p,
+      year: Math.min(2040, H0.startYear + i),
+      netMetering: false,
+      electricityPrice: p.electricityPrice * f,
+      electricityPriceLow: p.electricityPriceLow === null ? null : p.electricityPriceLow * f,
+      exportPrice: p.exportPrice * f,
+      exportCost: p.exportCost * f,
+      gasPrice: p.gasPrice * f,
+    };
+    const health = (1 - d) ** i;
+    const saving = simulate(q, rest).cost - simulate(q, withB, { batteryHealth: health }).cost;
+    return { index: i + 1, year: H0.startYear + i, health, saving };
+  });
+  const total = years.reduce((s, y) => s + y.saving, 0);
+  return {
+    horizonYears: H0.years,
+    degradationPerYear: d,
+    degradationSource:
+      p.batteryDegradationPct !== null ? ("fabrikant" as const) : ("voorzichtige aanname" as const),
+    firstYear: years[0]!.saving,
+    average: total / H0.years,
+    cumulative: total,
+    // Cautious band: ±sensitivity on the cumulative energy saving, never a narrow range.
+    range: {
+      min: Math.min(total * (1 - C.sensitivity * 1.5), total * (1 + C.sensitivity * 1.5)),
+      max: Math.max(total * (1 - C.sensitivity * 1.5), total * (1 + C.sensitivity * 1.5)),
+    },
+    finalHealth: years[years.length - 1]!.health,
+    years,
+  };
+}
+
 /**
  * Marginal battery value: the same home configuration with and without the new
- * battery (scenario D vs C), for 2026 with saldering and 2027 without.
+ * battery, for 2026 with saldering and the main year (2027) without.
  */
 export function batteryReport(p: EnergyProfile, selected: readonly string[]) {
   const rest = selected.filter((x) => x !== "battery");
@@ -712,24 +766,23 @@ export function batteryReport(p: EnergyProfile, selected: readonly string[]) {
       [2027, false],
     ] as const
   ).map(([year, netMetering]): BatteryYear => {
-    const q = {
-      ...p,
-      year: Math.max(year, year === 2027 ? Math.max(2027, p.year) : 2026),
-      netMetering,
-    };
+    const q = { ...p, year: year === 2027 ? Math.max(2027, p.year) : 2026, netMetering };
     const without = simulate(q, new Set(rest));
     const withB = simulate(q, new Set([...rest, "battery"]));
     const net = without.cost - withB.cost;
-    const alt = [0.85, 0.95].map(
-      (batteryEfficiency) =>
-        without.cost -
-        simulate(
-          { ...q, batteryEfficiency: Math.min(batteryEfficiency, 1) },
-          new Set([...rest, "battery"]),
-        ).cost,
-    );
+    // Honest band: battery efficiency and solar yield/consumption both uncertain.
+    const alt = [
+      ...[0.85, 0.95].map(
+        (batteryEfficiency) =>
+          without.cost - simulate({ ...q, batteryEfficiency }, new Set([...rest, "battery"])).cost,
+      ),
+      ...[1 - C.sensitivity, 1 + C.sensitivity].map(
+        (performance) =>
+          simulate(q, new Set(rest), { performance }).cost -
+          simulate(q, new Set([...rest, "battery"]), { performance }).cost,
+      ),
+    ];
     const lossKwh = withB.losses - without.losses;
-    // Loss value: lost kWh would otherwise have been exported (or netted at the supply price).
     const lossValue =
       lossKwh *
       (usesNetMetering(q) && without.imports > without.exports
@@ -748,24 +801,55 @@ export function batteryReport(p: EnergyProfile, selected: readonly string[]) {
       range: { min: Math.min(net, ...alt), max: Math.max(net, ...alt) },
       extraSelfKwh:
         withB.direct + withB.dischargedSolar - (without.direct + without.dischargedSolar),
+      importReductionKwh: without.imports - withB.imports,
+      exportReductionKwh: without.exports - withB.exports,
       selfShareBefore: without.selfConsumption,
       selfShareAfter: withB.selfConsumption,
       gridChargedKwh: withB.gridCharged,
     };
   });
   const [y26, y27] = years as [BatteryYear, BatteryYear];
-  let conclusion: string;
-  if (y26.net <= 5 && y27.net > y26.net + 5)
-    conclusion = `Met de huidige salderingsregeling levert de batterij financieel weinig of niets op (${signed(y26.net)} per jaar in 2026). Vanaf 2027 kan de besparing toenemen tot ongeveer ${signed(y27.net)} per jaar, doordat zelfgebruik van zonnestroom belangrijker wordt.`;
-  else if (y26.net <= 5 && y27.net <= 5)
-    conclusion = `In jouw situatie levert een thuisbatterij financieel weinig of niets op, ook vanaf 2027 (${signed(y27.net)} per jaar). ${y26.extraSelfKwh < 100 ? "Er is weinig zonneoverschot om op te slaan." : "Het opslagverlies en de gemiste terugleververgoeding wegen op tegen de vermeden inkoop."}`;
-  else
-    conclusion = `De batterij bespaart ongeveer ${signed(y26.net)} per jaar in 2026 en ${signed(y27.net)} per jaar vanaf 2027, doordat je ${round(y27.extraSelfKwh)} kWh meer eigen zonnestroom gebruikt.`;
+  const lifetime = batteryLifetime(p, selected);
+  const conclusion = batteryConclusion(p, y26, y27, lifetime.cumulative);
   const strategyNote =
     p.batteryStrategy === "smart"
       ? "Slimme optimalisatie vraagt een energiemanagementsysteem of een batterij met sturing op uurprijzen."
       : null;
-  return { years, y2026: y26, y2027: y27, conclusion, strategyNote, comparedWith: rest };
+  return { years, y2026: y26, y2027: y27, lifetime, conclusion, strategyNote, comparedWith: rest };
+}
+
+function batteryConclusion(
+  p: EnergyProfile,
+  y26: BatteryYear,
+  y27: BatteryYear,
+  cumulative: number,
+) {
+  const base =
+    "Een thuisbatterij wekt zelf geen stroom op; ze helpt je bestaande zonnestroom beter te benutten.";
+  if (y27.net > 25) {
+    const tail =
+      y26.net <= 5
+        ? ` In 2026 levert ze met saldering nog weinig op (${signed(y26.net)}), omdat teruggeleverde stroom dan nog tegen de volle prijs wordt verrekend.`
+        : "";
+    return `${base} Vanaf 2027 bespaart de batterij in jouw situatie ongeveer ${signed(y27.net)} per jaar: je gebruikt ${round(y27.extraSelfKwh)} kWh meer eigen zonnestroom en koopt ${round(y27.importReductionKwh)} kWh minder in. Over ${C.horizon.years} jaar is dat indicatief ${signed(cumulative)} aan lagere energiekosten (aanschaf niet meegerekend).${tail}`;
+  }
+  const why: string[] = [];
+  if (y27.extraSelfKwh < 150) why.push("er is weinig zonneoverschot om op te slaan");
+  if (p.exportPrice - p.exportCost >= p.electricityPrice * 0.6)
+    why.push(
+      "je terugleververgoeding ligt dicht bij je stroomprijs, dus opslaan levert weinig extra op",
+    );
+  if (y27.lossValue > Math.max(y27.net, 0)) why.push("het opslagverlies weegt zwaar");
+  if (Math.abs(y27.standbyCost) > 5) why.push("het stand-byverbruik kost geld");
+  const improve = [
+    p.existingPanels + p.newPanels < 10 ? "meer zonnepanelen" : null,
+    p.exportCost === 0 && p.exportCostModel !== "tiers" && p.exportCostModel !== "fixed"
+      ? "terugleverkosten in je contract (die vermijd je met opslag)"
+      : null,
+    p.contractType !== "dynamisch" ? "een dynamisch contract met slimme sturing" : null,
+    "meer stroomverbruik 's avonds en 's nachts",
+  ].filter(Boolean);
+  return `${base} In jouw situatie levert ze vanaf 2027 weinig of niets op (${signed(y27.net)} per jaar)${why.length ? `, omdat ${why.join(" en ")}` : ""}. Het resultaat kan verbeteren met ${improve.join(", ")}.`;
 }
 
 const signed = (n: number) => `${n >= 0 ? "+" : "−"}€ ${Math.abs(Math.round(n))}`;
