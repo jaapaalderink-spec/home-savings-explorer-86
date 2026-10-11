@@ -798,7 +798,11 @@ export function batteryReport(p: EnergyProfile, selected: readonly string[]) {
       lossKwh,
       lossValue,
       net,
-      range: { min: Math.min(net, ...alt), max: Math.max(net, ...alt) },
+      // Never narrower than ±25%: hourly profiles and tariffs are assumptions.
+      range: {
+        min: Math.min(net, ...alt, net - Math.abs(net) * 0.25),
+        max: Math.max(net, ...alt, net + Math.abs(net) * 0.25),
+      },
       extraSelfKwh:
         withB.direct + withB.dischargedSolar - (without.direct + without.dischargedSolar),
       importReductionKwh: without.imports - withB.imports,
