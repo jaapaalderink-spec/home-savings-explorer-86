@@ -6,6 +6,7 @@ type Props = {
   value: EnergyProfile;
   onChange: (value: EnergyProfile) => void;
   category?: string | undefined;
+  hideShared?: boolean;
 };
 
 const INTRO: Record<string, string> = {
@@ -16,7 +17,7 @@ const INTRO: Record<string, string> = {
   airco: "Een airco geeft comfort bij warmte en kan ook bijverwarmen.",
 };
 
-export function EnergyProfileForm({ value: p, onChange, category }: Props) {
+export function EnergyProfileForm({ value: p, onChange, category, hideShared }: Props) {
   const set = (key: keyof EnergyProfile, value: unknown) =>
     onChange({
       ...p,
@@ -112,7 +113,7 @@ export function EnergyProfileForm({ value: p, onChange, category }: Props) {
     </div>
   );
 
-  const myData = category ? null : details(
+  const myData = details(
     "Mijn energiegegevens",
     <>
       {number("consumption", "Totaal stroomverbruik incl. eigen zonnestroom (kWh/jaar)", 0, 100000)}
@@ -299,18 +300,18 @@ export function EnergyProfileForm({ value: p, onChange, category }: Props) {
         </>
       )}
 
-      {myData}
+      {!hideShared && myData}
     </div>
   );
 }
 
 /** Full editor ("Pas mijn gegevens aan"): every measure section plus shared energy data. */
-export function FullEnergyProfileForm({ value, onChange }: Omit<Props, "category">) {
+export function FullEnergyProfileForm({ value, onChange }: Pick<Props, "value" | "onChange">) {
   return (
     <div className="space-y-6">
-      {(["solar", "battery", "heatpump", "ev", "airco"] as const).map((c) => (
+      {(["solar", "battery", "heatpump", "ev", "airco"] as const).map((c, i) => (
         <section key={c}>
-          <EnergyProfileForm value={value} onChange={onChange} category={c} />
+          <EnergyProfileForm value={value} onChange={onChange} category={c} hideShared={i < 4} />
         </section>
       ))}
     </div>
