@@ -1,3 +1,4 @@
+import type React from "react";
 import {
   Sheet,
   SheetContent,
@@ -20,7 +21,8 @@ import {
 import { CountUp } from "./CountUp";
 import { buildOfferteHref, buildResultHref } from "./offerte-params";
 import { EnergyProfileForm } from "./EnergyProfileForm";
-import { DEFAULT_PROFILE, type EnergyProfile } from "@/lib/home-savings/scenario";
+import { DEFAULT_PROFILE, calculateScenario, type EnergyProfile } from "@/lib/home-savings/scenario";
+import { BatteryBreakdown } from "./BatteryBreakdown";
 
 export interface HomeInputs {
   profile: EnergyProfile;
@@ -127,6 +129,14 @@ export function CategoryPanel({
                   <ResultCard
                     categoryId={openId!}
                     result={result}
+                    battery={
+                      openId === "battery" && result
+                        ? (() => {
+                            const b = calculateScenario(inputs.profile, Object.keys(results).filter((k) => results[k])).battery;
+                            return b ? <BatteryBreakdown years={b.years} conclusion={b.conclusion} profile={inputs.profile} /> : null;
+                          })()
+                        : null
+                    }
                     offerteHref={buildOfferteHref(inputs, results, openId!)}
                     resultHref={buildResultHref(inputs, results, openId!)}
                     onCalculate={() => onCalculate(openId!)}
@@ -234,7 +244,9 @@ function ResultCard({
   resultHref,
   result,
   onCalculate,
+  battery,
 }: {
+  battery?: React.ReactNode;
   categoryId: string;
   offerteHref: string;
   resultHref: string;
@@ -263,6 +275,29 @@ function ResultCard({
       </div>
     );
   }
+  if (battery)
+    return (
+      <div
+        className="animate-rise rounded-2xl p-5"
+        style={{ backgroundColor: "var(--color-background)", boxShadow: "var(--shadow-panel-lg)" }}
+      >
+        {battery}
+        <p className="mt-3 text-[11px] text-moss/60">
+          Toegerekende bijdrage in je totale pakket (volgorde-onafhankelijk): {formatEuro(result.practicalSavings)} per jaar.
+        </p>
+        <Button type="button" variant="outline" className="mt-3 w-full" onClick={onCalculate}>
+          Verwijder uit bespaarpakket
+        </Button>
+        <Button asChild className="mt-4 w-full" size="lg" style={{ backgroundColor: "#4f8f62", color: "white" }}>
+          <a href={offerteHref}>
+            Vraag vrijblijvend offertes aan <ArrowRight size={18} className="ml-1.5" />
+          </a>
+        </Button>
+        <Button asChild variant="outline" className="mt-2 w-full">
+          <a href={resultHref}>Bekijk mijn totale voordeel</a>
+        </Button>
+      </div>
+    );
   return (
     <div
       className="animate-rise rounded-2xl p-5"
