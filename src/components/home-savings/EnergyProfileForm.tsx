@@ -392,7 +392,7 @@ export function EnergyProfileForm({ value: p, onChange, category, hideShared }: 
         </>
       )}
 
-      {!hideShared && myData}
+      {!hideShared && category !== "contract" && myData}
     </div>
   );
 }
