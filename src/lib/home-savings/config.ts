@@ -5,7 +5,7 @@
 export const ENERGY_CONFIG = {
   validFrom: "2026-01-01",
   reviewedAt: "2026-10-11",
-  version: 3,
+  version: 4,
   tariffs: {
     electricityPrice: 0.29, // euro/kWh incl. taxes (assumption)
     gasPrice: 1.3, // euro/m3 incl. taxes (assumption)
@@ -33,7 +33,18 @@ export const ENERGY_CONFIG = {
     maxSoc: 1,
     standbyW: 0, // unknown per device: set from the manufacturer's datasheet
     cycleCostPerKwh: 0, // wear cost per discharged kWh; no reliable figure, excluded
+    // Expected service life used as calculation horizon (assumption, not a guarantee).
+    lifetimeYears: 15,
+    // Annual capacity loss per chemistry (share/year). "unknown" is the cautious
+    // fallback when no manufacturer data is entered.
+    degradationByType: { lfp: 0.015, nmc: 0.025, unknown: 0.025 },
+    // Extra capacity loss per year with intensive (daily grid) cycling.
+    intensiveUseExtra: 0.005,
   },
+  // Long-term horizon: real tariff change per year applied to all prices (0 = today's
+  // assumed prices held constant; no price forecast is made).
+  horizon: { years: 15, startYear: 2027, tariffChangePerYear: 0 },
+  mainYear: 2027, // default calculation year: first year without saldering
   heat: {
     kwhPerM3: 8.8,
     boilerEfficiency: 0.95,
@@ -44,9 +55,8 @@ export const ENERGY_CONFIG = {
   },
   airco: { scop: 4, coolingKwhPerRoom: 100, heatShareGas: 20 },
   ev: { km: 12000, kwhPer100Km: 20, homeShare: 70 },
-  // Investment, maintenance and subsidies are intentionally empty: without
-  // reliable figures no payback period is shown.
-  investment: {} as Partial<Record<"solar" | "battery" | "heatpump" | "ev" | "airco", number>>,
+  // Purchase/installation costs are deliberately out of scope: the calculator only
+  // reports energy-cost savings, never payback, ROI or net profit.
   sensitivity: 0.2,
 } as const;
 

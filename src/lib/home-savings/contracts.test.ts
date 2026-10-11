@@ -188,7 +188,7 @@ describe("regressie: contracten, zonnepanelen en thuisbatterij", () => {
     const b = r.battery!;
     expect(b.y2026.net).toBeLessThan(0);
     expect(b.y2027.net).toBeGreaterThan(0);
-    expect(b.conclusion).toMatch(/Vanaf 2027 kan de besparing toenemen/);
+    expect(b.conclusion).toMatch(/Vanaf 2027 bespaart de batterij/);
     const sum =
       b.y2027.avoidedImport + b.y2027.missedExport + b.y2027.exportCostSaving + b.y2027.standbyCost;
     expect(sum).toBeCloseTo(b.y2027.net, 6);

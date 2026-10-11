@@ -145,6 +145,7 @@ export function CategoryPanel({
                                 years={b.years}
                                 conclusion={b.conclusion}
                                 profile={inputs.profile}
+                                lifetime={b.lifetime}
                               />
                             ) : null;
                           })()
