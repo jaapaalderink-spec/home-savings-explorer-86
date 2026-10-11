@@ -12,6 +12,7 @@ import {
 } from "@/lib/home-savings/scenario";
 import { ENERGY_CONFIG } from "@/lib/home-savings/config";
 import { FullEnergyProfileForm } from "@/components/home-savings/EnergyProfileForm";
+import { BatteryBreakdown } from "@/components/home-savings/BatteryBreakdown";
 
 export const Route = createFileRoute("/resultaat")({
   head: () => ({
@@ -83,8 +84,23 @@ function ResultPage() {
             </div>
             <p className="mt-2 text-sm text-moss/70">
               Indicatieve bandbreedte {formatEuro(r.range.min)} tot {formatEuro(r.range.max)} per
-              jaar. Geen gegarandeerde besparing.
+              jaar. Geen gegarandeerde besparing. Rekenjaar {r.profile.year}
+              {r.profile.year <= 2026 && r.profile.netMetering ? " met saldering" : " zonder saldering"}, contract:{" "}
+              {r.profile.contractType === "onbekend" ? "standaardaannames" : r.profile.contractType}.
             </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {[...r.comparisons].reverse().map((c) => (
+                <div key={c.year} className="rounded-xl bg-background p-3 text-sm" style={{ boxShadow: "var(--shadow-panel)" }}>
+                  <p className="font-semibold text-ink">
+                    {c.year >= 2027 ? `Vanaf ${c.year}, zonder saldering` : `${c.year}, met saldering`}
+                  </p>
+                  <p className="text-moss/80">
+                    Zonnepanelen en batterij samen: {formatEuro(c.package)} per jaar t.o.v. je huidige woning
+                    {r.selected.some((x) => x !== "solar" && x !== "battery") ? " (overige gekozen maatregelen gelijk gehouden)" : ""}.
+                  </p>
+                </div>
+              ))}
+            </div>
           </>
         )}
 
@@ -136,10 +152,20 @@ function ResultPage() {
           </div>
         )}
 
+        {r.battery && (
+          <div className="mt-6 rounded-2xl bg-background p-4" style={{ boxShadow: "var(--shadow-panel)" }}>
+            <BatteryBreakdown years={r.battery.years} conclusion={r.battery.conclusion} profile={r.profile} />
+            <p className="mt-2 text-[11px] text-moss/60">
+              Dit is de marginale besparing bij jouw configuratie. "Bijdrage in pakket" hierboven is een
+              volgorde-onafhankelijk toegerekende pakketbijdrage en kan daarvan afwijken.
+            </p>
+          </div>
+        )}
+
         {r.advice.length > 0 && (
           <div className="mt-6 space-y-2">
             <h2 className="text-lg font-semibold text-ink">Advies</h2>
-            {r.advice.map((a) => (
+            {r.advice.filter((a) => a !== r.battery?.conclusion).map((a) => (
               <p key={a} className="rounded-xl bg-background p-3 text-sm text-ink">
                 {a}
               </p>
