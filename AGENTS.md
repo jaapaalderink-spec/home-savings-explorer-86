@@ -21,3 +21,4 @@
 - Run local unit tests with integration tests excluded. Preview operations may
   affect real data; do not trigger payments, SMS, or database writes as smoke tests.
 - Never commit secrets. .env is already tracked and must contain public values only.
+- Energy calculator tariffs, export-cost models and battery strategy live in `src/lib/home-savings/scenario.ts` + `config.ts`; battery value is shown as the marginal with/without comparison per year, Shapley only for package allocation — keeps the battery number honest and the package additive.
