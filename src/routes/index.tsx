@@ -113,7 +113,6 @@ function HomePage() {
           : "none",
     ]),
   ) as Record<string, "selected" | "owned" | "none">;
-  const doneFlags = Object.fromEntries(Object.entries(status).map(([k, v]) => [k, v !== "none"]));
 
   return (
     <main className="min-h-dvh" style={{ backgroundColor: "var(--color-cloud)" }}>
