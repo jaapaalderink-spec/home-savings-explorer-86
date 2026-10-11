@@ -15,7 +15,7 @@ export const energyProfileSchema = z.object({
   exportPrice: z.number().finite().min(-1).max(2).default(C.tariffs.exportPrice),
   exportCost: amount(1, C.tariffs.exportCost),
   netMetering: z.boolean().default(false),
-  year: z.number().int().min(2026).max(2040).default(2026),
+  year: z.number().int().min(2026).max(2040).default(C.mainYear),
   existingPanels: amount(100, 0),
   existingWp: amount(1000, C.solar.existingWp),
   existingYield: z.number().finite().min(0).max(100000).nullable().default(null),
@@ -86,6 +86,9 @@ export const energyProfileSchema = z.object({
   batteryStrategy: z.enum(["self", "smart"]).default("self"),
   gridCharging: z.boolean().default(false),
   batteryStandbyW: amount(200, C.battery.standbyW),
+  batteryType: z.enum(["lfp", "nmc", "unknown"]).default("unknown"),
+  /** Manufacturer capacity loss in % per year; null = cautious default per type. */
+  batteryDegradationPct: z.number().min(0).max(10).nullable().default(null),
 });
 export type EnergyProfile = z.infer<typeof energyProfileSchema>;
 export const DEFAULT_PROFILE = energyProfileSchema.parse({});
@@ -211,7 +214,7 @@ export function annualExportCharge(p: EnergyProfile, grossExportKwh: number) {
     .annualCost;
 }
 
-type Options = { performance?: number; cooling?: boolean };
+type Options = { performance?: number; cooling?: boolean; batteryHealth?: number };
 function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
   const performance = opt.performance ?? 1;
   const spaceGas = Math.max(0, p.gas - p.hotWaterGas - p.cookingGas);
@@ -260,7 +263,7 @@ function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
   const base = Math.max(0, grossConsumption - currentHeatElectricity - currentHomeEv);
   const newProd = selected.has("solar") ? newSolarKwh(p) * performance : 0;
   const production = existingProd + newProd;
-  const newCapacity = selected.has("battery") ? newBatteryKwh(p) : 0;
+  const newCapacity = selected.has("battery") ? newBatteryKwh(p) * (opt.batteryHealth ?? 1) : 0;
   const capacity = p.existingBattery + newCapacity;
   const power = capacity * C.battery.powerPerKwh;
   const eff = p.batteryEfficiency;
@@ -571,7 +574,6 @@ export function calculateScenario(input: EnergyProfile, categories: readonly str
     comfortCost,
     results,
     notes,
-    payback: paybackYears(selected, savings),
     range: { min: Math.min(savings, ...uncertain), max: Math.max(savings, ...uncertain) },
     battery,
     comparisons: compareSolarBattery(p, selected),
@@ -581,13 +583,6 @@ export function calculateScenario(input: EnergyProfile, categories: readonly str
   return result;
 }
 export type ScenarioResult = ReturnType<typeof calculateScenario>;
-
-/** Indicative simple payback only when reliable investment data is configured. */
-export function paybackYears(selected: readonly Measure[], savings: number): number | null {
-  const inv = C.investment as Partial<Record<Measure, number>>;
-  if (!selected.length || selected.some((id) => inv[id] == null) || savings <= 0) return null;
-  return selected.reduce((s, id) => s + (inv[id] ?? 0), 0) / savings;
-}
 
 function buildAdvice(r: Omit<ScenarioResult, "advice"> & { advice: string[] }): string[] {
   const out: string[] = [];
