@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useLocation } from "@tanstack/react-router";
-import { useState } from "react";
-import { ArrowRight, Check, Home, Plus, Info } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, Check, Home, Plus, Info, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatEuro } from "@/lib/home-savings";
 import {
@@ -13,6 +13,14 @@ import {
 import { ENERGY_CONFIG } from "@/lib/home-savings/config";
 import { FullEnergyProfileForm } from "@/components/home-savings/EnergyProfileForm";
 import { BatteryBreakdown } from "@/components/home-savings/BatteryBreakdown";
+import { ResetCalculation } from "@/components/home-savings/ResetCalculation";
+import { buildOfferteHref } from "@/components/home-savings/offerte-params";
+import {
+  sessionStore,
+  useCalculatorSession,
+  removeMeasure,
+  ownedFromProfile,
+} from "@/lib/home-savings/session";
 
 export const Route = createFileRoute("/resultaat")({
   head: () => ({
@@ -47,14 +55,28 @@ const OWNED: Record<string, (p: EnergyProfile) => boolean> = {
 function ResultPage() {
   const searchStr = useLocation({ select: (l) => l.searchStr });
   const search = new URLSearchParams(searchStr);
-  const [profile, setProfile] = useState(() => profileFromSearch(search));
-  const [cats] = useState(() => (search.get("cats") ?? "").split(","));
+  const session = useCalculatorSession();
   const [editing, setEditing] = useState(false);
-  const r = calculateScenario(profile, cats);
 
-  const offerte = new URLSearchParams(search);
-  offerte.set("energyProfile", JSON.stringify(profile));
-  offerte.set("total", String(Math.round(r.savings)));
+  // Gedeelde link zonder opgeslagen sessie: neem de gegevens uit de link één keer over.
+  useEffect(() => {
+    if (sessionStore.hasStored() || !search.has("cats")) return;
+    const p = profileFromSearch(search);
+    sessionStore.set((s) => ({
+      ...s,
+      profile: p,
+      contract: { type: p.contractType },
+      owned: ownedFromProfile(p),
+      selected: (search.get("cats") ?? "").split(",").filter(Boolean),
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const profile = session.profile;
+  const setProfile = (p: EnergyProfile) =>
+    sessionStore.set((s) => ({ ...s, profile: p, owned: ownedFromProfile(p) }));
+  const r = calculateScenario(profile, session.selected);
+  const offerteHref = buildOfferteHref(session, r.results);
 
   return (
     <main className="min-h-dvh pb-16" style={{ backgroundColor: "var(--color-cloud)" }}>
@@ -154,6 +176,23 @@ function ResultPage() {
                   {owned && chosen && " · "}
                   {chosen ? "Wil je toevoegen" : !owned && "Niet gekozen"}
                 </p>
+                {chosen && (
+                  <div className="mt-3 flex gap-2">
+                    <Button asChild size="sm" variant="outline" className="flex-1">
+                      <Link to="/" search={{ open: id }}>
+                        <Pencil size={14} className="mr-1" /> Aanpassen
+                      </Link>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="flex-1"
+                      onClick={() => sessionStore.set((s) => removeMeasure(s, id))}
+                    >
+                      <Trash2 size={14} className="mr-1" /> Verwijderen
+                    </Button>
+                  </div>
+                )}
                 {chosen && (
                   <dl className="mt-2 space-y-1 text-sm">
                     <div className="flex justify-between">
@@ -259,7 +298,7 @@ function ResultPage() {
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Button asChild size="lg" style={{ backgroundColor: "#4f8f62", color: "white" }}>
-            <a href={`/offerte?${offerte.toString()}`}>
+            <a href={offerteHref}>
               Vraag gratis offertes aan <ArrowRight size={18} className="ml-1.5" />
             </a>
           </Button>
@@ -267,8 +306,11 @@ function ResultPage() {
             Pas mijn gegevens aan
           </Button>
           <Button asChild variant="ghost" size="lg">
-            <Link to="/">Bekijk andere maatregelen</Link>
+            <Link to="/">Meer maatregelen toevoegen</Link>
           </Button>
+        </div>
+        <div className="mt-4">
+          <ResetCalculation />
         </div>
         {editing && (
           <div className="mt-6 rounded-2xl bg-background p-5">

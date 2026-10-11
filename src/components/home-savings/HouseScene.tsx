@@ -1,5 +1,5 @@
 import { useRef, useState, type PointerEvent } from "react";
-import { MousePointerClick } from "lucide-react";
+import { MousePointerClick, Check, Home } from "lucide-react";
 import { CATEGORIES, type CategoryMeta } from "./categories";
 import houseHeroAsset from "@/assets/house-hero-v2.png.asset.json";
 
@@ -7,7 +7,7 @@ const houseHero = houseHeroAsset.url;
 
 interface Props {
   activeId: string | null;
-  results: Record<string, boolean>;
+  status: Record<string, "selected" | "owned" | "none">;
   onPick: (id: string) => void;
 }
 
@@ -16,7 +16,7 @@ interface Props {
  * De foto beweegt heel subtiel mee met de cursor (parallax) en staat stil
  * bij prefers-reduced-motion.
  */
-export function HouseScene({ activeId, results, onPick }: Props) {
+export function HouseScene({ activeId, status, onPick }: Props) {
   const frame = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
 
@@ -80,7 +80,7 @@ export function HouseScene({ activeId, results, onPick }: Props) {
             key={cat.id}
             cat={cat}
             active={activeId === cat.id}
-            done={!!results[cat.id]}
+            state={status[cat.id] ?? "none"}
             onPick={onPick}
           />
         ))}
@@ -103,21 +103,25 @@ export function HouseScene({ activeId, results, onPick }: Props) {
 function Hotspot({
   cat,
   active,
-  done,
+  state,
   onPick,
 }: {
   cat: CategoryMeta;
   active: boolean;
-  done: boolean;
+  state: "selected" | "owned" | "none";
   onPick: (id: string) => void;
 }) {
   const Icon = cat.icon;
   const flipUp = cat.hotspot.y > 55;
+  const done = state === "selected";
+  const owned = state === "owned";
+  const stateLabel = done ? "geselecteerd" : owned ? "al aanwezig" : "niet geselecteerd";
   return (
     <button
       type="button"
       onClick={() => onPick(cat.id)}
-      aria-label={`${cat.label} — ${cat.short}`}
+      aria-label={`${cat.label} — ${stateLabel}`}
+      data-state={state}
       className="group absolute hidden -translate-x-1/2 -translate-y-1/2 rounded-full focus-brand hover:z-20 focus-visible:z-20 sm:block"
       style={{ left: `${cat.hotspot.x}%`, top: `${cat.hotspot.y}%` }}
     >
@@ -135,16 +139,28 @@ function Hotspot({
             ? "#4f8f62"
             : done
               ? "rgba(79,143,98,0.92)"
-              : "rgba(240,184,79,0.94)",
+              : owned
+                ? "rgba(247,248,245,0.92)"
+                : "rgba(240,184,79,0.94)",
           boxShadow: "0 10px 24px rgba(23,33,27,0.35)",
         }}
       >
         <Icon size={20} strokeWidth={2.4} className={active || done ? "text-white" : "text-ink"} />
         {done && (
           <span
-            className="absolute -right-0.5 -top-0.5 h-3.5 w-3.5 rounded-full ring-2 ring-white"
+            className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full ring-2 ring-white"
             style={{ backgroundColor: "#17211b" }}
-          />
+          >
+            <Check size={10} strokeWidth={3.5} className="text-white" />
+          </span>
+        )}
+        {owned && (
+          <span
+            className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full ring-2 ring-white"
+            style={{ backgroundColor: "#4f8f62" }}
+          >
+            <Home size={9} strokeWidth={3} className="text-white" />
+          </span>
         )}
       </span>
       {/* label */}
@@ -155,7 +171,13 @@ function Hotspot({
         style={{ backgroundColor: "rgba(23,33,27,0.88)", color: "#f7f8f5" }}
       >
         <span className="block text-xs font-bold">{cat.label}</span>
-        <span className="block text-[11px] leading-snug opacity-80">{cat.short}</span>
+        <span className="block text-[11px] leading-snug opacity-80">
+          {done
+            ? "Geselecteerd · klik om aan te passen"
+            : owned
+              ? "Al aanwezig in je woning"
+              : cat.short}
+        </span>
       </span>
     </button>
   );
