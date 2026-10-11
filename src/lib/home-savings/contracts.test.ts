@@ -98,8 +98,8 @@ describe("regressie: contracten, zonnepanelen en thuisbatterij", () => {
     expect(rb.y2027.extraSelfKwh).toBeCloseTo(0);
   });
   it("negatieve terugleverprijzen maken opslaan juist waardevoller", () => {
-    const pos = batteryReport(P({ ...HOME, year: 2027 }), ["battery"]);
-    const neg = batteryReport(P({ ...HOME, year: 2027, exportPrice: -0.05 }), ["battery"]);
+    const pos = batteryReport(P({ ...HOME, year: 2031 }), ["battery"]); // after the 2027-2030 legal floor
+    const neg = batteryReport(P({ ...HOME, year: 2031, exportPrice: -0.05 }), ["battery"]);
     expect(neg.y2027.missedExport).toBeGreaterThan(0); // avoided paying for export
     expect(neg.y2027.net).toBeGreaterThan(pos.y2027.net);
   });
