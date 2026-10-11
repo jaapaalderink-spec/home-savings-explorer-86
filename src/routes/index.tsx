@@ -36,7 +36,7 @@ export const Route = createFileRoute("/")({
     ],
   }),
   validateSearch: (search: Record<string, unknown>): { open?: string } =>
-    typeof search.open === "string" ? { open: search.open } : {},
+    typeof search["open"] === "string" ? { open: search["open"] } : {},
   component: HomePage,
 });
 

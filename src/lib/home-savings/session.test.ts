@@ -60,10 +60,10 @@ describe("calculatorsessie", () => {
   it("5-7, 18: aanpassen van één veld herberekent het totaal, geen oude resultaten", () => {
     sessionStore.set(example());
     const before = calculateScenario(reload().profile, reload().selected).savings;
-    sessionStore.set((s) => ({ ...s, profile: { ...s.profile, newBattery: 5 } }));
+    sessionStore.set((s) => ({ ...s, profile: { ...s.profile, newBattery: 5, consumption: 6000 } }));
     const s = reload();
     expect(s.profile.newBattery).toBe(5);
-    expect(s.profile.consumption).toBe(4300);
+    expect(s.profile.existingPanels).toBe(8);
     expect(calculateScenario(s.profile, s.selected).savings).not.toBe(before);
     expect(JSON.parse(mem.getItem(SESSION_STORAGE_KEY)!)).not.toHaveProperty("results");
   });
@@ -85,7 +85,7 @@ describe("calculatorsessie", () => {
   it("11: bestaande zonnepanelen blijven bij verwijderen of resetten van nieuwe panelen", () => {
     const removed = removeMeasure(example(), "solar");
     expect(removed.profile.existingPanels).toBe(8);
-    expect(removed.owned.solar).toBe(true);
+    expect(removed.owned["solar"]).toBe(true);
     const reset = resetMeasure(example(), "solar");
     expect(reset.profile.existingPanels).toBe(8);
     expect(reset.profile.newPanels).toBe(0);

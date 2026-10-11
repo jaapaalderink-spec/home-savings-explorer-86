@@ -123,7 +123,7 @@ export function resetMeasure(s: CalculatorSession, id: string): CalculatorSessio
   const profile = { ...s.profile } as Record<string, unknown>;
   for (const f of fields) profile[f] = (DEFAULT_PROFILE as Record<string, unknown>)[f];
   // bestaande zonnepanelen: geen extra panelen als standaard
-  if (id === "solar" && s.profile.existingPanels > 0) profile.newPanels = 0;
+  if (id === "solar" && s.profile.existingPanels > 0) profile["newPanels"] = 0;
   const provided = s.profile.provided.filter((k) => !(fields as string[]).includes(k));
   return { ...s, profile: { ...(profile as EnergyProfile), provided } };
 }
