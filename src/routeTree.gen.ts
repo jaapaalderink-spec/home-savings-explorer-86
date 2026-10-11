@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BedanktRouteImport } from './routes/bedankt'
 import { Route as OfferteRouteImport } from './routes/offerte'
+import { Route as ResultaatRouteImport } from './routes/resultaat'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedFacturenRouteImport } from './routes/_authenticated/facturen'
@@ -43,6 +44,11 @@ const OfferteRoute = OfferteRouteImport.update({
   path: '/offerte',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResultaatRoute = ResultaatRouteImport.update({
+  id: '/resultaat',
+  path: '/resultaat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/bedankt': typeof BedanktRoute
   '/offerte': typeof OfferteRoute
+  '/resultaat': typeof ResultaatRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/facturen': typeof AuthenticatedFacturenRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/bedankt': typeof BedanktRoute
   '/offerte': typeof OfferteRoute
+  '/resultaat': typeof ResultaatRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/facturen': typeof AuthenticatedFacturenRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/bedankt': typeof BedanktRoute
   '/offerte': typeof OfferteRoute
+  '/resultaat': typeof ResultaatRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/facturen': typeof AuthenticatedFacturenRoute
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/bedankt'
     | '/offerte'
+    | '/resultaat'
     | '/admin'
     | '/dashboard'
     | '/facturen'
@@ -113,6 +123,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/bedankt'
     | '/offerte'
+    | '/resultaat'
     | '/admin'
     | '/dashboard'
     | '/facturen'
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/bedankt'
     | '/offerte'
+    | '/resultaat'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/_authenticated/facturen'
@@ -136,6 +148,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BedanktRoute: typeof BedanktRoute
   OfferteRoute: typeof OfferteRoute
+  ResultaatRoute: typeof ResultaatRoute
   ApiPublicMollieWebhookRoute: typeof ApiPublicMollieWebhookRoute
 }
 
@@ -174,6 +187,13 @@ declare module '@tanstack/react-router' {
       path: '/offerte'
       fullPath: '/offerte'
       preLoaderRoute: typeof OfferteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resultaat': {
+      id: '/resultaat'
+      path: '/resultaat'
+      fullPath: '/resultaat'
+      preLoaderRoute: typeof ResultaatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -228,6 +248,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BedanktRoute: BedanktRoute,
   OfferteRoute: OfferteRoute,
+  ResultaatRoute: ResultaatRoute,
   ApiPublicMollieWebhookRoute: ApiPublicMollieWebhookRoute,
 }
 export const routeTree = rootRouteImport
