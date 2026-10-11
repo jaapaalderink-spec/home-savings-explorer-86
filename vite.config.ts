@@ -12,4 +12,6 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Pre-bundle on startup so a late dependency discovery can't load a second React copy.
+  vite: { optimizeDeps: { include: ["@radix-ui/react-alert-dialog"] } },
 });
