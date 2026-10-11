@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { BarChart3, FileText, Gauge, Map, Table } from "lucide-react";
+import { BarChart3, Calculator, FileText, Gauge, Map, Table } from "lucide-react";
+import { CalculationDebug } from "@/components/admin/CalculationDebug";
 import { PlatformStats } from "@/components/admin/PlatformStats";
 import { AdminLeadsTable } from "@/components/admin/AdminLeadsTable";
 import { RegionMapPanel } from "@/components/admin/RegionMapPanel";
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type TabId = "overview" | "leads" | "map" | "quality" | "billing";
+type TabId = "overview" | "leads" | "map" | "quality" | "billing" | "calc";
 
 function AdminPage() {
   const [tab, setTab] = useState<TabId>("overview");
@@ -45,6 +46,7 @@ function AdminPage() {
     { id: "map", label: "Kaart & regio's", icon: Map },
     { id: "quality", label: "Kwaliteit", icon: Gauge },
     { id: "billing", label: "Facturatie", icon: FileText },
+    { id: "calc", label: "Rekencontrole", icon: Calculator },
   ];
 
   return (
@@ -92,6 +94,7 @@ function AdminPage() {
         {tab === "map" && <RegionMapPanel filters={filters} />}
         {tab === "quality" && <QualityScores />}
         {tab === "billing" && <BillingAdmin />}
+        {tab === "calc" && <CalculationDebug />}
       </div>
     </main>
   );

@@ -10,7 +10,13 @@ import {
 
 const P = (p: Partial<EnergyProfile>): EnergyProfile => ({ ...D, ...p });
 // Test home from the brief: 8 existing panels (~3000 kWh), extra panels, battery.
-const HOME = P({ existingPanels: 8, existingYield: 3000, newPanels: 8, netMetering: true, year: 2026 });
+const HOME = P({
+  existingPanels: 8,
+  existingYield: 3000,
+  newPanels: 8,
+  netMetering: true,
+  year: 2026,
+});
 const NEW_SOLAR = (8 * 450 * 850) / 1000; // 3060 kWh
 
 describe("regressie: contracten, zonnepanelen en thuisbatterij", () => {
@@ -32,7 +38,10 @@ describe("regressie: contracten, zonnepanelen en thuisbatterij", () => {
   });
   it("saldering 2026: verrekening op kWh, cost = (verbruik − opwek) × prijs", () => {
     const r = calculateScenario(P({ netMetering: true, year: 2026 }), ["solar"]);
-    expect(r.after.cost - r.after.gasCost - r.after.fixedCost).toBeCloseTo((3500 - NEW_SOLAR) * 0.29, 6);
+    expect(r.after.cost - r.after.gasCost - r.after.fixedCost).toBeCloseTo(
+      (3500 - NEW_SOLAR) * 0.29,
+      6,
+    );
   });
   it("geen wettelijke saldering in 2027", () => {
     const r = calculateScenario(P({ netMetering: true, year: 2027 }), ["solar"]);
@@ -50,26 +59,42 @@ describe("regressie: contracten, zonnepanelen en thuisbatterij", () => {
       { upToKwh: 2500, annualCost: 120 },
       { upToKwh: null, annualCost: 300 },
     ];
-    const r = calculateScenario(P({ exportCostModel: "tiers", exportCostTiers: tiers, consumption: 0 }), ["solar"]);
+    const r = calculateScenario(
+      P({ exportCostModel: "tiers", exportCostTiers: tiers, consumption: 0 }),
+      ["solar"],
+    );
     expect(r.after.exportCosts).toBe(300);
     // A battery that pushes export into a lower bracket saves the bracket difference, not per kWh.
-    const rb = batteryReport(P({ ...HOME, exportCostModel: "tiers", exportCostTiers: tiers }), ["solar", "battery"]);
+    const rb = batteryReport(P({ ...HOME, exportCostModel: "tiers", exportCostTiers: tiers }), [
+      "solar",
+      "battery",
+    ]);
     expect([0, 180, 280, 100]).toContain(Math.round(rb.y2027.exportCostSaving));
   });
   it("niet-vermijdbare vaste terugleverkosten zijn geen batterijvoordeel", () => {
-    const rb = batteryReport(P({ ...HOME, exportCostModel: "fixed", exportCostFixed: 150 }), ["solar", "battery"]);
+    const rb = batteryReport(P({ ...HOME, exportCostModel: "fixed", exportCostFixed: 150 }), [
+      "solar",
+      "battery",
+    ]);
     expect(rb.y2026.exportCostSaving).toBe(0);
     expect(rb.y2027.exportCostSaving).toBe(0);
   });
   it("vast contract met daltarief rekent nachtafname tegen dal", () => {
     const flat = calculateScenario(P({ contractType: "vast", year: 2027 }), []);
-    const dual = calculateScenario(P({ contractType: "vast", electricityPriceLow: 0.2, year: 2027 }), []);
+    const dual = calculateScenario(
+      P({ contractType: "vast", electricityPriceLow: 0.2, year: 2027 }),
+      [],
+    );
     expect(dual.before.cost).toBeLessThan(flat.before.cost);
   });
   it("variabel contract volgt tariefperiodes met ingangsdatum", () => {
     const base = calculateScenario(P({ contractType: "variabel", year: 2027 }), []);
     const half = calculateScenario(
-      P({ contractType: "variabel", year: 2027, tariffPeriods: [{ from: "2027-07-01", electricityPrice: 0.39 }] }),
+      P({
+        contractType: "variabel",
+        year: 2027,
+        tariffPeriods: [{ from: "2027-07-01", electricityPrice: 0.39 }],
+      }),
       [],
     );
     const h1 = debugScenario(half.profile, []).tariffs[4]!;
@@ -84,10 +109,27 @@ describe("regressie: contracten, zonnepanelen en thuisbatterij", () => {
     expect(noon.jun.exportPrice).not.toBe(noon.jun.importPrice);
   });
   it("netladen alleen met slimme strategie en dynamisch contract", () => {
-    const base = { ...HOME, year: 2027, contractType: "dynamisch" as const, batteryStrategy: "smart" as const };
+    const base = {
+      ...HOME,
+      year: 2027,
+      contractType: "dynamisch" as const,
+      batteryStrategy: "smart" as const,
+    };
     const off = batteryReport(P({ ...base, gridCharging: false }), ["battery"]);
-    const on = batteryReport(P({ ...base, gridCharging: true, existingPanels: 0, existingYield: null }), ["battery"]);
-    const fixed = batteryReport(P({ ...base, contractType: "vast", gridCharging: true, existingPanels: 0, existingYield: null }), ["battery"]);
+    const on = batteryReport(
+      P({ ...base, gridCharging: true, existingPanels: 0, existingYield: null }),
+      ["battery"],
+    );
+    const fixed = batteryReport(
+      P({
+        ...base,
+        contractType: "vast",
+        gridCharging: true,
+        existingPanels: 0,
+        existingYield: null,
+      }),
+      ["battery"],
+    );
     expect(off.y2027.gridChargedKwh).toBe(0);
     expect(on.y2027.gridChargedKwh).toBeGreaterThan(0);
     expect(fixed.y2027.gridChargedKwh).toBe(0);
@@ -107,7 +149,7 @@ describe("regressie: contracten, zonnepanelen en thuisbatterij", () => {
     const q = P({ ...HOME, netMetering: false, year: 2027, batteryEfficiency: 0.9 });
     const without = debugScenario(q, ["solar"]).after;
     const withB = debugScenario(q, ["solar", "battery"]).after;
-    const ref = (withB.discharged * 0.29) - (withB.charged * 0.05);
+    const ref = withB.discharged * 0.29 - withB.charged * 0.05;
     expect(without.cost - withB.cost).toBeCloseTo(ref, 6);
   });
   it("bestaande panelen worden niet dubbel gewaardeerd", () => {
@@ -123,7 +165,14 @@ describe("regressie: contracten, zonnepanelen en thuisbatterij", () => {
     expect(rb.y2026.lossKwh).toBeGreaterThan(0);
   });
   it("optimalisatie met laadpaal en warmtepomp blijft in balans", () => {
-    const q = P({ ...HOME, year: 2027, hasEv: true, contractType: "dynamisch", batteryStrategy: "smart", gridCharging: true });
+    const q = P({
+      ...HOME,
+      year: 2027,
+      hasEv: true,
+      contractType: "dynamisch",
+      batteryStrategy: "smart",
+      gridCharging: true,
+    });
     const s = debugScenario(q, ["solar", "battery", "ev", "heatpump"]).after;
     expect(s.balanceError).toBeLessThan(1e-9);
     expect(s.production).toBeCloseTo(s.direct + s.charged + s.exports, 6);
@@ -140,7 +189,8 @@ describe("regressie: contracten, zonnepanelen en thuisbatterij", () => {
     expect(b.y2026.net).toBeLessThan(0);
     expect(b.y2027.net).toBeGreaterThan(0);
     expect(b.conclusion).toMatch(/Vanaf 2027 kan de besparing toenemen/);
-    const sum = b.y2027.avoidedImport + b.y2027.missedExport + b.y2027.exportCostSaving + b.y2027.standbyCost;
+    const sum =
+      b.y2027.avoidedImport + b.y2027.missedExport + b.y2027.exportCostSaving + b.y2027.standbyCost;
     expect(sum).toBeCloseTo(b.y2027.net, 6);
   });
 });

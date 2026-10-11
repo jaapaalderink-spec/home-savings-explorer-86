@@ -62,7 +62,12 @@ export const energyProfileSchema = z.object({
   exportCostModel: z.enum(["none", "perKwh", "tiers", "fixed", "timeOfUse"]).default("perKwh"),
   exportCostNight: z.number().finite().min(0).max(1).nullable().default(null),
   exportCostTiers: z
-    .array(z.object({ upToKwh: z.number().min(0).max(100000).nullable(), annualCost: z.number().min(0).max(5000) }))
+    .array(
+      z.object({
+        upToKwh: z.number().min(0).max(100000).nullable(),
+        annualCost: z.number().min(0).max(5000),
+      }),
+    )
     .max(20)
     .default([]),
   exportCostFixed: amount(5000, 0),
@@ -111,7 +116,9 @@ const SUN_SHAPE = DAYLIGHT.map((dl) =>
 const BASE_SHAPE = norm(
   H.map((h) => (h < 6 ? 0.025 : h < 9 ? 0.045 : h < 17 ? 0.035 : h < 22 ? 0.065 : 0.04)),
 );
-const HEAT_SHAPE = norm(H.map((h) => (h < 6 ? 0.03 : h < 10 ? 0.06 : h < 17 ? 0.035 : h < 23 ? 0.05 : 0.03)));
+const HEAT_SHAPE = norm(
+  H.map((h) => (h < 6 ? 0.03 : h < 10 ? 0.06 : h < 17 ? 0.035 : h < 23 ? 0.05 : 0.03)),
+);
 const EV_EVENING = norm(H.map((h) => (h >= 18 && h <= 23 ? 1 : 0)));
 const EV_SOLAR = norm(H.map((h) => (h >= 10 && h <= 15 ? 1 : 0)));
 const COOL_SHAPE = norm(H.map((h) => (h >= 12 && h <= 18 ? 1 : 0)));
@@ -170,7 +177,8 @@ export function exportFloor(p: EnergyProfile) {
 export function hourlyTariff(p: EnergyProfile, month: number, hour: number) {
   const t = termsFor(p, month);
   const dynamic = p.contractType === "dynamisch";
-  const low = !dynamic && p.electricityPriceLow !== null && C.tariffs.lowTariffHours.includes(hour as never);
+  const low =
+    !dynamic && p.electricityPriceLow !== null && C.tariffs.lowTariffHours.includes(hour as never);
   const spotDev = C.dynamic.spotAvg * (DYN_SHAPE[month]![hour]! - 1);
   const night = C.tariffs.lowTariffHours.includes(hour as never);
   const exportCostRate =
@@ -183,7 +191,11 @@ export function hourlyTariff(p: EnergyProfile, month: number, hour: number) {
         : 0;
   return {
     bucket: dynamic ? "d" : low ? "l" : "n",
-    importPrice: dynamic ? t.electricityPrice + C.dynamic.vat * spotDev : low ? p.electricityPriceLow! : t.electricityPrice,
+    importPrice: dynamic
+      ? t.electricityPrice + C.dynamic.vat * spotDev
+      : low
+        ? p.electricityPriceLow!
+        : t.electricityPrice,
     exportPrice: dynamic ? t.exportPrice + spotDev : Math.max(t.exportPrice, exportFloor(p)),
     exportCostRate,
   };
@@ -192,8 +204,11 @@ export function hourlyTariff(p: EnergyProfile, month: number, hour: number) {
 export function annualExportCharge(p: EnergyProfile, grossExportKwh: number) {
   if (p.exportCostModel === "fixed") return p.exportCostFixed;
   if (p.exportCostModel !== "tiers" || !p.exportCostTiers.length) return 0;
-  const tiers = [...p.exportCostTiers].sort((a, b) => (a.upToKwh ?? Infinity) - (b.upToKwh ?? Infinity));
-  return (tiers.find((t) => grossExportKwh <= (t.upToKwh ?? Infinity)) ?? tiers[tiers.length - 1]!).annualCost;
+  const tiers = [...p.exportCostTiers].sort(
+    (a, b) => (a.upToKwh ?? Infinity) - (b.upToKwh ?? Infinity),
+  );
+  return (tiers.find((t) => grossExportKwh <= (t.upToKwh ?? Infinity)) ?? tiers[tiers.length - 1]!)
+    .annualCost;
 }
 
 type Options = { performance?: number; cooling?: boolean };
@@ -252,7 +267,8 @@ function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
   const minE = capacity * C.battery.minSoc;
   const maxE = capacity * C.battery.maxSoc;
   const dynamic = p.contractType === "dynamisch";
-  const gridChargeAllowed = p.batteryStrategy === "smart" && p.gridCharging && dynamic && capacity > 0;
+  const gridChargeAllowed =
+    p.batteryStrategy === "smart" && p.gridCharging && dynamic && capacity > 0;
   const evShape = p.smartCharging && production > 0 ? EV_SOLAR : EV_EVENING;
   const t = {
     demand: 0,
@@ -298,12 +314,26 @@ function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
       const surplus = hours.reduce((s, x) => s + Math.max(0, x.sun - x.load), 0);
       const room = maxE - minE;
       gridBudget = Math.max(0, Math.min(room, deficit) - Math.min(surplus * eff, room)) / eff;
-      const top = hours.map((x) => x.tariff.importPrice).sort((a, b) => b - a).slice(0, 4);
-      gridThreshold = (top.reduce((a, b) => a + b, 0) / top.length) * eff - C.battery.cycleCostPerKwh;
+      const top = hours
+        .map((x) => x.tariff.importPrice)
+        .sort((a, b) => b - a)
+        .slice(0, 4);
+      gridThreshold =
+        (top.reduce((a, b) => a + b, 0) / top.length) * eff - C.battery.cycleCostPerKwh;
     }
     let socSolar = 0;
     let socGrid = 0;
-    const day = { ...t, demand: 0, direct: 0, charged: 0, gridCharged: 0, discharged: 0, dischargedSolar: 0, imports: 0, exports: 0 };
+    const day = {
+      ...t,
+      demand: 0,
+      direct: 0,
+      charged: 0,
+      gridCharged: 0,
+      discharged: 0,
+      dischargedSolar: 0,
+      imports: 0,
+      exports: 0,
+    };
     const hourly: { imp: number; exp: number; tariff: (typeof hours)[number]["tariff"] }[] = [];
     for (const { load, evLoad, sun, tariff } of hours) {
       const direct = Math.min(sun, load);
@@ -315,11 +345,16 @@ function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
       const charge = surplus > 0 ? Math.min(surplus, power, Math.max(0, maxE - soc) / eff) : 0;
       let gridCharge = 0;
       if (gridChargeAllowed && gridBudget > 0 && deficit > 0 && tariff.importPrice < gridThreshold)
-        gridCharge = Math.min(power - charge, Math.max(0, maxE - soc - charge * eff) / eff, gridBudget);
+        gridCharge = Math.min(
+          power - charge,
+          Math.max(0, maxE - soc - charge * eff) / eff,
+          gridBudget,
+        );
       gridBudget -= gridCharge;
       // Never charge and discharge in the same hour.
       const avail = socSolar + socGrid;
-      const discharge = deficit > 0 && charge + gridCharge === 0 ? Math.min(deficit, power, avail) : 0;
+      const discharge =
+        deficit > 0 && charge + gridCharge === 0 ? Math.min(deficit, power, avail) : 0;
       const fromSolar = avail > 0 ? (discharge * socSolar) / avail : 0;
       socSolar = Math.max(0, socSolar + charge * eff - fromSolar);
       socGrid = Math.max(0, socGrid + gridCharge * eff - (discharge - fromSolar));
@@ -395,15 +430,18 @@ function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
         b.e -= off;
       }
   const exportCosts = exportCostVariable + annualExportCharge(p, t.exports);
-  const avgImportPrice = t.imports > 0 ? Object.values(buckets).reduce((s, b) => s + b.ic, 0) / t.imports : p.electricityPrice;
+  const avgImportPrice =
+    t.imports > 0
+      ? Object.values(buckets).reduce((s, b) => s + b.ic, 0) / t.imports
+      : p.electricityPrice;
   const standbyKwh = newCapacity > 0 ? (p.batteryStandbyW * 8760) / 1000 : 0;
   const standbyCost = standbyKwh * (avgImportPrice || p.electricityPrice);
-  const gasDisconnected =
-    wantsHeat && p.target === "electric" && p.canDisconnectGas && gas <= 1e-9;
+  const gasDisconnected = wantsHeat && p.target === "electric" && p.canDisconnectGas && gas <= 1e-9;
   const gasCost = gas * p.gasPrice;
   const fixedCost = gasDisconnected ? 0 : p.gas > 0 ? p.gasConnectionFixed : 0;
   const publicChargeCost = (evEnergy - homeEv) * p.publicChargePrice;
-  const cost = importCost - exportRevenue + exportCosts + standbyCost + gasCost + fixedCost + publicChargeCost;
+  const cost =
+    importCost - exportRevenue + exportCosts + standbyCost + gasCost + fixedCost + publicChargeCost;
   return {
     cost,
     gas,
@@ -478,7 +516,9 @@ export function calculateScenario(input: EnergyProfile, categories: readonly str
   if (selected.includes("ev") && !p.hasEv)
     notes.push("Zonder elektrische auto is voor de laadpaal geen besparing berekend.");
   if (p.hotWaterGas + p.cookingGas > p.gas)
-    notes.push("De ingevulde verdeling van gas is groter dan het totale gasverbruik; controleer deze invoer.");
+    notes.push(
+      "De ingevulde verdeling van gas is groter dan het totale gasverbruik; controleer deze invoer.",
+    );
   if (
     p.consumption <
     (["hybrid", "heatpump", "resistance"].includes(p.heating) ? p.heatingElectricity : 0) +
@@ -509,10 +549,13 @@ export function calculateScenario(input: EnergyProfile, categories: readonly str
         max: Math.max(contribution * 0.75, contribution * 1.25),
       },
       confidence: "low",
-      explanationReasons: id === "battery" && battery ? [battery.conclusion] : [
-        `Los aangeschaft: ${Math.round(standalone[id] ?? 0)} euro per jaar. Bijdrage in je pakket: ${Math.round(contribution)} euro per jaar.`,
-        ...notes,
-      ],
+      explanationReasons:
+        id === "battery" && battery
+          ? [battery.conclusion]
+          : [
+              `Los aangeschaft: ${Math.round(standalone[id] ?? 0)} euro per jaar. Bijdrage in je pakket: ${Math.round(contribution)} euro per jaar.`,
+              ...notes,
+            ],
       badges: ["inclusief bestaande installaties", "indicatief uurmodel"],
     };
   }
@@ -563,22 +606,36 @@ function buildAdvice(r: Omit<ScenarioResult, "advice"> & { advice: string[] }): 
     out.push(r.battery.conclusion);
     if (r.battery.strategyNote) out.push(r.battery.strategyNote);
     if (p.contractType === "dynamisch" && !(p.batteryStrategy === "smart" && p.gridCharging))
-      out.push("Slim laden en ontladen op dynamische uurprijzen is niet meegerekend. Zet 'Slimme optimalisatie' en 'Laden uit het net' aan om een indicatie te zien; onbalanshandel wordt nooit meegerekend.");
+      out.push(
+        "Slim laden en ontladen op dynamische uurprijzen is niet meegerekend. Zet 'Slimme optimalisatie' en 'Laden uit het net' aan om een indicatie te zien; onbalanshandel wordt nooit meegerekend.",
+      );
   }
   if (has("heatpump") && hasSolar)
-    out.push("Een warmtepomp verbruikt vooral in de winter stroom, als je zonnepanelen weinig opleveren. Zonnestroom dekt daarom maar een beperkt deel van dat verbruik.");
+    out.push(
+      "Een warmtepomp verbruikt vooral in de winter stroom, als je zonnepanelen weinig opleveren. Zonnestroom dekt daarom maar een beperkt deel van dat verbruik.",
+    );
   if (has("airco") && r.comfortCost > 0.5)
-    out.push(`Koelen met een airco is een comfortverbetering en kost naar schatting ${Math.round(r.comfortCost)} euro per jaar aan stroom. Dat is niet als besparing geteld.`);
+    out.push(
+      `Koelen met een airco is een comfortverbetering en kost naar schatting ${Math.round(r.comfortCost)} euro per jaar aan stroom. Dat is niet als besparing geteld.`,
+    );
   if (has("airco") && has("heatpump"))
-    out.push("Airco en warmtepomp vervangen samen nooit meer gas dan er is: de airco rekent alleen met de warmtevraag die de warmtepomp overlaat.");
+    out.push(
+      "Airco en warmtepomp vervangen samen nooit meer gas dan er is: de airco rekent alleen met de warmtevraag die de warmtepomp overlaat.",
+    );
   if (r.selected.length > 1) {
     if (r.synergy < -1)
-      out.push(`Samen leveren je maatregelen ${Math.round(-r.synergy)} euro per jaar minder op dan de optelsom van losse aanschaf. Ze gebruiken deels dezelfde zonnestroom of dezelfde warmtevraag, die maar één keer bespaard kan worden.`);
+      out.push(
+        `Samen leveren je maatregelen ${Math.round(-r.synergy)} euro per jaar minder op dan de optelsom van losse aanschaf. Ze gebruiken deels dezelfde zonnestroom of dezelfde warmtevraag, die maar één keer bespaard kan worden.`,
+      );
     else if (r.synergy > 1)
-      out.push(`Samen leveren je maatregelen ${Math.round(r.synergy)} euro per jaar meer op dan de optelsom van losse aanschaf, doordat ze elkaars energie benutten.`);
+      out.push(
+        `Samen leveren je maatregelen ${Math.round(r.synergy)} euro per jaar meer op dan de optelsom van losse aanschaf, doordat ze elkaars energie benutten.`,
+      );
   }
   if (has("battery") && has("ev"))
-    out.push("Een thuisbatterij is te klein om een elektrische auto op te laden; in de berekening gaat opgeslagen stroom naar het gewone verbruik binnen haar capaciteit.");
+    out.push(
+      "Een thuisbatterij is te klein om een elektrische auto op te laden; in de berekening gaat opgeslagen stroom naar het gewone verbruik binnen haar capaciteit.",
+    );
   return out;
 }
 
@@ -622,7 +679,12 @@ export function profileFromSearch(search: URLSearchParams): EnergyProfile {
 const round = (n: number) => Math.round(n);
 function contractNote(p: EnergyProfile) {
   const name = [p.supplier, p.contractName].filter(Boolean).join(" – ");
-  const label = { vast: "vast contract", variabel: "variabel contract", dynamisch: "dynamisch contract (representatief uurprijsprofiel, geen historische prijzen)", onbekend: "onbekend contract: standaardaannames" }[p.contractType];
+  const label = {
+    vast: "vast contract",
+    variabel: "variabel contract",
+    dynamisch: "dynamisch contract (representatief uurprijsprofiel, geen historische prijzen)",
+    onbekend: "onbekend contract: standaardaannames",
+  }[p.contractType];
   return `Contract: ${label}${name ? ` (${name})` : ""}. De werkelijke uitkomst hangt af van je energieleverancier en contractvoorwaarden.`;
 }
 
@@ -649,18 +711,35 @@ export type BatteryYear = {
  */
 export function batteryReport(p: EnergyProfile, selected: readonly string[]) {
   const rest = selected.filter((x) => x !== "battery");
-  const years = ([[2026, true], [2027, false]] as const).map(([year, netMetering]): BatteryYear => {
-    const q = { ...p, year: Math.max(year, year === 2027 ? Math.max(2027, p.year) : 2026), netMetering };
+  const years = (
+    [
+      [2026, true],
+      [2027, false],
+    ] as const
+  ).map(([year, netMetering]): BatteryYear => {
+    const q = {
+      ...p,
+      year: Math.max(year, year === 2027 ? Math.max(2027, p.year) : 2026),
+      netMetering,
+    };
     const without = simulate(q, new Set(rest));
     const withB = simulate(q, new Set([...rest, "battery"]));
     const net = without.cost - withB.cost;
     const alt = [0.85, 0.95].map(
       (batteryEfficiency) =>
-        without.cost - simulate({ ...q, batteryEfficiency: Math.min(batteryEfficiency, 1) }, new Set([...rest, "battery"])).cost,
+        without.cost -
+        simulate(
+          { ...q, batteryEfficiency: Math.min(batteryEfficiency, 1) },
+          new Set([...rest, "battery"]),
+        ).cost,
     );
     const lossKwh = withB.losses - without.losses;
     // Loss value: lost kWh would otherwise have been exported (or netted at the supply price).
-    const lossValue = lossKwh * (usesNetMetering(q) && without.imports > without.exports ? q.electricityPrice : Math.max(q.exportPrice - q.exportCost, 0));
+    const lossValue =
+      lossKwh *
+      (usesNetMetering(q) && without.imports > without.exports
+        ? q.electricityPrice
+        : Math.max(q.exportPrice - q.exportCost, 0));
     return {
       year: q.year,
       netMetering: usesNetMetering(q),
@@ -672,7 +751,8 @@ export function batteryReport(p: EnergyProfile, selected: readonly string[]) {
       lossValue,
       net,
       range: { min: Math.min(net, ...alt), max: Math.max(net, ...alt) },
-      extraSelfKwh: withB.direct + withB.dischargedSolar - (without.direct + without.dischargedSolar),
+      extraSelfKwh:
+        withB.direct + withB.dischargedSolar - (without.direct + without.dischargedSolar),
       selfShareBefore: without.selfConsumption,
       selfShareAfter: withB.selfConsumption,
       gridChargedKwh: withB.gridCharged,
@@ -700,7 +780,11 @@ export function compareSolarBattery(p: EnergyProfile, selected: readonly string[
   const rest = selected.filter((x) => x !== "solar" && x !== "battery");
   const sets = { A: [], B: ["battery"], C: ["solar"], D: ["solar", "battery"] } as const;
   return ([2026, 2027] as const).map((year) => {
-    const q = { ...p, year: year === 2027 ? Math.max(2027, p.year) : 2026, netMetering: year === 2026 };
+    const q = {
+      ...p,
+      year: year === 2027 ? Math.max(2027, p.year) : 2026,
+      netMetering: year === 2026,
+    };
     const costs = Object.fromEntries(
       Object.entries(sets).map(([k, ids]) => [k, simulate(q, new Set([...rest, ...ids])).cost]),
     ) as Record<keyof typeof sets, number>;
@@ -721,7 +805,11 @@ export function debugScenario(input: EnergyProfile, categories: readonly string[
   return {
     profile: p,
     selected,
-    tariffs: H.filter((h) => h % 3 === 0).map((h) => ({ hour: h, jan: hourlyTariff(p, 0, h), jun: hourlyTariff(p, 5, h) })),
+    tariffs: H.filter((h) => h % 3 === 0).map((h) => ({
+      hour: h,
+      jan: hourlyTariff(p, 0, h),
+      jun: hourlyTariff(p, 5, h),
+    })),
     exportFloor: exportFloor(p),
     before: simulate(p, new Set()),
     after: simulate(p, new Set(selected)),

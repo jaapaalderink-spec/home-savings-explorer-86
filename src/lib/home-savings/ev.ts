@@ -1,4 +1,12 @@
-import { MARKET, AdviceResult, clamp, bandwidth, confidenceFromCompleteness, formatEuro, formatNumber } from "./shared";
+import {
+  MARKET,
+  AdviceResult,
+  clamp,
+  bandwidth,
+  confidenceFromCompleteness,
+  formatEuro,
+  formatNumber,
+} from "./shared";
 
 export interface EVInput {
   evStatus: "nu" | "binnen2jaar" | "nogniet";
@@ -28,7 +36,8 @@ export function calculateEVAdvice(input: EVInput): AdviceResult {
   const evCost =
     solarChargingKwh * MARKET.feedInValuePerKwh +
     (homeChargingKwh - solarChargingKwh) * ASSUMPTIONS.electricityPricePerKwh;
-  const evPublicCost = evChargingKwh * (1 - ASSUMPTIONS.homeChargeShare) * ASSUMPTIONS.publicPricePerKwh;
+  const evPublicCost =
+    evChargingKwh * (1 - ASSUMPTIONS.homeChargeShare) * ASSUMPTIONS.publicPricePerKwh;
 
   let practicalSavings = Math.max(fuelCost - (evCost + evPublicCost), 0);
   practicalSavings = Math.round(practicalSavings / ASSUMPTIONS.step) * ASSUMPTIONS.step;
@@ -37,11 +46,17 @@ export function calculateEVAdvice(input: EVInput): AdviceResult {
 
   const reasons: string[] = [];
   if (evStatus === "nu") {
-    reasons.push("Je rijdt al elektrisch — een eigen laadpaal maakt thuis laden makkelijk en goedkoper dan openbare palen.");
+    reasons.push(
+      "Je rijdt al elektrisch — een eigen laadpaal maakt thuis laden makkelijk en goedkoper dan openbare palen.",
+    );
   } else if (evStatus === "binnen2jaar") {
-    reasons.push("Je overweegt een elektrische auto binnen 2 jaar; een laadpaal zit dan vaak in het plaatje.");
+    reasons.push(
+      "Je overweegt een elektrische auto binnen 2 jaar; een laadpaal zit dan vaak in het plaatje.",
+    );
   } else {
-    reasons.push("Laat je een laadpaal meenemen, dan rijd je toekomstbestendig moeiteloos elektrisch zodra je overstapt.");
+    reasons.push(
+      "Laat je een laadpaal meenemen, dan rijd je toekomstbestendig moeiteloos elektrisch zodra je overstapt.",
+    );
   }
   reasons.push(`Met ${formatNumber(annualKm)} km/jaar bespaar je fors op brandstofkosten.`);
 

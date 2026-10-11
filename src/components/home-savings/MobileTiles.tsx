@@ -29,7 +29,9 @@ export function MobileTiles({
             </span>
             <span className="min-w-0">
               <span className="block truncate text-sm font-semibold text-ink">{cat.label}</span>
-              <span className="block truncate text-[11px] text-moss/70">{done ? "Ingevuld" : cat.short}</span>
+              <span className="block truncate text-[11px] text-moss/70">
+                {done ? "Ingevuld" : cat.short}
+              </span>
             </span>
           </button>
         );

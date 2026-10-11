@@ -21,7 +21,11 @@ import {
 import { CountUp } from "./CountUp";
 import { buildOfferteHref, buildResultHref } from "./offerte-params";
 import { EnergyProfileForm } from "./EnergyProfileForm";
-import { DEFAULT_PROFILE, calculateScenario, type EnergyProfile } from "@/lib/home-savings/scenario";
+import {
+  DEFAULT_PROFILE,
+  calculateScenario,
+  type EnergyProfile,
+} from "@/lib/home-savings/scenario";
 import { BatteryBreakdown } from "./BatteryBreakdown";
 
 export interface HomeInputs {
@@ -132,8 +136,17 @@ export function CategoryPanel({
                     battery={
                       openId === "battery" && result
                         ? (() => {
-                            const b = calculateScenario(inputs.profile, Object.keys(results).filter((k) => results[k])).battery;
-                            return b ? <BatteryBreakdown years={b.years} conclusion={b.conclusion} profile={inputs.profile} /> : null;
+                            const b = calculateScenario(
+                              inputs.profile,
+                              Object.keys(results).filter((k) => results[k]),
+                            ).battery;
+                            return b ? (
+                              <BatteryBreakdown
+                                years={b.years}
+                                conclusion={b.conclusion}
+                                profile={inputs.profile}
+                              />
+                            ) : null;
                           })()
                         : null
                     }
@@ -283,12 +296,18 @@ function ResultCard({
       >
         {battery}
         <p className="mt-3 text-[11px] text-moss/60">
-          Toegerekende bijdrage in je totale pakket (volgorde-onafhankelijk): {formatEuro(result.practicalSavings)} per jaar.
+          Toegerekende bijdrage in je totale pakket (volgorde-onafhankelijk):{" "}
+          {formatEuro(result.practicalSavings)} per jaar.
         </p>
         <Button type="button" variant="outline" className="mt-3 w-full" onClick={onCalculate}>
           Verwijder uit bespaarpakket
         </Button>
-        <Button asChild className="mt-4 w-full" size="lg" style={{ backgroundColor: "#4f8f62", color: "white" }}>
+        <Button
+          asChild
+          className="mt-4 w-full"
+          size="lg"
+          style={{ backgroundColor: "#4f8f62", color: "white" }}
+        >
           <a href={offerteHref}>
             Vraag vrijblijvend offertes aan <ArrowRight size={18} className="ml-1.5" />
           </a>

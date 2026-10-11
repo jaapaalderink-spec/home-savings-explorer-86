@@ -131,7 +131,11 @@ function Hotspot({
       <span
         className="relative flex h-11 w-11 items-center justify-center rounded-full ring-1 ring-white/60 backdrop-blur-md transition-transform duration-200 group-hover:scale-110 group-focus-visible:scale-110"
         style={{
-          backgroundColor: active ? "#4f8f62" : done ? "rgba(79,143,98,0.92)" : "rgba(240,184,79,0.94)",
+          backgroundColor: active
+            ? "#4f8f62"
+            : done
+              ? "rgba(79,143,98,0.92)"
+              : "rgba(240,184,79,0.94)",
           boxShadow: "0 10px 24px rgba(23,33,27,0.35)",
         }}
       >

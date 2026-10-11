@@ -72,10 +72,8 @@ export function calculateHeatPumpAdvice(input: HeatPumpInput): AdviceResult {
   const yearInsulation = insulationFactor[yearBucket(buildYear)] ?? 1;
   const labelInsulation = labelFactor[energyLabel];
   // Combineer bouwjaar en energielabel; label heeft iets meer gewicht omdat het actuele isolatieniveau weergeeft.
-  const insulation = (yearInsulation * 0.4 + labelInsulation * 0.6);
-  const adjustedGasUse = Math.round(
-    baseGasUse * insulation * (input.hasHeatBoiler ? 0.88 : 1),
-  );
+  const insulation = yearInsulation * 0.4 + labelInsulation * 0.6;
+  const adjustedGasUse = Math.round(baseGasUse * insulation * (input.hasHeatBoiler ? 0.88 : 1));
 
   let practicalSavings = 0;
   const reasons: string[] = [];
@@ -89,17 +87,24 @@ export function calculateHeatPumpAdvice(input: HeatPumpInput): AdviceResult {
     practicalSavings = Math.max(gasCost - newElectricityCost, 0);
     reasons.push("Een warmtepomp vervangt je gasketel en verlaagt je gasrekening fors.");
     if (buildYear < 1980) {
-      reasons.push("Oudere woningen isoleren vaak wat minder, houd rekening met een hybride warmtepomp.");
+      reasons.push(
+        "Oudere woningen isoleren vaak wat minder, houd rekening met een hybride warmtepomp.",
+      );
     } else {
-      reasons.push("Je woning is goed geïsoleerd genoeg voor een efficiënte volledig-elektrische warmtepomp.");
+      reasons.push(
+        "Je woning is goed geïsoleerd genoeg voor een efficiënte volledig-elektrische warmtepomp.",
+      );
     }
     if (input.contract === "dynamisch") {
       practicalSavings *= 1.08;
       badges.push("dynamisch contract");
     }
   } else {
-    practicalSavings = adjustedGasUse * 0.4 * (ASSUMPTIONS.gasPricePerM3 - ASSUMPTIONS.electricityPricePerKwh);
-    reasons.push("Met een efficiëntere warmtepomp verbruik je minder stroom voor verwarming dan nu.");
+    practicalSavings =
+      adjustedGasUse * 0.4 * (ASSUMPTIONS.gasPricePerM3 - ASSUMPTIONS.electricityPricePerKwh);
+    reasons.push(
+      "Met een efficiëntere warmtepomp verbruik je minder stroom voor verwarming dan nu.",
+    );
   }
 
   practicalSavings = Math.round(practicalSavings / ASSUMPTIONS.step) * ASSUMPTIONS.step;
@@ -129,7 +134,8 @@ export function calculateHeatPumpAdvice(input: HeatPumpInput): AdviceResult {
     beforeAfter: {
       label: "Gasverbruik",
       before: `${Math.round(adjustedGasUse)} m³/jaar`,
-      after: currentHeating === "gas" ? "±0 m³/jaar" : `${Math.round(adjustedGasUse * 0.5)} m³/jaar`,
+      after:
+        currentHeating === "gas" ? "±0 m³/jaar" : `${Math.round(adjustedGasUse * 0.5)} m³/jaar`,
     },
     confidence,
     explanationReasons: reasons,

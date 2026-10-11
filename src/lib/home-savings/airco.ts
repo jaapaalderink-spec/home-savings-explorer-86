@@ -1,4 +1,11 @@
-import { AdviceResult, HouseType, clamp, bandwidth, confidenceFromCompleteness, MARKET } from "./shared";
+import {
+  AdviceResult,
+  HouseType,
+  clamp,
+  bandwidth,
+  confidenceFromCompleteness,
+  MARKET,
+} from "./shared";
 
 export interface AircoInput {
   roomCount: number;
@@ -29,21 +36,30 @@ export function calculateAircoAdvice(input: AircoInput): AdviceResult {
   const extraElectricity =
     ((gasReplacedM3 * MARKET.gasKwhPerM3 * MARKET.boilerEfficiency) / ASSUMPTIONS.heatPumpCop) *
     ASSUMPTIONS.electricityPricePerKwh;
-  const coolingCost = roomCount * ASSUMPTIONS.coolingKwhPerRoom * ASSUMPTIONS.electricityPricePerKwh;
+  const coolingCost =
+    roomCount * ASSUMPTIONS.coolingKwhPerRoom * ASSUMPTIONS.electricityPricePerKwh;
   let practicalSavings = Math.max(gasSavings - extraElectricity - coolingCost, 0);
   practicalSavings = Math.round(practicalSavings / ASSUMPTIONS.step) * ASSUMPTIONS.step;
 
   const range = bandwidth(practicalSavings, 0.25, ASSUMPTIONS.step);
 
   const reasons: string[] = [];
-  reasons.push("Een moderne airco (met warmtepompfunctie) koelt én verwarmt efficiënt door de hoge COP.");
+  reasons.push(
+    "Een moderne airco (met warmtepompfunctie) koelt én verwarmt efficiënt door de hoge COP.",
+  );
   if (roomCount >= 3) {
-    reasons.push(`Met ${roomCount} ruimtes dekt de airco een groot deel van je verwarming en bespaar je veel gas.`);
+    reasons.push(
+      `Met ${roomCount} ruimtes dekt de airco een groot deel van je verwarming en bespaar je veel gas.`,
+    );
   } else {
-    reasons.push(`Voor ${roomCount} ruimte(s) is het een gerichte besparing op comfortabele temperaturen.`);
+    reasons.push(
+      `Voor ${roomCount} ruimte(s) is het een gerichte besparing op comfortabele temperaturen.`,
+    );
   }
   if (houseType === "appartement") {
-    reasons.push("In een appartement is een multi-split airco vaak de makkelijkste keuze zonder gasaansluiting.");
+    reasons.push(
+      "In een appartement is een multi-split airco vaak de makkelijkste keuze zonder gasaansluiting.",
+    );
   }
 
   const badges: string[] = [];
