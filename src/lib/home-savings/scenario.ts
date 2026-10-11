@@ -456,12 +456,14 @@ export function calculateScenario(input: EnergyProfile, categories: readonly str
   const comfortCost = selected.includes("airco")
     ? after.cost - simulate(p, new Set(selected), { cooling: false }).cost
     : 0;
+  const battery = selected.includes("battery") ? batteryReport(p, selected) : null;
   const notes = [
     "Vergelijking met je huidige installaties; bedragen zijn energiekosten, exclusief aanschaf, onderhoud en subsidies.",
     usesNetMetering(p)
       ? `Rekenjaar ${p.year} met saldering.`
       : `Rekenjaar ${p.year} zonder saldering${p.year > C.netMeteringLastYear ? " (salderingsregeling eindigt 1 januari 2027)" : ""}, met netto terugleververgoeding na terugleverkosten.`,
     `Uurmodel met een representatieve dag per maand en standaardprofielen; geen gemeten uurdata. Aannames geldig vanaf ${C.validFrom}.`,
+    contractNote(p),
   ];
   if (selected.includes("heatpump"))
     notes.push(
@@ -472,10 +474,6 @@ export function calculateScenario(input: EnergyProfile, categories: readonly str
   if (p.existingPanels > 0)
     notes.push(
       `Bestaand: ${p.existingPanels} panelen; ${Math.round(existingSolarKwh(p))} kWh/jaar ${p.existingYield === null ? "geschat" : "gemeten"}. Deze opbrengst zit al in de uitgangssituatie.`,
-    );
-  if (selected.includes("battery"))
-    notes.push(
-      "De batterij laadt alleen met zonneoverschot binnen haar vermogen en capaciteit, met laadverlies, en ontlaadt dezelfde avond en nacht. Er wordt niets van zomer naar winter verschoven.",
     );
   if (selected.includes("ev") && !p.hasEv)
     notes.push("Zonder elektrische auto is voor de laadpaal geen besparing berekend.");
@@ -511,7 +509,7 @@ export function calculateScenario(input: EnergyProfile, categories: readonly str
         max: Math.max(contribution * 0.75, contribution * 1.25),
       },
       confidence: "low",
-      explanationReasons: [
+      explanationReasons: id === "battery" && battery ? [battery.conclusion] : [
         `Los aangeschaft: ${Math.round(standalone[id] ?? 0)} euro per jaar. Bijdrage in je pakket: ${Math.round(contribution)} euro per jaar.`,
         ...notes,
       ],
@@ -532,6 +530,8 @@ export function calculateScenario(input: EnergyProfile, categories: readonly str
     notes,
     payback: paybackYears(selected, savings),
     range: { min: Math.min(savings, ...uncertain), max: Math.max(savings, ...uncertain) },
+    battery,
+    comparisons: compareSolarBattery(p, selected),
     advice: [] as string[],
   };
   result.advice = buildAdvice(result);
@@ -559,15 +559,10 @@ function buildAdvice(r: Omit<ScenarioResult, "advice"> & { advice: string[] }): 
         : "Je zonnepanelen en laadpaal kunnen goed samenwerken. Door overdag te laden, kun je meer van je zelf opgewekte stroom direct gebruiken. Zet 'Slim laden overdag' aan om dit door te rekenen.",
     );
   }
-  if (has("battery")) {
-    const s = r.standalone.battery ?? 0;
-    out.push(
-      s <= 0
-        ? "In jouw situatie levert een thuisbatterij financieel weinig of niets op, bijvoorbeeld door saldering of weinig zonneoverschot. Laat dit vooral meewegen als je om andere redenen een batterij overweegt."
-        : "Een thuisbatterij kan jouw eigenverbruik verhogen. Of dit financieel aantrekkelijk is, hangt af van jouw energietarief, het batterijformaat en jouw dagelijkse stroomverbruik.",
-    );
-    if (p.contractType === "dynamisch")
-      out.push("Extra opbrengst door handelen op dynamische prijzen is niet meegerekend; die is niet vooraf te garanderen.");
+  if (has("battery") && r.battery) {
+    if (r.battery.strategyNote) out.push(r.battery.strategyNote);
+    if (p.contractType === "dynamisch" && !(p.batteryStrategy === "smart" && p.gridCharging))
+      out.push("Slim laden en ontladen op dynamische uurprijzen is niet meegerekend. Zet 'Slimme optimalisatie' en 'Laden uit het net' aan om een indicatie te zien; onbalanshandel wordt nooit meegerekend.");
   }
   if (has("heatpump") && hasSolar)
     out.push("Een warmtepomp verbruikt vooral in de winter stroom, als je zonnepanelen weinig opleveren. Zonnestroom dekt daarom maar een beperkt deel van dat verbruik.");
@@ -621,4 +616,115 @@ export function profileFromSearch(search: URLSearchParams): EnergyProfile {
   p.evKm = read("evKm", p.evKm, 120000);
   p.hasAirco = owned.includes("airco");
   return p;
+}
+
+const round = (n: number) => Math.round(n);
+function contractNote(p: EnergyProfile) {
+  const name = [p.supplier, p.contractName].filter(Boolean).join(" – ");
+  const label = { vast: "vast contract", variabel: "variabel contract", dynamisch: "dynamisch contract (representatief uurprijsprofiel, geen historische prijzen)", onbekend: "onbekend contract: standaardaannames" }[p.contractType];
+  return `Contract: ${label}${name ? ` (${name})` : ""}. De werkelijke uitkomst hangt af van je energieleverancier en contractvoorwaarden.`;
+}
+
+export type BatteryYear = {
+  year: number;
+  netMetering: boolean;
+  avoidedImport: number;
+  missedExport: number;
+  exportCostSaving: number;
+  standbyCost: number;
+  lossKwh: number;
+  lossValue: number;
+  net: number;
+  range: { min: number; max: number };
+  extraSelfKwh: number;
+  selfShareBefore: number;
+  selfShareAfter: number;
+  gridChargedKwh: number;
+};
+
+/**
+ * Marginal battery value: the same home configuration with and without the new
+ * battery (scenario D vs C), for 2026 with saldering and 2027 without.
+ */
+export function batteryReport(p: EnergyProfile, selected: readonly string[]) {
+  const rest = selected.filter((x) => x !== "battery");
+  const years = ([[2026, true], [2027, false]] as const).map(([year, netMetering]): BatteryYear => {
+    const q = { ...p, year: Math.max(year, year === 2027 ? Math.max(2027, p.year) : 2026), netMetering };
+    const without = simulate(q, new Set(rest));
+    const withB = simulate(q, new Set([...rest, "battery"]));
+    const net = without.cost - withB.cost;
+    const alt = [0.85, 0.95].map(
+      (batteryEfficiency) =>
+        without.cost - simulate({ ...q, batteryEfficiency: Math.min(batteryEfficiency, 1) }, new Set([...rest, "battery"])).cost,
+    );
+    const lossKwh = withB.losses - without.losses;
+    // Loss value: lost kWh would otherwise have been exported (or netted at the supply price).
+    const lossValue = lossKwh * (usesNetMetering(q) && without.imports > without.exports ? q.electricityPrice : Math.max(q.exportPrice - q.exportCost, 0));
+    return {
+      year: q.year,
+      netMetering: usesNetMetering(q),
+      avoidedImport: without.importCost - withB.importCost,
+      missedExport: withB.exportRevenue - without.exportRevenue,
+      exportCostSaving: without.exportCosts - withB.exportCosts,
+      standbyCost: -(withB.standbyCost - without.standbyCost),
+      lossKwh,
+      lossValue,
+      net,
+      range: { min: Math.min(net, ...alt), max: Math.max(net, ...alt) },
+      extraSelfKwh: withB.direct + withB.dischargedSolar - (without.direct + without.dischargedSolar),
+      selfShareBefore: without.selfConsumption,
+      selfShareAfter: withB.selfConsumption,
+      gridChargedKwh: withB.gridCharged,
+    };
+  });
+  const [y26, y27] = years as [BatteryYear, BatteryYear];
+  let conclusion: string;
+  if (y26.net <= 5 && y27.net > y26.net + 5)
+    conclusion = `Met de huidige salderingsregeling levert de batterij financieel weinig of niets op (${signed(y26.net)} per jaar in 2026). Vanaf 2027 kan de besparing toenemen tot ongeveer ${signed(y27.net)} per jaar, doordat zelfgebruik van zonnestroom belangrijker wordt.`;
+  else if (y26.net <= 5 && y27.net <= 5)
+    conclusion = `In jouw situatie levert een thuisbatterij financieel weinig of niets op, ook vanaf 2027 (${signed(y27.net)} per jaar). ${y26.extraSelfKwh < 100 ? "Er is weinig zonneoverschot om op te slaan." : "Het opslagverlies en de gemiste terugleververgoeding wegen op tegen de vermeden inkoop."}`;
+  else
+    conclusion = `De batterij bespaart ongeveer ${signed(y26.net)} per jaar in 2026 en ${signed(y27.net)} per jaar vanaf 2027, doordat je ${round(y27.extraSelfKwh)} kWh meer eigen zonnestroom gebruikt.`;
+  const strategyNote =
+    p.batteryStrategy === "smart"
+      ? "Slimme optimalisatie vraagt een energiemanagementsysteem of een batterij met sturing op uurprijzen."
+      : null;
+  return { years, y2026: y26, y2027: y27, conclusion, strategyNote, comparedWith: rest };
+}
+
+const signed = (n: number) => `${n >= 0 ? "+" : "−"}€ ${Math.abs(Math.round(n))}`;
+
+/** Scenarios A-D (current, +battery, +solar, +solar+battery) per year, other selected measures held equal. */
+export function compareSolarBattery(p: EnergyProfile, selected: readonly string[]) {
+  const rest = selected.filter((x) => x !== "solar" && x !== "battery");
+  const sets = { A: [], B: ["battery"], C: ["solar"], D: ["solar", "battery"] } as const;
+  return ([2026, 2027] as const).map((year) => {
+    const q = { ...p, year: year === 2027 ? Math.max(2027, p.year) : 2026, netMetering: year === 2026 };
+    const costs = Object.fromEntries(
+      Object.entries(sets).map(([k, ids]) => [k, simulate(q, new Set([...rest, ...ids])).cost]),
+    ) as Record<keyof typeof sets, number>;
+    return {
+      year: q.year,
+      costs,
+      batteryOnExisting: costs.A - costs.B,
+      batteryWithNewSolar: costs.C - costs.D,
+      package: costs.A - costs.D,
+    };
+  });
+}
+
+/** Full traceable breakdown for the admin calculation check. */
+export function debugScenario(input: EnergyProfile, categories: readonly string[]) {
+  const p = energyProfileSchema.parse(input);
+  const selected = MEASURES.filter((id) => categories.includes(id));
+  return {
+    profile: p,
+    selected,
+    tariffs: H.filter((h) => h % 3 === 0).map((h) => ({ hour: h, jan: hourlyTariff(p, 0, h), jun: hourlyTariff(p, 5, h) })),
+    exportFloor: exportFloor(p),
+    before: simulate(p, new Set()),
+    after: simulate(p, new Set(selected)),
+    battery: selected.includes("battery") ? batteryReport(p, selected) : null,
+    comparisons: compareSolarBattery(p, selected),
+  };
 }
