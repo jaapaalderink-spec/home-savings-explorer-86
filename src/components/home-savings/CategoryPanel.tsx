@@ -18,7 +18,7 @@ import {
   buildAdviceText,
 } from "@/lib/home-savings";
 import { CountUp } from "./CountUp";
-import { buildOfferteHref } from "./offerte-params";
+import { buildOfferteHref, buildResultHref } from "./offerte-params";
 import { EnergyProfileForm } from "./EnergyProfileForm";
 import { DEFAULT_PROFILE, type EnergyProfile } from "@/lib/home-savings/scenario";
 
@@ -128,6 +128,7 @@ export function CategoryPanel({
                     categoryId={openId!}
                     result={result}
                     offerteHref={buildOfferteHref(inputs, results, openId!)}
+                    resultHref={buildResultHref(inputs, results, openId!)}
                     onCalculate={() => onCalculate(openId!)}
                   />
                 </div>
@@ -230,11 +231,13 @@ function ContractForm({
 
 function ResultCard({
   offerteHref,
+  resultHref,
   result,
   onCalculate,
 }: {
   categoryId: string;
   offerteHref: string;
+  resultHref: string;
   result: AdviceResult | null;
   onCalculate: () => void;
 }) {
@@ -255,7 +258,7 @@ function ResultCard({
           size="lg"
           style={{ backgroundColor: "#4f8f62", color: "white" }}
         >
-          <Sparkles size={18} className="mr-1.5" /> Bereken je besparing
+          <Sparkles size={18} className="mr-1.5" /> Voeg toe aan mijn pakket
         </Button>
       </div>
     );
@@ -317,8 +320,11 @@ function ResultCard({
         style={{ backgroundColor: "#4f8f62", color: "white" }}
       >
         <a href={offerteHref}>
-          Vraag gratis offertes aan <ArrowRight size={18} className="ml-1.5" />
+          Vraag vrijblijvend offertes aan <ArrowRight size={18} className="ml-1.5" />
         </a>
+      </Button>
+      <Button asChild variant="outline" className="mt-2 w-full">
+        <a href={resultHref}>Bekijk mijn totale voordeel</a>
       </Button>
     </div>
   );
