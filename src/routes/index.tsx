@@ -43,6 +43,12 @@ function HomePage() {
   const handleChange = useCallback((patch: Partial<HomeInputs>) => {
     setInputs((prev) => {
       const next = { ...prev, ...patch };
+      if (patch.contract)
+        next.profile = {
+          ...next.profile,
+          contractType: patch.contract.type as typeof next.profile.contractType,
+          provided: [...new Set([...next.profile.provided, "contractType"])],
+        };
       if (patch.owned) {
         const p = { ...next.profile };
         if (patch.owned["solar"] !== prev.owned["solar"]) {

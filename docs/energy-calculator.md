@@ -1,4 +1,6 @@
-# Household energy calculator, version 1
+# Household energy calculator, version 2
+
+Version 2: hourly model (one representative day per month, battery cycle 06:00-05:59, unused charge booked as export), central assumptions in `src/lib/home-savings/config.ts`, calendar year (saldering only <= 2026), separate export costs, standalone vs Shapley contribution vs synergy, comfort cost for cooling, advice texts, results page `/resultaat`. Tests: `scenario.test.ts`, `scenarios.test.ts`.
 
 The homepage and quotation wizard use `src/lib/home-savings/scenario.ts`.
 Existing devices belong to the baseline. A selected measure changes that

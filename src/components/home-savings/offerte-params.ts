@@ -37,3 +37,12 @@ export function buildOfferteHref(
 
   return `/offerte?${params.toString()}`;
 }
+
+/** zelfde gegevens, maar naar het totaaloverzicht */
+export function buildResultHref(
+  inputs: HomeInputs,
+  results: Record<string, AdviceResult | null>,
+  extraCat?: string,
+): string {
+  return buildOfferteHref(inputs, results, extraCat).replace("/offerte?", "/resultaat?");
+}

@@ -3,7 +3,7 @@ import { ArrowRight, Wand2, Check, Circle, Home } from "lucide-react";
 import { CATEGORIES, CONTRACT_META } from "./categories";
 import { AdviceResult, formatEuro } from "@/lib/home-savings";
 import { CountUp } from "./CountUp";
-import { buildOfferteHref } from "./offerte-params";
+import { buildOfferteHref, buildResultHref } from "./offerte-params";
 import type { HomeInputs } from "./CategoryPanel";
 import { calculateScenario } from "@/lib/home-savings/scenario";
 
@@ -138,6 +138,11 @@ export function SavingsSummary({ results, inputs, onPick }: Props) {
             Vraag gratis offertes aan voor jouw situatie <ArrowRight size={18} className="ml-1.5" />
           </a>
         </Button>
+        {counted.length > 0 && (
+          <Button asChild variant="outline" className="w-full sm:w-auto">
+            <a href={buildResultHref(inputs, results)}>Bekijk mijn totale voordeel</a>
+          </Button>
+        )}
         <a
           href="/offerte"
           className="inline-flex items-center gap-1 text-sm text-moss/70 underline-offset-2 hover:text-moss hover:underline"

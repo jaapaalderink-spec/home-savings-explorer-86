@@ -11,7 +11,7 @@ import { startPhoneVerification, verifyPhoneCode } from "@/lib/phone-verify.func
 import { CATEGORY_LABEL } from "@/lib/lead-pricing";
 import { formatEuro } from "@/lib/home-savings";
 import { calculateScenario, profileFromSearch } from "@/lib/home-savings/scenario";
-import { EnergyProfileForm } from "@/components/home-savings/EnergyProfileForm";
+import { FullEnergyProfileForm } from "@/components/home-savings/EnergyProfileForm";
 
 export const Route = createFileRoute("/offerte")({
   head: () => ({
@@ -255,7 +255,7 @@ function OffertePage() {
             {step === 1 && (
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <EnergyProfileForm value={profile} onChange={setProfile} />
+                  <FullEnergyProfileForm value={profile} onChange={setProfile} />
                   <div className="mt-4 space-y-2 text-sm">
                     <p>
                       Energiekosten: {formatEuro(scenario.before.cost)} naar{" "}
