@@ -156,11 +156,11 @@ export function withLiveDefaults(p: EnergyProfile, opts: { year?: boolean } = {}
   for (const [k, live] of LIVE_DEFAULTS)
     if (!p.provided.includes(k) && q[k] === DEFAULT_PROFILE[k]) q[k] = live();
   if (!p.provided.includes("coolingKwh") && p.coolingKwh === DEFAULT_PROFILE.coolingKwh)
-    q.coolingKwh = Math.round((p.aircoRooms * C.airco.coolingDemandPerRoom) / C.airco.seer);
+    q["coolingKwh"] = Math.round((p.aircoRooms * C.airco.coolingDemandPerRoom) / C.airco.seer);
   if (opts.year && !p.provided.includes("year") && p.year === DEFAULT_PROFILE.year)
-    q.year = C.mainYear;
+    q["year"] = C.mainYear;
   if (!p.provided.includes("contractType") && p.contractType === "onbekend")
-    q.contractType = C.defaults.contractType;
+    q["contractType"] = C.defaults.contractType;
   return q as EnergyProfile;
 }
 

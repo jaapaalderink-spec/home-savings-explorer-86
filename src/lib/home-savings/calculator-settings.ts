@@ -41,7 +41,18 @@ const num = (
   help: string,
   step = 0.01,
   scale?: number,
-): SettingDef => ({ kind: "number", tab, key, label, unit, min, max, step, help, scale });
+): SettingDef => ({
+  kind: "number",
+  tab,
+  key,
+  label,
+  unit,
+  min,
+  max,
+  step,
+  help,
+  ...(scale ? { scale } : {}),
+});
 // Percentages are stored as shares (0.9) and shown as 90 %.
 const pct = (tab: SettingTab, key: string, label: string, min: number, max: number, help: string) =>
   num(tab, key, label, "%", min, max, help, 0.1, 100);

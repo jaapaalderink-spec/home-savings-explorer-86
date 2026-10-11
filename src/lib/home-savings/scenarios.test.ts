@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { ENERGY_CONFIG } from "./config";
+const EV_KWH = ENERGY_CONFIG.ev.kwhPer100Km * (1 + ENERGY_CONFIG.ev.chargeLoss);
 import { calculateScenario, DEFAULT_PROFILE as D, MEASURES, energyProfileSchema } from "./scenario";
 
 const run = (p: Partial<typeof D>, ids: readonly string[]) =>
@@ -33,7 +35,7 @@ describe("acceptance scenarios (opdracht §11)", () => {
   });
   it("7 laadpaal met bestaande EV vergelijkt dezelfde kilometers", () => {
     const r = run({ hasEv: true }, ["ev"]);
-    expect(r.savings).toBeCloseTo(12000 * 0.2 * 0.7 * (0.5 - 0.29));
+    expect(r.savings).toBeCloseTo(((12000 * EV_KWH) / 100) * 0.7 * (0.5 - 0.29));
   });
   it("8 laadpaal met zonnepanelen en slim laden laadt deels met zonnestroom", () => {
     const evening = run({ hasEv: true, existingPanels: 12 }, ["ev"]);

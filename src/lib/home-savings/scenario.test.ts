@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { ENERGY_CONFIG } from "./config";
+const EV_KWH = ENERGY_CONFIG.ev.kwhPer100Km * (1 + ENERGY_CONFIG.ev.chargeLoss);
 import {
   calculateScenario,
   DEFAULT_PROFILE,
@@ -122,7 +124,7 @@ describe("household energy scenarios", () => {
   it("compares charging the same EV rather than a petrol car", () => {
     expect(calculateScenario(DEFAULT_PROFILE, ["ev"]).savings).toBe(0);
     const p = { ...DEFAULT_PROFILE, hasEv: true };
-    expect(calculateScenario(p, ["ev"]).savings).toBeCloseTo(12000 * 0.2 * 0.7 * (0.5 - 0.29));
+    expect(calculateScenario(p, ["ev"]).savings).toBeCloseTo(((12000 * EV_KWH) / 100) * 0.7 * (0.5 - 0.29));
     expect(calculateScenario({ ...p, hasCharger: true }, ["ev"]).savings).toBe(0);
   });
   it("does not add existing electric heating twice", () => {
