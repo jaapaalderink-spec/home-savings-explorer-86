@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Input } from "@/components/ui/input";
-import type { EnergyProfile } from "@/lib/home-savings/scenario";
+import { DEFAULT_PROFILE, type EnergyProfile } from "@/lib/home-savings/scenario";
+import { ENERGY_CONFIG as C } from "@/lib/home-savings/config";
 
 type Props = {
   value: EnergyProfile;
@@ -186,7 +187,7 @@ export function EnergyProfileForm({ value: p, onChange, category, hideShared }: 
   const myData = details(
     "Mijn energiegegevens",
     <>
-      {number("consumption", "Totaal stroomverbruik incl. eigen zonnestroom (kWh/jaar)", 0, 100000)}
+      {number("consumption", "Stroomverbruik per jaar (kWh)", 0, 100000)}
       {number("gas", "Gasverbruik (m3/jaar)", 0, 20000)}
       {select("contractType", "Energiecontract", {
         onbekend: "Weet ik niet",
@@ -194,15 +195,11 @@ export function EnergyProfileForm({ value: p, onChange, category, hideShared }: 
         variabel: "Variabel",
         dynamisch: "Dynamisch",
       })}
-      {number("electricityPrice", "Stroomprijs incl. belasting (euro/kWh)", 0, 2, 0.01)}
-      {number("gasPrice", "Gasprijs incl. belasting (euro/m3)", 0, 10, 0.01)}
-      {number("exportPrice", "Terugleververgoeding (euro/kWh)", -1, 2, 0.01)}
-      {exportCostFields}
-      {select("year", "Rekenjaar", {
-        "2027": "2027 en later (geen saldering)",
-        "2026": "2026 (ter vergelijking)",
-      })}
-      {p.year <= 2026 && check("netMetering", "Rekenen met saldering in 2026")}
+      {p.existingPanels > 0 &&
+        select("consumptionBasis", "Welk stroomverbruik heb je ingevuld?", {
+          gross: "Totaal verbruik incl. eigen zonnestroom",
+          net: "Verbruik volgens jaarafrekening (afname min teruglevering)",
+        })}
       <p className="text-xs text-moss/70">
         Velden met "geschat" gebruiken een standaardaanname. Vervang ze door je jaarafrekening voor
         een nauwkeuriger uitkomst.
@@ -226,11 +223,6 @@ export function EnergyProfileForm({ value: p, onChange, category, hideShared }: 
               1,
               true,
             )}
-          {p.existingPanels > 0 &&
-            select("consumptionBasis", "Welk stroomverbruik heb je ingevuld?", {
-              gross: "Totaal verbruik incl. eigen zonnestroom",
-              net: "Verbruik volgens jaarafrekening (afname min teruglevering)",
-            })}
           <div className="space-y-1 text-sm">
             <span className="font-medium">Hoeveel panelen wil je laten plaatsen?</span>
             {choice(
@@ -240,20 +232,6 @@ export function EnergyProfileForm({ value: p, onChange, category, hideShared }: 
             )}
             {!p.adviseSolar && number("newPanels", "Aantal nieuwe panelen", 0, 100)}
           </div>
-          {details(
-            "Meer details",
-            <>
-              {p.existingPanels > 0 &&
-                number("existingWp", "Wattpiek per bestaand paneel", 0, 1000)}
-              {number("newWp", "Wattpiek per nieuw paneel", 0, 1000)}
-              {number(
-                "yieldPerKwp",
-                "Opbrengst voor richting, helling en schaduw (kWh/kWp)",
-                200,
-                1300,
-              )}
-            </>,
-          )}
         </>
       )}
 
@@ -270,7 +248,12 @@ export function EnergyProfileForm({ value: p, onChange, category, hideShared }: 
             <span className="font-medium">Gewenste capaciteit</span>
             {choice(
               p.adviseBattery ? "advise" : String(p.newBattery),
-              { "5": "5 kWh", "10": "10 kWh", "15": "15 kWh", advise: "Laat adviseren" },
+              {
+                ...Object.fromEntries(
+                  C.battery.adviseOptions.map((k) => [String(k), `${k} kWh`]),
+                ),
+                advise: "Laat adviseren",
+              },
               (v) =>
                 v === "advise"
                   ? set("adviseBattery", true)
@@ -282,46 +265,6 @@ export function EnergyProfileForm({ value: p, onChange, category, hideShared }: 
                     }),
             )}
           </div>
-          {p.provided.includes("contractType")
-            ? null
-            : select("contractType", "Energiecontract", {
-                onbekend: "Weet ik niet",
-                vast: "Vast",
-                variabel: "Variabel",
-                dynamisch: "Dynamisch",
-              })}
-          {select("batteryStrategy", "Hoe wil je de batterij gebruiken?", {
-            self: "Maximaal eigenverbruik van zonnestroom",
-            smart: "Slimme optimalisatie (vraagt energiemanagementsysteem)",
-          })}
-          {p.batteryStrategy === "smart" &&
-            p.contractType === "dynamisch" &&
-            check("gridCharging", "Ook laden uit het net in goedkope uren")}
-          {p.batteryStrategy === "smart" && p.contractType !== "dynamisch" && (
-            <p className="text-xs text-moss/70">
-              Slim laden uit het net rekenen we alleen door bij een dynamisch contract.
-            </p>
-          )}
-          {details(
-            "Meer details",
-            <>
-              {number("batteryEfficiency", "Laad- en ontlaadrendement (0,5 tot 1)", 0.5, 1, 0.01)}
-              {number("batteryStandbyW", "Stand-byverbruik volgens fabrikant (watt)", 0, 200)}
-              {select("batteryType", "Type batterij", {
-                unknown: "Weet ik niet (voorzichtige aanname)",
-                lfp: "LFP (lithium-ijzerfosfaat)",
-                nmc: "NMC",
-              })}
-              {number(
-                "batteryDegradationPct",
-                "Capaciteitsverlies per jaar volgens fabrikant (%)",
-                0,
-                10,
-                0.1,
-                true,
-              )}
-            </>,
-          )}
         </>
       )}
 
@@ -369,17 +312,6 @@ export function EnergyProfileForm({ value: p, onChange, category, hideShared }: 
                 "70": "Vooral thuis",
                 "100": "Altijd thuis",
               })}
-              {check(
-                "smartCharging",
-                "Slim laden overdag op zonnestroom (vraagt geschikte laadpaal)",
-              )}
-              {details(
-                "Meer details",
-                <>
-                  {number("evKwhPer100Km", "Stroom incl. laadverlies (kWh/100 km)", 5, 50, 0.1)}
-                  {number("publicChargePrice", "Tarief openbaar laden (euro/kWh)", 0, 2, 0.01)}
-                </>,
-              )}
             </>
           )}
         </>
@@ -393,9 +325,16 @@ export function EnergyProfileForm({ value: p, onChange, category, hideShared }: 
               type="number"
               min={0}
               max={20}
-              value={Math.round(p.coolingKwh / 100)}
+              value={p.aircoRooms}
               onChange={(e) =>
-                set("coolingKwh", Math.min(20, Math.max(0, Number(e.target.value) || 0)) * 100)
+                onChange({
+                  ...p,
+                  aircoRooms: Math.min(20, Math.max(0, Number(e.target.value) || 0)),
+                  coolingKwh: DEFAULT_PROFILE.coolingKwh,
+                  provided: [
+                    ...new Set([...p.provided.filter((k) => k !== "coolingKwh"), "aircoRooms"]),
+                  ],
+                })
               }
             />
           </label>
@@ -405,20 +344,6 @@ export function EnergyProfileForm({ value: p, onChange, category, hideShared }: 
               set("aircoMode", v),
             )}
           </div>
-          {details(
-            "Meer details",
-            <>
-              {p.aircoMode === "both" &&
-                number(
-                  "aircoHeatingShare",
-                  "Aandeel resterende gasverwarming vervangen (%)",
-                  0,
-                  100,
-                )}
-              {number("aircoScop", "Seizoensrendement bij verwarmen", 1, 7, 0.1)}
-              {number("coolingKwh", "Stroom voor koeling (kWh/jaar)", 0, 10000)}
-            </>,
-          )}
         </>
       )}
 
@@ -459,43 +384,6 @@ export function EnergyProfileForm({ value: p, onChange, category, hideShared }: 
             average: "Gemiddeld",
             poor: "Matig",
           })}
-          {details(
-            "Meer details",
-            <>
-              {number("hotWaterGas", "Gas voor warm water (m3/jaar)", 0, 5000)}
-              {number("cookingGas", "Gas voor koken (m3/jaar)", 0, 1000)}
-              {["hybrid", "heatpump", "resistance"].includes(p.heating) &&
-                number(
-                  "heatingElectricity",
-                  "Huidig stroomverbruik verwarming (kWh/jaar)",
-                  0,
-                  50000,
-                )}
-              {["hybrid", "heatpump"].includes(p.heating) &&
-                number("existingScop", "Rendement bestaande warmtepomp", 1, 7, 0.1)}
-              {select("flowTemperature", "Aanvoertemperatuur op koude dagen", {
-                unknown: "Weet ik niet",
-                "35": "35 graden (vloerverwarming)",
-                "45": "45 graden",
-                "55": "55 graden",
-                "65": "65 graden",
-              })}
-              {number("scop", "Seizoensrendement (SCOP) volgens installateur", 1, 7, 0.1, true)}
-              {p.target === "hybrid" &&
-                number("hybridCoverage", "Aandeel ruimtewarmte door warmtepomp (%)", 0, 100)}
-              {p.target === "electric" && (
-                <>
-                  {number("hotWaterCop", "Rendement warm tapwater", 1, 5, 0.1)}
-                  {check(
-                    "canDisconnectGas",
-                    "Gasaansluiting kan worden opgezegd (koken elektrisch)",
-                  )}
-                  {p.canDisconnectGas &&
-                    number("gasConnectionFixed", "Vaste gaskosten (euro/jaar)", 0, 1000)}
-                </>
-              )}
-            </>,
-          )}
         </>
       )}
 
