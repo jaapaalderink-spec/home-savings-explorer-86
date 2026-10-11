@@ -560,6 +560,7 @@ function buildAdvice(r: Omit<ScenarioResult, "advice"> & { advice: string[] }): 
     );
   }
   if (has("battery") && r.battery) {
+    out.push(r.battery.conclusion);
     if (r.battery.strategyNote) out.push(r.battery.strategyNote);
     if (p.contractType === "dynamisch" && !(p.batteryStrategy === "smart" && p.gridCharging))
       out.push("Slim laden en ontladen op dynamische uurprijzen is niet meegerekend. Zet 'Slimme optimalisatie' en 'Laden uit het net' aan om een indicatie te zien; onbalanshandel wordt nooit meegerekend.");
