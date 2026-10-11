@@ -3,10 +3,7 @@ import { useState, useCallback, useEffect } from "react";
 import { ShieldCheck } from "lucide-react";
 import { HouseScene } from "@/components/home-savings/HouseScene";
 import { MobileTiles } from "@/components/home-savings/MobileTiles";
-import {
-  CategoryPanel,
-  type HomeInputs,
-} from "@/components/home-savings/CategoryPanel";
+import { CategoryPanel, type HomeInputs } from "@/components/home-savings/CategoryPanel";
 import { ContractCard } from "@/components/home-savings/ContractCard";
 import { SavingsSummary } from "@/components/home-savings/SavingsSummary";
 import { calculateScenario } from "@/lib/home-savings/scenario";
@@ -100,7 +97,10 @@ function HomePage() {
   const handleCalculate = useCallback((id: string) => {
     if (id !== "contract") sessionStore.set((s) => toggleMeasure(s, id));
   }, []);
-  const handleRemove = useCallback((id: string) => sessionStore.set((s) => removeMeasure(s, id)), []);
+  const handleRemove = useCallback(
+    (id: string) => sessionStore.set((s) => removeMeasure(s, id)),
+    [],
+  );
   const handleReset = useCallback((id: string) => sessionStore.set((s) => resetMeasure(s, id)), []);
 
   const status = Object.fromEntries(

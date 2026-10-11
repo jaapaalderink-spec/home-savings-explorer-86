@@ -6,12 +6,7 @@
  */
 import { useSyncExternalStore } from "react";
 import { z } from "zod";
-import {
-  DEFAULT_PROFILE,
-  MEASURES,
-  energyProfileSchema,
-  type EnergyProfile,
-} from "./scenario";
+import { DEFAULT_PROFILE, MEASURES, energyProfileSchema, type EnergyProfile } from "./scenario";
 
 export const SESSION_STORAGE_KEY = "oo-energy-calculator";
 export const SESSION_VERSION = 1;

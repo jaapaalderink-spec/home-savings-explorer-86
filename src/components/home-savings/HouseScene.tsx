@@ -172,7 +172,11 @@ function Hotspot({
       >
         <span className="block text-xs font-bold">{cat.label}</span>
         <span className="block text-[11px] leading-snug opacity-80">
-          {done ? "Geselecteerd · klik om aan te passen" : owned ? "Al aanwezig in je woning" : cat.short}
+          {done
+            ? "Geselecteerd · klik om aan te passen"
+            : owned
+              ? "Al aanwezig in je woning"
+              : cat.short}
         </span>
       </span>
     </button>
