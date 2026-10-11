@@ -1,4 +1,10 @@
-import { AdviceResult, EnergyContractType, bandwidth, confidenceFromCompleteness, MARKET } from "./shared";
+import {
+  AdviceResult,
+  EnergyContractType,
+  bandwidth,
+  confidenceFromCompleteness,
+  MARKET,
+} from "./shared";
 
 export interface EHMSInput {
   smartDevices: Array<"solar" | "battery" | "ev" | "heatpump" | "airco" | "boiler">;
@@ -19,8 +25,7 @@ export function calculateEHMSAdvice(input: EHMSInput): AdviceResult {
   const count = Math.min(devices.length, ASSUMPTIONS.maxDevices);
 
   let practicalSavings = count * ASSUMPTIONS.baseSavingPerDevice;
-  const isDynamic =
-    input.hasDynamicContract === "ja" || input.contract === "dynamisch";
+  const isDynamic = input.hasDynamicContract === "ja" || input.contract === "dynamisch";
 
   if (isDynamic) {
     practicalSavings += count * ASSUMPTIONS.dynamicBonusPerDevice;
@@ -30,16 +35,24 @@ export function calculateEHMSAdvice(input: EHMSInput): AdviceResult {
   const range = bandwidth(practicalSavings, 0.22, ASSUMPTIONS.step);
 
   const reasons: string[] = [];
-  reasons.push("Een energy home management system (EHMS) coördineert je apparaten zodat ze samen optimaal stroom opwekken, opslaan en verbruiken.");
+  reasons.push(
+    "Een energy home management system (EHMS) coördineert je apparaten zodat ze samen optimaal stroom opwekken, opslaan en verbruiken.",
+  );
   if (count >= 3) {
-    reasons.push(`Met ${count} slimme systemen haalt het EHMS pas écht zijn waarde — het legt verbindingen die losse apparaten missen.`);
+    reasons.push(
+      `Met ${count} slimme systemen haalt het EHMS pas écht zijn waarde — het legt verbindingen die losse apparaten missen.`,
+    );
   } else if (count >= 1) {
     reasons.push("Hoe meer slimme apparaten je combineert, hoe meer het EHMS kan optimaliseren.");
   } else {
-    reasons.push("Zonder gekoppelde apparaten levert een EHMS weinig op — begin met minstens één systeem.");
+    reasons.push(
+      "Zonder gekoppelde apparaten levert een EHMS weinig op — begin met minstens één systeem.",
+    );
   }
   if (isDynamic) {
-    reasons.push("Met een dynamisch contract kan het EHMS slim schuiven tussen dure en goedkope uren, wat flink extra oplevert.");
+    reasons.push(
+      "Met een dynamisch contract kan het EHMS slim schuiven tussen dure en goedkope uren, wat flink extra oplevert.",
+    );
   }
 
   const badges: string[] = [];
@@ -49,7 +62,8 @@ export function calculateEHMSAdvice(input: EHMSInput): AdviceResult {
 
   const filled = [
     count > 0,
-    input.hasDynamicContract !== "weetniet" || (input.contract !== undefined && input.contract !== "onbekend"),
+    input.hasDynamicContract !== "weetniet" ||
+      (input.contract !== undefined && input.contract !== "onbekend"),
   ].filter(Boolean).length;
   const confidence = confidenceFromCompleteness(filled, 2);
 

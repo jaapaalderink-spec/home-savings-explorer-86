@@ -64,7 +64,6 @@ export const CONTRACT_META: CategoryMeta = {
   order: 7,
 };
 
-
 export const HOUSE_TYPES: { id: HouseType; label: string }[] = [
   { id: "rijtjeshuis", label: "Rijtjeshuis" },
   { id: "hoekwoning", label: "Hoekwoning" },

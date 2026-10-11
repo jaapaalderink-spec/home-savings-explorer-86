@@ -5,13 +5,7 @@ import { CONTRACT_META } from "./categories";
  * Zevende, gelijkwaardige keuze — bewust géén hotspot op het huis maar
  * een eigen kaart onder de huisscène.
  */
-export function ContractCard({
-  done,
-  onPick,
-}: {
-  done: boolean;
-  onPick: (id: string) => void;
-}) {
+export function ContractCard({ done, onPick }: { done: boolean; onPick: (id: string) => void }) {
   return (
     <button
       type="button"

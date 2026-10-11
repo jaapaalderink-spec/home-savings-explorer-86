@@ -10,14 +10,7 @@ export type EnergyContractType = "vast" | "dynamisch" | "variabel" | "onbekend";
 
 export type HouseType = "rijtjeshuis" | "hoekwoning" | "vrijstaand" | "appartement";
 
-export type CategoryId =
-  | "solar"
-  | "heatpump"
-  | "battery"
-  | "ev"
-  | "ehms"
-  | "airco"
-  | "boiler";
+export type CategoryId = "solar" | "heatpump" | "battery" | "ev" | "ehms" | "airco" | "boiler";
 
 export interface BeforeAfter {
   label: string;

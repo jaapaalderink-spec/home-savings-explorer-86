@@ -54,17 +54,25 @@ export function calculateBatteryAdvice(input: BatteryInput): AdviceResult {
   const range = bandwidth(practicalSavings, 0.24, ASSUMPTIONS.step);
 
   const reasons: string[] = [];
-  reasons.push("Een thuisbatterij slaat overtollige zonne-stroom op voor gebruik 's avonds of 's nachts.");
+  reasons.push(
+    "Een thuisbatterij slaat overtollige zonne-stroom op voor gebruik 's avonds of 's nachts.",
+  );
   if (annualFeedInKwh > 1500) {
-    reasons.push(`Je levert ${Math.round(annualFeedInKwh)} kWh/jaar terug — veel ruimte om zelf meer te verbruiken.`);
+    reasons.push(
+      `Je levert ${Math.round(annualFeedInKwh)} kWh/jaar terug — veel ruimte om zelf meer te verbruiken.`,
+    );
   } else {
-    reasons.push("Je teruglevering is beperkt, een batterij levert vooral waarde in combinatie met dynamische tarieven.");
+    reasons.push(
+      "Je teruglevering is beperkt, een batterij levert vooral waarde in combinatie met dynamische tarieven.",
+    );
   }
   if (goals.includes("noodstroom")) {
     reasons.push("Je hebt noodstroom gekozen, dus een batterij met backup-functie past goed.");
   }
   if (goals.includes("dynamisch") || contract === "dynamisch") {
-    reasons.push("Met een dynamisch contract laad je goedkoop op en ontlaad je op dure uren, wat de besparing flink verhoogt.");
+    reasons.push(
+      "Met een dynamisch contract laad je goedkoop op en ontlaad je op dure uren, wat de besparing flink verhoogt.",
+    );
   }
 
   if (boilerSurplusKwh > 0) {
@@ -75,11 +83,17 @@ export function calculateBatteryAdvice(input: BatteryInput): AdviceResult {
 
   const badges: string[] = [];
   if (boilerSurplusKwh > 0) badges.push("gecombineerd met warmteboiler");
-  if (contract === "dynamisch" || goals.includes("dynamisch")) badges.push("dynamisch energiecontract");
+  if (contract === "dynamisch" || goals.includes("dynamisch"))
+    badges.push("dynamisch energiecontract");
   if (goals.includes("noodstroom")) badges.push("noodstroom gewenst");
   if (annualFeedInKwh > 2500) badges.push("veel teruglevering");
 
-  const filled = [input.annualConsumptionKwh, input.annualFeedInKwh, goals.length > 0, contract !== "onbekend"].filter(Boolean).length;
+  const filled = [
+    input.annualConsumptionKwh,
+    input.annualFeedInKwh,
+    goals.length > 0,
+    contract !== "onbekend",
+  ].filter(Boolean).length;
   const confidence = confidenceFromCompleteness(filled, 4);
 
   return {
@@ -88,7 +102,7 @@ export function calculateBatteryAdvice(input: BatteryInput): AdviceResult {
     beforeAfter: {
       label: "Eigen stroomgebruik uit zon",
       before: `${Math.round((annualConsumptionKwh * 0.3) / 100) * 100} kWh/jaar`,
-      after: `${Math.round(((annualConsumptionKwh * 0.3) + selfConsumptionIncreaseKwh) / 100) * 100} kWh/jaar`,
+      after: `${Math.round((annualConsumptionKwh * 0.3 + selfConsumptionIncreaseKwh) / 100) * 100} kWh/jaar`,
     },
     confidence,
     explanationReasons: reasons,

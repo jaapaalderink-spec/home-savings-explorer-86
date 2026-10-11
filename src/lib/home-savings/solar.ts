@@ -32,8 +32,7 @@ export function calculateSolarAdvice(input: SolarInput): AdviceResult {
 
   const yearlyYieldKwh = round(panelCount * ASSUMPTIONS.yieldPerPanelPerYearKwh);
 
-  const selfConsumptionShare =
-    ASSUMPTIONS.selfConsumptionShare + (input.hasHeatBoiler ? 0.12 : 0);
+  const selfConsumptionShare = ASSUMPTIONS.selfConsumptionShare + (input.hasHeatBoiler ? 0.12 : 0);
   const selfUsedKwh = Math.min(
     yearlyYieldKwh * selfConsumptionShare,
     annualConsumptionKwh * (input.hasHeatBoiler ? 0.85 : 0.7),
@@ -52,7 +51,9 @@ export function calculateSolarAdvice(input: SolarInput): AdviceResult {
 
   const reasons: string[] = [];
   if (alreadyHasSolar) {
-    reasons.push("Je hebt al zonnepanelen, daarom richten we ons op wat extra je al hebt of uitbreiden oplevert.");
+    reasons.push(
+      "Je hebt al zonnepanelen, daarom richten we ons op wat extra je al hebt of uitbreiden oplevert.",
+    );
   } else {
     reasons.push(
       `Met ${panelCount} panelen wek je ongeveer ${formatNumber(yearlyYieldKwh)} kWh per jaar op.`,

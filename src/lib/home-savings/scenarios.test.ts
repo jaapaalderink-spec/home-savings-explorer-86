@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { calculateScenario, DEFAULT_PROFILE as D, MEASURES, energyProfileSchema } from "./scenario";
 
-const run = (p: Partial<typeof D>, ids: readonly string[]) => calculateScenario({ ...D, ...p }, ids);
+const run = (p: Partial<typeof D>, ids: readonly string[]) =>
+  calculateScenario({ ...D, ...p }, ids);
 const sumStandalone = (r: ReturnType<typeof run>) =>
   Object.values(r.standalone).reduce((a, b) => a + (b ?? 0), 0);
 
@@ -63,7 +64,9 @@ describe("acceptance scenarios (opdracht §11)", () => {
     const p = { coolingKwh: 0, aircoHeatingShare: 100 };
     const both = run(p, ["heatpump", "airco"]);
     const replaced = both.before.gas - both.after.gas;
-    expect(replaced).toBeLessThanOrEqual(D.gas - D.hotWaterGas - D.cookingGas + D.hotWaterGas + 1e-6);
+    expect(replaced).toBeLessThanOrEqual(
+      D.gas - D.hotWaterGas - D.cookingGas + D.hotWaterGas + 1e-6,
+    );
     expect(both.after.gas).toBeGreaterThanOrEqual(D.cookingGas - 1e-6);
   });
   it("14 zon + batterij + laadpaal: één simulatie, bijdragen tellen op", () => {

@@ -66,3 +66,27 @@ to the existing notes field as readable JSON (no database migration).
 Legacy columns remain available. Preview tests must not submit a real lead
 or trigger SMS. Unit tests verify energy balances, existing equipment,
 interaction attribution, heat performance, zeroes and negative outcomes.
+
+## Version 3 (2026-10-11): contracts, export costs, battery
+
+- Tariffs resolve per hour (`hourlyTariff`): fixed/variable with optional low tariff
+  (23-07) and dated `tariffPeriods`; dynamic uses a representative (not historical)
+  price shape with separate import and export prices (export can go negative).
+- Export costs: none, per kWh (on gross export), annual tiers on full-year export,
+  fixed (never a battery benefit), or time-of-use.
+- Saldering (<= 2026) is an invoice-level kWh offset per tariff period, then across.
+  2027-2030 applies the legal minimum feed-in (50% of an assumed bare supply price)
+  for fixed/variable contracts.
+- Battery: min/max SoC reserve, solar vs grid origin tracked, grid charging only with
+  strategy "smart" + dynamic contract + explicit opt-in; optional standby watts.
+- `batteryReport` = marginal value (same config with vs without battery, D vs C) for
+  2026 and 2027, split into avoided import, missed feed-in, export-cost change, standby.
+  Shapley contribution stays the package allocation. `compareSolarBattery` gives A-D.
+- `consumptionBasis: "net"` converts a bill (import minus export) figure to gross load.
+- Admin check: Platformbeheer > Rekencontrole (`debugScenario`).
+- `TARIFF_SETS` in config.ts is the versioned supplier catalogue; empty until verified.
+
+Test home (8 existing panels, 3000 kWh, +8 panels, 2026 saldering): the old -21 euro
+was a Shapley average of -33 (battery on existing panels, losses valued at the full
+price because exports < imports) and -8 (with extra panels, losses valued at 0.05).
+Under saldering a battery only adds 10% losses; the value appears from 2027.

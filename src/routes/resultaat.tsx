@@ -12,6 +12,7 @@ import {
 } from "@/lib/home-savings/scenario";
 import { ENERGY_CONFIG } from "@/lib/home-savings/config";
 import { FullEnergyProfileForm } from "@/components/home-savings/EnergyProfileForm";
+import { BatteryBreakdown } from "@/components/home-savings/BatteryBreakdown";
 
 export const Route = createFileRoute("/resultaat")({
   head: () => ({
@@ -25,7 +26,8 @@ export const Route = createFileRoute("/resultaat")({
       { property: "og:title", content: "Jouw totale besparing — Onafhankelijke Offerte" },
       {
         property: "og:description",
-        content: "Eén samenhangende berekening van zonnepanelen, batterij, laadpaal, airco en warmtepomp.",
+        content:
+          "Eén samenhangende berekening van zonnepanelen, batterij, laadpaal, airco en warmtepomp.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -83,8 +85,37 @@ function ResultPage() {
             </div>
             <p className="mt-2 text-sm text-moss/70">
               Indicatieve bandbreedte {formatEuro(r.range.min)} tot {formatEuro(r.range.max)} per
-              jaar. Geen gegarandeerde besparing.
+              jaar. Geen gegarandeerde besparing. Rekenjaar {r.profile.year}
+              {r.profile.year <= 2026 && r.profile.netMetering
+                ? " met saldering"
+                : " zonder saldering"}
+              , contract:{" "}
+              {r.profile.contractType === "onbekend" ? "standaardaannames" : r.profile.contractType}
+              .
             </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {[...r.comparisons].reverse().map((c) => (
+                <div
+                  key={c.year}
+                  className="rounded-xl bg-background p-3 text-sm"
+                  style={{ boxShadow: "var(--shadow-panel)" }}
+                >
+                  <p className="font-semibold text-ink">
+                    {c.year >= 2027
+                      ? `Vanaf ${c.year}, zonder saldering`
+                      : `${c.year}, met saldering`}
+                  </p>
+                  <p className="text-moss/80">
+                    Zonnepanelen en batterij samen: {formatEuro(c.package)} per jaar t.o.v. je
+                    huidige woning
+                    {r.selected.some((x) => x !== "solar" && x !== "battery")
+                      ? " (overige gekozen maatregelen gelijk gehouden)"
+                      : ""}
+                    .
+                  </p>
+                </div>
+              ))}
+            </div>
           </>
         )}
 
@@ -100,7 +131,13 @@ function ResultPage() {
                 style={{ boxShadow: "var(--shadow-panel)" }}
               >
                 <p className="flex items-center gap-1.5 font-semibold text-ink">
-                  {chosen ? <Check size={16} className="text-leaf" /> : owned ? <Home size={16} /> : <Plus size={16} />}
+                  {chosen ? (
+                    <Check size={16} className="text-leaf" />
+                  ) : owned ? (
+                    <Home size={16} />
+                  ) : (
+                    <Plus size={16} />
+                  )}
                   {MEASURE_LABEL[id]}
                 </p>
                 <p className="text-xs text-moss/70">
@@ -116,7 +153,9 @@ function ResultPage() {
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-moss/70">Bijdrage in pakket</dt>
-                      <dd className="font-semibold text-leaf">{formatEuro(r.contributions[id] ?? 0)}/jr</dd>
+                      <dd className="font-semibold text-leaf">
+                        {formatEuro(r.contributions[id] ?? 0)}/jr
+                      </dd>
                     </div>
                   </dl>
                 )}
@@ -126,12 +165,32 @@ function ResultPage() {
         </div>
 
         {r.selected.length > 1 && (
-          <div className="mt-6 rounded-2xl bg-background p-4 text-sm" style={{ boxShadow: "var(--shadow-panel)" }}>
+          <div
+            className="mt-6 rounded-2xl bg-background p-4 text-sm"
+            style={{ boxShadow: "var(--shadow-panel)" }}
+          >
             <p className="font-semibold text-ink">Samenwerking: {formatEuro(r.synergy)} per jaar</p>
             <p className="mt-1 text-moss/80">
-              Dit is het verschil tussen je pakket ({formatEuro(r.savings)}) en de optelsom van losse
-              aanschaf. "Bijdrage in pakket" verdeelt het pakket eerlijk over de maatregelen,
+              Dit is het verschil tussen je pakket ({formatEuro(r.savings)}) en de optelsom van
+              losse aanschaf. "Bijdrage in pakket" verdeelt het pakket eerlijk over de maatregelen,
               onafhankelijk van de volgorde waarin je ze koos.
+            </p>
+          </div>
+        )}
+
+        {r.battery && (
+          <div
+            className="mt-6 rounded-2xl bg-background p-4"
+            style={{ boxShadow: "var(--shadow-panel)" }}
+          >
+            <BatteryBreakdown
+              years={r.battery.years}
+              conclusion={r.battery.conclusion}
+              profile={r.profile}
+            />
+            <p className="mt-2 text-[11px] text-moss/60">
+              Dit is de marginale besparing bij jouw configuratie. "Bijdrage in pakket" hierboven is
+              een volgorde-onafhankelijk toegerekende pakketbijdrage en kan daarvan afwijken.
             </p>
           </div>
         )}
@@ -139,24 +198,41 @@ function ResultPage() {
         {r.advice.length > 0 && (
           <div className="mt-6 space-y-2">
             <h2 className="text-lg font-semibold text-ink">Advies</h2>
-            {r.advice.map((a) => (
-              <p key={a} className="rounded-xl bg-background p-3 text-sm text-ink">
-                {a}
-              </p>
-            ))}
+            {r.advice
+              .filter((a) => a !== r.battery?.conclusion)
+              .map((a) => (
+                <p key={a} className="rounded-xl bg-background p-3 text-sm text-ink">
+                  {a}
+                </p>
+              ))}
           </div>
         )}
 
         {r.selected.length > 0 && (
           <div className="mt-6 grid gap-2 text-sm text-moss sm:grid-cols-2">
-            <p>Netafname: {Math.round(r.before.imports)} → {Math.round(r.after.imports)} kWh</p>
-            <p>Teruglevering: {Math.round(r.before.exports)} → {Math.round(r.after.exports)} kWh</p>
+            <p>
+              Netafname: {Math.round(r.before.imports)} → {Math.round(r.after.imports)} kWh
+            </p>
+            <p>
+              Teruglevering: {Math.round(r.before.exports)} → {Math.round(r.after.exports)} kWh
+            </p>
             <p>Zonnestroom direct gebruikt: {Math.round(r.after.direct)} kWh</p>
-            <p>Gas: {Math.round(r.before.gas)} → {Math.round(r.after.gas)} m3</p>
-            {r.after.heatpumpKwh > 0 && <p>Stroom warmtepomp: {Math.round(r.after.heatpumpKwh)} kWh</p>}
+            <p>
+              Gas: {Math.round(r.before.gas)} → {Math.round(r.after.gas)} m3
+            </p>
+            {r.after.heatpumpKwh > 0 && (
+              <p>Stroom warmtepomp: {Math.round(r.after.heatpumpKwh)} kWh</p>
+            )}
             {r.after.aircoKwh > 0 && <p>Stroom airco: {Math.round(r.after.aircoKwh)} kWh</p>}
-            {r.comfortCost > 0.5 && <p>Extra kosten koeling (comfort): {formatEuro(r.comfortCost)}/jr</p>}
-            <p>Terugverdientijd: {r.payback === null ? "niet getoond, geen betrouwbare investeringsgegevens" : `${r.payback.toFixed(1)} jaar (indicatief)`}</p>
+            {r.comfortCost > 0.5 && (
+              <p>Extra kosten koeling (comfort): {formatEuro(r.comfortCost)}/jr</p>
+            )}
+            <p>
+              Terugverdientijd:{" "}
+              {r.payback === null
+                ? "niet getoond, geen betrouwbare investeringsgegevens"
+                : `${r.payback.toFixed(1)} jaar (indicatief)`}
+            </p>
           </div>
         )}
 
@@ -168,7 +244,10 @@ function ResultPage() {
             {r.notes.map((n) => (
               <li key={n}>{n}</li>
             ))}
-            <li>Aannames herzien op {ENERGY_CONFIG.reviewedAt}; standaardtarieven zijn geen actuele tarieven.</li>
+            <li>
+              Aannames herzien op {ENERGY_CONFIG.reviewedAt}; standaardtarieven zijn geen actuele
+              tarieven.
+            </li>
           </ul>
         </details>
 
