@@ -321,8 +321,8 @@ function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
       const avail = socSolar + socGrid;
       const discharge = deficit > 0 && charge + gridCharge === 0 ? Math.min(deficit, power, avail) : 0;
       const fromSolar = avail > 0 ? (discharge * socSolar) / avail : 0;
-      socSolar += charge * eff - fromSolar;
-      socGrid += gridCharge * eff - (discharge - fromSolar);
+      socSolar = Math.max(0, socSolar + charge * eff - fromSolar);
+      socGrid = Math.max(0, socGrid + gridCharge * eff - (discharge - fromSolar));
       const imp = deficit - discharge + gridCharge;
       const exp = surplus - charge;
       balanceError = Math.max(
@@ -366,7 +366,7 @@ function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
       b.er += exp * tariff.exportPrice * d;
       exportCostVariable += exp * tariff.exportCostRate * d;
     }
-    for (const k of Object.keys(t) as (keyof typeof t)[]) t[k] += day[k] * d;
+    for (const k of Object.keys(t) as (keyof typeof t)[]) t[k] += Math.max(0, day[k]) * d;
   }
   // Saldering is an invoice-level offset of kWh, first within a tariff period, then across.
   const netMetering = usesNetMetering(p);
