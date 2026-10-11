@@ -147,13 +147,8 @@ export function validateSetting(key: string, value: unknown): string | null {
   if (!d) return "Onbekende instelling";
   if (d.kind === "number") {
     if (typeof value !== "number" || !Number.isFinite(value)) return "Geen geldig getal";
-    if (value < d.min || value > d.max) {
-      const s = d.scale ?? 1;
-      return `Moet tussen ${d.min} en ${d.max} ${d.unit} liggen`.replace(
-        /(-?[\d.]+) en (-?[\d.]+)/,
-        `${d.min * (s === 100 ? 1 : 1)} en ${d.max}`,
-      );
-    }
+    if (value < d.min || value > d.max)
+      return `Moet tussen ${d.min} en ${d.max} ${d.unit} liggen`.trim();
     return null;
   }
   if (d.kind === "boolean") return typeof value === "boolean" ? null : "Kies aan of uit";
