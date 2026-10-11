@@ -78,14 +78,19 @@ function ResultPage() {
         ) : (
           <>
             <div className="mt-6 grid gap-3 sm:grid-cols-4">
-              <Stat label="Energiekosten nu" value={`${formatEuro(r.before.cost)}/jr`} />
-              <Stat label="Na de maatregelen" value={`${formatEuro(r.after.cost)}/jr`} />
-              <Stat label="Voordeel per jaar" value={formatEuro(r.savings)} strong />
+              <Stat label="Energiekosten huidige woning" value={`${formatEuro(r.before.cost)}/jr`} />
+              <Stat label="Na de gekozen maatregelen" value={`${formatEuro(r.after.cost)}/jr`} />
+              <Stat
+                label={`Samen bespaard ${r.profile.year >= 2027 ? `vanaf ${r.profile.year}` : `in ${r.profile.year}`}`}
+                value={`${formatEuro(r.savings)}/jr`}
+                strong
+              />
               <Stat label="Gemiddeld per maand" value={formatEuro(r.savings / 12)} />
             </div>
             <p className="mt-2 text-sm text-moss/70">
               Indicatieve bandbreedte {formatEuro(r.range.min)} tot {formatEuro(r.range.max)} per
-              jaar. Geen gegarandeerde besparing. Rekenjaar {r.profile.year}
+              jaar. Alleen energiekosten: aanschaf en installatie zijn niet meegerekend. Geen
+              gegarandeerde besparing. Rekenjaar {r.profile.year}
               {r.profile.year <= 2026 && r.profile.netMetering
                 ? " met saldering"
                 : " zonder saldering"}
@@ -93,8 +98,9 @@ function ResultPage() {
               {r.profile.contractType === "onbekend" ? "standaardaannames" : r.profile.contractType}
               .
             </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {[...r.comparisons].reverse().map((c) => (
+            <p className="mt-4 text-sm font-semibold text-ink">Korte vergelijking 2026 en 2027</p>
+            <div className="mt-2 grid gap-3 sm:grid-cols-2">
+              {r.comparisons.map((c) => (
                 <div
                   key={c.year}
                   className="rounded-xl bg-background p-3 text-sm"
@@ -169,7 +175,9 @@ function ResultPage() {
             className="mt-6 rounded-2xl bg-background p-4 text-sm"
             style={{ boxShadow: "var(--shadow-panel)" }}
           >
-            <p className="font-semibold text-ink">Samenwerking: {formatEuro(r.synergy)} per jaar</p>
+            <p className="font-semibold text-ink">
+              Aanvullend effect van samenwerking: {formatEuro(r.synergy)} per jaar
+            </p>
             <p className="mt-1 text-moss/80">
               Dit is het verschil tussen je pakket ({formatEuro(r.savings)}) en de optelsom van
               losse aanschaf. "Bijdrage in pakket" verdeelt het pakket eerlijk over de maatregelen,
@@ -227,12 +235,6 @@ function ResultPage() {
             {r.comfortCost > 0.5 && (
               <p>Extra kosten koeling (comfort): {formatEuro(r.comfortCost)}/jr</p>
             )}
-            <p>
-              Terugverdientijd:{" "}
-              {r.payback === null
-                ? "niet getoond, geen betrouwbare investeringsgegevens"
-                : `${r.payback.toFixed(1)} jaar (indicatief)`}
-            </p>
           </div>
         )}
 

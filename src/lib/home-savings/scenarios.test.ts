@@ -128,8 +128,8 @@ describe("acceptance scenarios (opdracht §11)", () => {
       }
     }
   });
-  it("terugverdientijd alleen met investeringsgegevens", () => {
-    expect(run({}, ["solar"]).payback).toBeNull();
+  it("geen terugverdientijd of investeringsbedragen in de uitkomst", () => {
+    expect("payback" in run({}, ["solar"])).toBe(false);
   });
   it("onvolledige en onrealistische invoer", () => {
     expect(energyProfileSchema.parse({}).consumption).toBe(D.consumption);
