@@ -195,6 +195,7 @@ function ResultPage() {
               years={r.battery.years}
               conclusion={r.battery.conclusion}
               profile={r.profile}
+              lifetime={r.battery.lifetime}
             />
             <p className="mt-2 text-[11px] text-moss/60">
               Dit is de marginale besparing bij jouw configuratie. "Bijdrage in pakket" hierboven is

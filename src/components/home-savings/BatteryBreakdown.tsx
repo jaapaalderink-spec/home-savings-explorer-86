@@ -1,7 +1,11 @@
-import type { BatteryYear, EnergyProfile } from "@/lib/home-savings/scenario";
+import type { BatteryYear, EnergyProfile, batteryLifetime } from "@/lib/home-savings/scenario";
 
 const eur = (n: number) =>
   `${n >= 0 ? "+" : "−"} € ${Math.abs(Math.round(n)).toLocaleString("nl-NL")}`;
+// Long-term figures rounded to €10: no false precision.
+const eur10 = (n: number) =>
+  `€ ${(Math.round(n / 10) * 10).toLocaleString("nl-NL")}`;
+const kwh = (n: number) => `${Math.round(n).toLocaleString("nl-NL")} kWh`;
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 const CONTRACT: Record<EnergyProfile["contractType"], string> = {
   vast: "vast contract",
@@ -15,17 +19,48 @@ export function BatteryBreakdown({
   years,
   conclusion,
   profile,
+  lifetime,
 }: {
   years: BatteryYear[];
   conclusion: string;
   profile: EnergyProfile;
+  lifetime?: ReturnType<typeof batteryLifetime>;
 }) {
+  const main = years.find((y) => !y.netMetering) ?? years[0]!;
   const ordered = [...years].sort((a, b) => b.year - a.year); // 2027 first: prominent
   return (
     <div className="space-y-3">
-      <p className="text-sm font-semibold text-ink">
-        Verwachte jaarlijkse besparing met een thuisbatterij
+      <p className="text-base font-semibold text-ink">Wat kan een thuisbatterij jou opleveren?</p>
+      <p className="text-xs text-moss/80">
+        Een thuisbatterij wekt geen extra stroom op. Ze slaat je eigen zonneoverschot op, zodat je
+        het later zelf gebruikt in plaats van het terug te leveren.
       </p>
+      <dl className="grid gap-x-6 gap-y-1 rounded-xl bg-background p-3 text-sm sm:grid-cols-2">
+        <Row label={`Jaarlijkse besparing vanaf ${main.year}`} value={`${eur(main.net)}/jr`} strong />
+        <Row label="Extra eigen zonnestroom gebruikt" value={kwh(main.extraSelfKwh)} />
+        <Row label="Minder stroom ingekocht" value={kwh(main.importReductionKwh)} />
+        <Row label="Minder stroom teruggeleverd" value={kwh(main.exportReductionKwh)} />
+        <Row label="Vermeden terugleverkosten" value={`${eur(main.exportCostSaving)}/jr`} />
+        {lifetime && (
+          <Row
+            label={`Indicatief voordeel over ${lifetime.horizonYears} jaar`}
+            value={eur10(lifetime.cumulative)}
+            strong
+          />
+        )}
+      </dl>
+      {lifetime && (
+        <p className="text-[11px] leading-relaxed text-moss/70">
+          {lifetime.horizonYears}-jaarsindicatie: eerste jaar {eur(lifetime.firstYear)}, gemiddeld{" "}
+          {eur(lifetime.average)} per jaar, bandbreedte {eur10(lifetime.range.min)} tot{" "}
+          {eur10(lifetime.range.max)}. Gerekend met {(lifetime.degradationPerYear * 100).toFixed(1)}%
+          capaciteitsverlies per jaar ({lifetime.degradationSource}; na {lifetime.horizonYears} jaar
+          nog ongeveer {Math.round(lifetime.finalHealth * 100)}% capaciteit) en de huidige
+          aangenomen tarieven, zonder prijsvoorspelling. Dit is geen nettowinst: aanschaf,
+          installatie en eventuele vervangingskosten zijn niet meegerekend. De levensduur van{" "}
+          {lifetime.horizonYears} jaar is een rekenaanname, geen garantie.
+        </p>
+      )}
       <div className="grid gap-2 sm:grid-cols-2">
         {ordered.map((y, i) => (
           <div
@@ -50,6 +85,8 @@ export function BatteryBreakdown({
                 <Row label="Stand-byverbruik" value={eur(y.standbyCost)} />
               )}
               <Row label="Netto besparing" value={eur(y.net)} strong />
+              <Row label="Minder ingekocht" value={kwh(y.importReductionKwh)} muted />
+              <Row label="Minder teruggeleverd" value={kwh(y.exportReductionKwh)} muted />
               <Row
                 label={`Waarvan opslagverlies (${Math.round(y.lossKwh)} kWh)`}
                 value={eur(-y.lossValue)}
