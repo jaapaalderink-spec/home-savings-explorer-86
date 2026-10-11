@@ -9,7 +9,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sparkles, ArrowRight, Info } from "lucide-react";
+import { Sparkles, ArrowRight, Info, RotateCcw, Trash2 } from "lucide-react";
 import { CATEGORIES, CONTRACT_META } from "./categories";
 import {
   EnergyContractType,
@@ -55,6 +55,9 @@ interface Props {
   onChange: (patch: Partial<HomeInputs>) => void;
   results: Record<string, AdviceResult | null>;
   onCalculate: (id: string) => void;
+  selected?: string[];
+  onRemove?: (id: string) => void;
+  onReset?: (id: string) => void;
 }
 
 const META_BY_ID = Object.fromEntries(
@@ -68,9 +71,12 @@ export function CategoryPanel({
   onChange,
   results,
   onCalculate,
+  selected = [],
+  onRemove,
+  onReset,
 }: Props) {
   const meta = openId ? META_BY_ID[openId] : null;
-  const result = openId ? (results[openId] ?? null) : null;
+  const result = openId && selected.includes(openId) ? (results[openId] ?? null) : null;
 
   return (
     <Sheet open={openId !== null} onOpenChange={(o) => onOpenChange(o ? openId : null)}>
@@ -154,7 +160,21 @@ export function CategoryPanel({
                     offerteHref={buildOfferteHref(inputs, results, openId!)}
                     resultHref={buildResultHref(inputs, results, openId!)}
                     onCalculate={() => onCalculate(openId!)}
+                    onRemove={() => (onRemove ?? onCalculate)(openId!)}
                   />
+                  <div className="mt-3 flex justify-center text-xs">
+                    <button
+                      type="button"
+                      onClick={() => onReset?.(openId!)}
+                      className="inline-flex items-center gap-1 text-moss/70 underline-offset-2 hover:text-moss hover:underline"
+                    >
+                      <RotateCcw size={12} /> Opnieuw instellen
+                    </button>
+                  </div>
+                  <p className="mt-1 text-center text-[11px] text-moss/50">
+                    Zet alleen de instellingen van deze maatregel terug. Je woninggegevens blijven
+                    staan.
+                  </p>
                 </div>
               )}
 
@@ -258,8 +278,10 @@ function ResultCard({
   resultHref,
   result,
   onCalculate,
+  onRemove,
   battery,
 }: {
+  onRemove: () => void;
   battery?: React.ReactNode;
   categoryId: string;
   offerteHref: string;
@@ -300,8 +322,8 @@ function ResultCard({
           Toegerekende bijdrage in je totale pakket (volgorde-onafhankelijk):{" "}
           {formatEuro(result.practicalSavings)} per jaar.
         </p>
-        <Button type="button" variant="outline" className="mt-3 w-full" onClick={onCalculate}>
-          Verwijder uit bespaarpakket
+        <Button type="button" variant="outline" className="mt-3 w-full" onClick={onRemove}>
+          <Trash2 size={16} className="mr-1.5" /> Verwijder deze maatregel
         </Button>
         <Button
           asChild
@@ -364,8 +386,8 @@ function ResultCard({
       </div>
 
       <p className="mt-3 text-[11px] text-moss/60">{CONFIDENCE_LABEL[result.confidence]}</p>
-      <Button type="button" variant="outline" className="mt-3 w-full" onClick={onCalculate}>
-        Verwijder uit bespaarpakket
+      <Button type="button" variant="outline" className="mt-3 w-full" onClick={onRemove}>
+        <Trash2 size={16} className="mr-1.5" /> Verwijder deze maatregel
       </Button>
 
       <Button
