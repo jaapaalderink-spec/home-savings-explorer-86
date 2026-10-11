@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { AdviceResult } from "./shared";
-import { ENERGY_CONFIG as C } from "./config";
+import { ENERGY_CONFIG as C, DEFAULT_ENERGY_CONFIG as D0, configState } from "./config";
 
 const amount = (max: number, fallback: number) =>
   z.number().finite().min(0).max(max).default(fallback);
@@ -44,7 +44,7 @@ export const energyProfileSchema = z.object({
   hasEv: z.boolean().default(false),
   hasCharger: z.boolean().default(false),
   evKm: amount(120000, C.ev.km),
-  evKwhPer100Km: z.number().min(5).max(50).default(C.ev.kwhPer100Km),
+  evKwhPer100Km: z.number().min(5).max(50).default(20),
   homeChargeShare: amount(100, C.ev.homeShare),
   smartCharging: z.boolean().default(false),
   publicChargePrice: amount(2, C.tariffs.publicChargePrice),
@@ -53,6 +53,7 @@ export const energyProfileSchema = z.object({
   aircoHeatingShare: amount(100, C.airco.heatShareGas),
   aircoScop: z.number().min(1).max(7).default(C.airco.scop),
   coolingKwh: amount(10000, 200),
+  aircoRooms: amount(20, D0.airco.defaultRooms),
   provided: z.array(z.string()).default([]),
   // Contract terms (all optional; empty means: use labelled assumptions).
   supplier: z.string().max(80).default(""),
@@ -103,11 +104,8 @@ export const MEASURE_LABEL: Record<Measure, string> = {
 };
 
 // Monthly fractions: approximate NL seasonality.
-const SUN = [0.025, 0.045, 0.08, 0.115, 0.135, 0.14, 0.135, 0.115, 0.085, 0.065, 0.035, 0.025];
-const HEAT = [0.17, 0.15, 0.13, 0.08, 0.04, 0.01, 0, 0, 0.03, 0.08, 0.13, 0.18];
 const DAYLIGHT = [8, 9.8, 11.8, 13.8, 15.6, 16.6, 16.2, 14.7, 12.6, 10.6, 8.7, 7.6];
 const DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-const HEAT_PER_M3 = C.heat.kwhPerM3 * C.heat.boilerEfficiency;
 const norm = (a: number[]) => {
   const s = a.reduce((x, y) => x + y, 0);
   return a.map((v) => (s > 0 ? v / s : 0));
@@ -124,6 +122,48 @@ const HEAT_SHAPE = norm(
 );
 const EV_EVENING = norm(H.map((h) => (h >= 18 && h <= 23 ? 1 : 0)));
 const EV_SOLAR = norm(H.map((h) => (h >= 10 && h <= 15 ? 1 : 0)));
+const heatPerM3 = () => C.heat.kwhPerM3 * C.heat.boilerEfficiency;
+const solarFactor = () => 1 - C.solar.extraLossShare;
+
+/**
+ * Technical fields the consumer no longer edits: when they still hold the shipped
+ * code default and were not explicitly provided, use the live (admin-published)
+ * configuration instead. Explicit values (provided, or non-default) always win.
+ */
+const LIVE_DEFAULTS: [keyof EnergyProfile, () => unknown][] = [
+  ["electricityPrice", () => C.tariffs.electricityPrice],
+  ["gasPrice", () => C.tariffs.gasPrice],
+  ["exportPrice", () => C.tariffs.exportPrice],
+  ["exportCost", () => C.tariffs.exportCost],
+  ["publicChargePrice", () => C.tariffs.publicChargePrice],
+  ["gasConnectionFixed", () => C.tariffs.gasConnectionFixed],
+  ["existingWp", () => C.solar.existingWp],
+  ["newWp", () => C.solar.newWp],
+  ["yieldPerKwp", () => C.solar.yieldPerKwp],
+  ["hybridCoverage", () => C.heat.hybridCoverage],
+  ["hotWaterCop", () => C.heat.hotWaterCop],
+  ["hotWaterGas", () => C.heat.hotWaterGas],
+  ["cookingGas", () => C.heat.cookingGas],
+  ["batteryEfficiency", () => C.battery.efficiency],
+  ["batteryStandbyW", () => C.battery.standbyW],
+  ["evKwhPer100Km", () => C.ev.kwhPer100Km * (1 + C.ev.chargeLoss)],
+  ["homeChargeShare", () => C.ev.homeShare],
+  ["aircoHeatingShare", () => C.airco.heatShareGas],
+  ["aircoScop", () => C.airco.scop],
+];
+export function withLiveDefaults(p: EnergyProfile, opts: { year?: boolean } = {}): EnergyProfile {
+  const q = { ...p } as Record<string, unknown>;
+  for (const [k, live] of LIVE_DEFAULTS)
+    if (!p.provided.includes(k) && q[k] === DEFAULT_PROFILE[k]) q[k] = live();
+  if (!p.provided.includes("coolingKwh") && p.coolingKwh === DEFAULT_PROFILE.coolingKwh)
+    q["coolingKwh"] = Math.round((p.aircoRooms * C.airco.coolingDemandPerRoom) / C.airco.seer);
+  if (opts.year && !p.provided.includes("year") && p.year === DEFAULT_PROFILE.year)
+    q["year"] = C.mainYear;
+  if (!p.provided.includes("contractType") && p.contractType === "onbekend")
+    q["contractType"] = C.defaults.contractType;
+  return q as EnergyProfile;
+}
+
 const COOL_SHAPE = norm(H.map((h) => (h >= 12 && h <= 18 ? 1 : 0)));
 
 export function effectiveScop(p: EnergyProfile) {
@@ -134,16 +174,24 @@ export const usesNetMetering = (p: EnergyProfile) =>
 const newSolarKwh = (p: EnergyProfile) =>
   p.adviseSolar
     ? Math.max(0, p.consumption * C.solar.adviseKwhShare - existingSolarKwh(p))
-    : ((p.newPanels * p.newWp) / 1000) * p.yieldPerKwp;
+    : ((p.newPanels * p.newWp) / 1000) * p.yieldPerKwp * solarFactor();
 const existingSolarKwh = (p: EnergyProfile) =>
   p.existingPanels > 0
-    ? (p.existingYield ?? ((p.existingPanels * p.existingWp) / 1000) * p.yieldPerKwp)
+    ? (p.existingYield ?? ((p.existingPanels * p.existingWp) / 1000) * p.yieldPerKwp * solarFactor())
     : 0;
 const newBatteryKwh = (p: EnergyProfile) =>
-  p.adviseBattery ? (p.consumption > 5000 ? 10 : 5) : p.newBattery;
+  p.adviseBattery
+    ? p.consumption > C.battery.adviseLargeAboveKwh
+      ? C.battery.adviseLargeCapacity
+      : C.battery.defaultCapacity
+    : p.newBattery;
 
 // Representative dynamic price shape per month (mean 1 over the day). Not historical data.
-const DYN_SHAPE = SUN.map((sunM, m) => {
+let dynCache: { stamp: number; shape: number[][] } | null = null;
+const dynShape = () => {
+  if (dynCache?.stamp === configState.stamp) return dynCache.shape;
+  const SUN = C.solar.monthlyShare;
+  const shape = SUN.map((sunM, m) => {
   const D = C.dynamic;
   const peak = Math.max(...SUN_SHAPE[m]!);
   const raw = H.map(
@@ -153,7 +201,10 @@ const DYN_SHAPE = SUN.map((sunM, m) => {
   );
   const mean = raw.reduce((x, y) => x + y, 0) / 24;
   return raw.map((v) => v - mean + 1);
-});
+  });
+  dynCache = { stamp: configState.stamp, shape };
+  return shape;
+};
 const pad = (n: number) => String(n).padStart(2, "0");
 
 /** Contract terms that apply in a month (tariff periods override from their start date). */
@@ -182,7 +233,7 @@ export function hourlyTariff(p: EnergyProfile, month: number, hour: number) {
   const dynamic = p.contractType === "dynamisch";
   const low =
     !dynamic && p.electricityPriceLow !== null && C.tariffs.lowTariffHours.includes(hour as never);
-  const spotDev = C.dynamic.spotAvg * (DYN_SHAPE[month]![hour]! - 1);
+  const spotDev = C.dynamic.spotAvg * (dynShape()[month]![hour]! - 1);
   const night = C.tariffs.lowTariffHours.includes(hour as never);
   const exportCostRate =
     p.exportCostModel === "perKwh"
@@ -215,7 +266,8 @@ export function annualExportCharge(p: EnergyProfile, grossExportKwh: number) {
 }
 
 type Options = { performance?: number; cooling?: boolean; batteryHealth?: number };
-function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
+function simulate(input: EnergyProfile, selected: Set<string>, opt: Options = {}) {
+  const p = withLiveDefaults(input);
   const performance = opt.performance ?? 1;
   const spaceGas = Math.max(0, p.gas - p.hotWaterGas - p.cookingGas);
   const hotGas = Math.min(p.hotWaterGas, p.gas);
@@ -232,13 +284,13 @@ function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
     (!["hybrid", "heatpump"].includes(p.heating) || p.replaceHeatpump);
   if (wantsHeat) {
     // Measured heating electricity includes hot water: preserve its demand without inventing gas.
-    const heat = spaceGas * HEAT_PER_M3 + electricHeat;
+    const heat = spaceGas * heatPerM3() + electricHeat;
     const coverage = p.target === "electric" ? 1 : p.hybridCoverage / 100;
     spaceElectricity = (heat * coverage) / (effectiveScop(p) * performance);
-    if (p.target === "hybrid") gas = p.gas - spaceGas + (heat * (1 - coverage)) / HEAT_PER_M3;
+    if (p.target === "hybrid") gas = p.gas - spaceGas + (heat * (1 - coverage)) / heatPerM3();
     else {
       gas = Math.max(0, p.gas - spaceGas - hotGas);
-      waterElectricity = (hotGas * HEAT_PER_M3) / (p.hotWaterCop * performance);
+      waterElectricity = (hotGas * heatPerM3()) / (p.hotWaterCop * performance);
     }
   }
   let cooling = 0;
@@ -249,7 +301,7 @@ function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
       const remainingSpaceGas = Math.max(0, gas - Math.min(hotGas, gas) - p.cookingGas);
       const replaced = Math.min(remainingSpaceGas, (remainingSpaceGas * p.aircoHeatingShare) / 100);
       gas -= replaced;
-      aircoHeat = (replaced * HEAT_PER_M3) / (p.aircoScop * performance);
+      aircoHeat = (replaced * heatPerM3()) / (p.aircoScop * performance);
     }
     cooling = opt.cooling === false ? 0 : p.coolingKwh;
   }
@@ -265,13 +317,18 @@ function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
   const production = existingProd + newProd;
   const newCapacity = selected.has("battery") ? newBatteryKwh(p) * (opt.batteryHealth ?? 1) : 0;
   const capacity = p.existingBattery + newCapacity;
-  const power = capacity * C.battery.powerPerKwh;
+  const power = capacity * C.battery.chargePowerPerKwh;
+  const outPower = capacity * C.battery.dischargePowerPerKwh;
   const eff = p.batteryEfficiency;
   const minE = capacity * C.battery.minSoc;
   const maxE = capacity * C.battery.maxSoc;
   const dynamic = p.contractType === "dynamisch";
   const gridChargeAllowed =
-    p.batteryStrategy === "smart" && p.gridCharging && dynamic && capacity > 0;
+    C.battery.allowGridCharging &&
+    p.batteryStrategy === "smart" &&
+    p.gridCharging &&
+    dynamic &&
+    capacity > 0;
   const evShape = p.smartCharging && production > 0 ? EV_SOLAR : EV_EVENING;
   const t = {
     demand: 0,
@@ -289,13 +346,13 @@ function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
   let balanceError = 0;
   for (let m = 0; m < 12; m++) {
     const d = DAYS[m]!;
-    const sunDay = (production * SUN[m]!) / d;
+    const sunDay = (production * C.solar.monthlyShare[m]!) / d;
     const parts = {
       base: base / 365,
-      heat: ((spaceElectricity + aircoHeat) * HEAT[m]!) / d,
+      heat: ((spaceElectricity + aircoHeat) * C.heat.monthlyShare[m]!) / d,
       water: waterElectricity / 365,
       ev: homeEv / 365,
-      cool: (cooling * SUN[m]!) / d,
+      cool: (cooling * C.solar.monthlyShare[m]!) / d,
     };
     // Day runs 06:00 -> 05:59 so evening/night use of daytime storage stays within one cycle.
     const hours = H.map((i) => {
@@ -357,7 +414,7 @@ function simulate(p: EnergyProfile, selected: Set<string>, opt: Options = {}) {
       // Never charge and discharge in the same hour.
       const avail = socSolar + socGrid;
       const discharge =
-        deficit > 0 && charge + gridCharge === 0 ? Math.min(deficit, power, avail) : 0;
+        deficit > 0 && charge + gridCharge === 0 ? Math.min(deficit, outPower, avail) : 0;
       const fromSolar = avail > 0 ? (discharge * socSolar) / avail : 0;
       socSolar = Math.max(0, socSolar + charge * eff - fromSolar);
       socGrid = Math.max(0, socGrid + gridCharge * eff - (discharge - fromSolar));
@@ -475,7 +532,7 @@ export { simulate };
 export type Simulation = ReturnType<typeof simulate>;
 
 export function calculateScenario(input: EnergyProfile, categories: readonly string[]) {
-  const p = energyProfileSchema.parse(input);
+  const p = withLiveDefaults(energyProfileSchema.parse(input), { year: true });
   const selected = MEASURES.filter((id) => categories.includes(id));
   const cache = new Map<string, Simulation>();
   const sim = (ids: readonly string[]) => {
@@ -883,7 +940,7 @@ export function compareSolarBattery(p: EnergyProfile, selected: readonly string[
 
 /** Full traceable breakdown for the admin calculation check. */
 export function debugScenario(input: EnergyProfile, categories: readonly string[]) {
-  const p = energyProfileSchema.parse(input);
+  const p = withLiveDefaults(energyProfileSchema.parse(input), { year: true });
   const selected = MEASURES.filter((id) => categories.includes(id));
   return {
     profile: p,

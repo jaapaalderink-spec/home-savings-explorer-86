@@ -1,3 +1,4 @@
+import { useCalculatorConfig } from "@/lib/home-savings/use-calculator-config";
 import { createFileRoute, Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowRight, Check, Home, Plus, Info, Pencil, Trash2 } from "lucide-react";
@@ -10,7 +11,8 @@ import {
   MEASURE_LABEL,
   type EnergyProfile,
 } from "@/lib/home-savings/scenario";
-import { ENERGY_CONFIG } from "@/lib/home-savings/config";
+import { ENERGY_CONFIG, configState } from "@/lib/home-savings/config";
+import { plainAssumptions } from "@/lib/home-savings/plain-assumptions";
 import { FullEnergyProfileForm } from "@/components/home-savings/EnergyProfileForm";
 import { BatteryBreakdown } from "@/components/home-savings/BatteryBreakdown";
 import { ResetCalculation } from "@/components/home-savings/ResetCalculation";
@@ -55,6 +57,7 @@ const OWNED: Record<string, (p: EnergyProfile) => boolean> = {
 function ResultPage() {
   const searchStr = useLocation({ select: (l) => l.searchStr });
   const search = new URLSearchParams(searchStr);
+  useCalculatorConfig();
   const session = useCalculatorSession();
   const [editing, setEditing] = useState(false);
 
@@ -283,6 +286,17 @@ function ResultPage() {
 
         <details className="mt-6 rounded-xl bg-background p-4 text-sm">
           <summary className="flex cursor-pointer items-center gap-1.5 font-semibold text-ink">
+            <Info size={14} /> Hoe is jouw besparing berekend?
+          </summary>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-moss/80">
+            {plainAssumptions(session.selected).map((n) => (
+              <li key={n}>{n}</li>
+            ))}
+          </ul>
+        </details>
+
+        <details className="mt-3 rounded-xl bg-background p-4 text-sm">
+          <summary className="flex cursor-pointer items-center gap-1.5 font-semibold text-ink">
             <Info size={14} /> Gebruikte aannames
           </summary>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-moss/80">
@@ -292,6 +306,9 @@ function ResultPage() {
             <li>
               Aannames herzien op {ENERGY_CONFIG.reviewedAt}; standaardtarieven zijn geen actuele
               tarieven.
+              {configState.publishedVersion
+                ? ` Rekenparameters versie ${configState.publishedVersion}.`
+                : ""}
             </li>
           </ul>
         </details>

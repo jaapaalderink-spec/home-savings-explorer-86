@@ -61,6 +61,92 @@ export type Database = {
           },
         ]
       }
+      calculator_config_changes: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          setting_key: string
+          version_id: string
+        }
+        Insert: {
+          action?: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          setting_key: string
+          version_id: string
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          setting_key?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calculator_config_changes_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "calculator_config_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calculator_config_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          published_at: string | null
+          published_by: string | null
+          status: string
+          tariff_sets: Json
+          updated_at: string
+          updated_by: string | null
+          values: Json
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          published_at?: string | null
+          published_by?: string | null
+          status?: string
+          tariff_sets?: Json
+          updated_at?: string
+          updated_by?: string | null
+          values?: Json
+          version?: never
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          published_at?: string | null
+          published_by?: string | null
+          status?: string
+          tariff_sets?: Json
+          updated_at?: string
+          updated_by?: string | null
+          values?: Json
+          version?: never
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           active: boolean
@@ -1349,6 +1435,7 @@ export type Database = {
         Returns: boolean
       }
       next_credit_number: { Args: never; Returns: string }
+      publish_calculator_config: { Args: { _id: string }; Returns: number }
       review_complaint_with_credit: {
         Args: {
           p_actor?: string

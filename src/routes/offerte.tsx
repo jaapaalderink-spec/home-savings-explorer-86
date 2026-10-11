@@ -1,3 +1,4 @@
+import { useCalculatorConfig } from "@/lib/home-savings/use-calculator-config";
 import { createFileRoute, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, Check, ShieldCheck } from "lucide-react";
@@ -49,6 +50,7 @@ function num(value: string | null, fallback: number): number {
 }
 
 function OffertePage() {
+  useCalculatorConfig();
   const navigate = useNavigate();
   const searchString = useLocation({ select: (location) => location.searchStr });
   const search = new URLSearchParams(searchString);
