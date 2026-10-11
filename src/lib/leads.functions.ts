@@ -29,6 +29,8 @@ const leadSchema = z.object({
   estimatedSavings: z.number().int().min(-2000000).max(2000000).optional().default(0),
   energyProfile: energyProfileSchema.optional(),
   notes: z.string().trim().max(1000).optional().default(""),
+  /** Server-set: published calculator configuration version used for the estimate. */
+  calcConfigVersion: z.number().int().nullable().optional(),
 });
 
 export type LeadInput = z.infer<typeof leadSchema>;
@@ -40,10 +42,19 @@ export type LeadInput = z.infer<typeof leadSchema>;
 export const submitLead = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => leadSchema.parse(data))
   .handler(async ({ data }) => {
-    if (data.energyProfile)
+    data.calcConfigVersion = null;
+    if (data.energyProfile) {
+      const { fetchPublishedConfig } = await import("@/lib/home-savings/use-calculator-config");
+      const { withOverrides } = await import("@/lib/home-savings/calculator-settings");
+      const row = await fetchPublishedConfig();
+      const profile = data.energyProfile;
       data.estimatedSavings = Math.round(
-        calculateScenario(data.energyProfile, data.categories).savings,
+        withOverrides((row?.values ?? {}) as Record<string, unknown>, () =>
+          calculateScenario(profile, data.categories),
+        ).savings,
       );
+      data.calcConfigVersion = row?.version ?? null;
+    }
     const { normalizeDutchMobile } = await import("@/lib/phone");
     const phone = normalizeDutchMobile(data.phone);
     if (!phone) {

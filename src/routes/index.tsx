@@ -1,3 +1,4 @@
+import { useCalculatorConfig } from "@/lib/home-savings/use-calculator-config";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useCallback, useEffect } from "react";
 import { ShieldCheck } from "lucide-react";
@@ -42,6 +43,7 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   const [openId, setOpenId] = useState<string | null>(null);
+  useCalculatorConfig();
   const session = useCalculatorSession();
   const inputs: HomeInputs = session;
   const selected = session.selected;

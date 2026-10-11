@@ -1,3 +1,4 @@
+import { useCalculatorConfig } from "@/lib/home-savings/use-calculator-config";
 import { createFileRoute, Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowRight, Check, Home, Plus, Info, Pencil, Trash2 } from "lucide-react";
@@ -55,6 +56,7 @@ const OWNED: Record<string, (p: EnergyProfile) => boolean> = {
 function ResultPage() {
   const searchStr = useLocation({ select: (l) => l.searchStr });
   const search = new URLSearchParams(searchStr);
+  useCalculatorConfig();
   const session = useCalculatorSession();
   const [editing, setEditing] = useState(false);
 
