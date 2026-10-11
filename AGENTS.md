@@ -23,3 +23,4 @@
 - Never commit secrets. .env is already tracked and must contain public values only.
 - Energy calculator tariffs, export-cost models and battery strategy live in `src/lib/home-savings/scenario.ts` + `config.ts`; battery value is shown as the marginal with/without comparison per year, Shapley only for package allocation — keeps the battery number honest and the package additive.
 - The calculator reports energy-cost savings only (no purchase cost, payback or ROI); the long-term battery horizon, degradation and main year are central settings in `config.ts` — keeps advice free of unverifiable investment figures.
+- Calculator defaults live in `src/lib/home-savings/config.ts`; admins override only registered settings (`calculator-settings.ts` SETTINGS) via drafts in `calculator_config_versions`, live only after `publish_calculator_config` — legal rules stay in code, invalid published values fall back to code defaults, and leads record the config version used.
