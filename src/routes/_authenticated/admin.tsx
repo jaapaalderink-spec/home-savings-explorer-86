@@ -19,6 +19,8 @@ import { CoverageGaps } from "@/components/admin/CoverageGaps";
 import { BillingAdmin } from "@/components/admin/BillingAdmin";
 import { QualityScores } from "@/components/admin/QualityScores";
 import { ProductCoverage } from "@/components/admin/ProductCoverage";
+import { ContractsAdmin } from "@/components/admin/ContractsAdmin";
+import { AllocationQueue } from "@/components/admin/AllocationQueue";
 import { PlatformTeam } from "@/components/admin/PlatformTeam";
 import { AdminOverview } from "@/components/dashboard/AdminOverview";
 import { FilterBar } from "@/components/admin/FilterBar";
@@ -47,7 +49,17 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 type TabId =
-  "overview" | "leads" | "map" | "quality" | "billing" | "calc" | "settings" | "staff" | "coverage";
+  | "overview"
+  | "leads"
+  | "map"
+  | "quality"
+  | "billing"
+  | "calc"
+  | "settings"
+  | "staff"
+  | "coverage"
+  | "contracts"
+  | "queue";
 
 function AdminPage() {
   const [tab, setTab] = useState<TabId>("overview");
@@ -57,6 +69,8 @@ function AdminPage() {
     { id: "overview", label: "Overzicht", icon: BarChart3 },
     { id: "leads", label: "Aanvragen", icon: Table },
     { id: "map", label: "Kaart & regio's", icon: Map },
+    { id: "queue", label: "Wachtrij", icon: ListOrdered },
+    { id: "contracts", label: "Contracten", icon: FileSignature },
     { id: "coverage", label: "Dekking per product", icon: Map },
     { id: "quality", label: "Kwaliteit", icon: Gauge },
     { id: "billing", label: "Facturatie", icon: FileText },
@@ -113,6 +127,8 @@ function AdminPage() {
         {tab === "calc" && <CalculationDebug />}
         {tab === "staff" && <PlatformTeam />}
         {tab === "coverage" && <ProductCoverage />}
+        {tab === "contracts" && <ContractsAdmin />}
+        {tab === "queue" && <AllocationQueue />}
         {tab === "settings" && <CalculatorSettings />}
       </div>
     </main>

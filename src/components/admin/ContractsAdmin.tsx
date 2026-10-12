@@ -4,17 +4,25 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createContractVersion, getCompanyContracts, searchCompanies } from "@/lib/contracts.functions";
+import {
+  createContractVersion,
+  getCompanyContracts,
+  searchCompanies,
+} from "@/lib/contracts.functions";
 import { CONTRACT_DEFAULTS, contractMonthlyEstimate } from "@/lib/contract-policy";
 import { formatEuro } from "@/lib/home-savings";
 
 const panel = { boxShadow: "var(--shadow-panel)" };
-const fmt = (d: string) => new Date(d).toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" });
+const fmt = (d: string) =>
+  new Date(d).toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" });
 
 export function ContractsAdmin() {
   const [q, setQ] = useState("");
   const [companyId, setCompanyId] = useState<string | null>(null);
-  const list = useQuery({ queryKey: ["company-search", q], queryFn: () => searchCompanies({ data: { q } }) });
+  const list = useQuery({
+    queryKey: ["company-search", q],
+    queryFn: () => searchCompanies({ data: { q } }),
+  });
 
   return (
     <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
@@ -36,7 +44,9 @@ export function ContractsAdmin() {
           ))}
         </ul>
       </section>
-      {companyId ? <CompanyContract companyId={companyId} /> : (
+      {companyId ? (
+        <CompanyContract companyId={companyId} />
+      ) : (
         <p className="text-sm text-moss/70">Kies een bedrijf om de contractversies te zien.</p>
       )}
     </div>
@@ -84,23 +94,28 @@ function CompanyContract({ companyId }: { companyId: string }) {
         <h3 className="font-display text-lg font-bold text-ink">{data.company?.name}</h3>
         {data.versions.length === 0 ? (
           <p className="mt-1 text-sm text-moss/70">
-            Oud contract: abonnement {data.company?.plan_name}, {data.company?.monthly_lead_limit} leads per maand,{" "}
-            {formatEuro(Number(data.company?.monthly_fee_ex_vat ?? 0))} per maand. De oude leadprijzen blijven gelden
-            tot een nieuwe contractversie ingaat.
+            Oud contract: abonnement {data.company?.plan_name}, {data.company?.monthly_lead_limit}{" "}
+            leads per maand, {formatEuro(Number(data.company?.monthly_fee_ex_vat ?? 0))} per maand.
+            De oude leadprijzen blijven gelden tot een nieuwe contractversie ingaat.
           </p>
         ) : (
           <ul className="mt-2 divide-y divide-moss/10 text-sm">
             {data.versions.map((v) => (
               <li key={v.id} className="py-2">
-                <span className="font-semibold text-ink">Versie {v.version}</span> · vanaf {fmt(v.valid_from)}
-                {v.id === data.activeId && <span className="ml-2 rounded-full bg-leaf/15 px-2 text-xs text-leaf">actief</span>}
+                <span className="font-semibold text-ink">Versie {v.version}</span> · vanaf{" "}
+                {fmt(v.valid_from)}
+                {v.id === data.activeId && (
+                  <span className="ml-2 rounded-full bg-leaf/15 px-2 text-xs text-leaf">
+                    actief
+                  </span>
+                )}
                 {v.valid_from > new Date().toISOString().slice(0, 10) && (
                   <span className="ml-2 rounded-full bg-muted px-2 text-xs">gepland</span>
                 )}
                 <span className="block text-moss/70">
                   {v.lead_quota_per_month} leadplaatsen p/m · {v.paid_seats} extra plekken · lead{" "}
-                  {formatEuro(Number(v.base_lead_price_ex_vat))} + {formatEuro(Number(v.extra_product_price_ex_vat))} per extra
-                  product
+                  {formatEuro(Number(v.base_lead_price_ex_vat))} +{" "}
+                  {formatEuro(Number(v.extra_product_price_ex_vat))} per extra product
                 </span>
               </li>
             ))}
@@ -111,18 +126,32 @@ function CompanyContract({ companyId }: { companyId: string }) {
       <section className="rounded-2xl bg-background p-5" style={panel}>
         <h3 className="font-display text-lg font-bold text-ink">Nieuwe contractversie</h3>
         <p className="mt-1 text-sm text-moss/70">
-          Gaat in op de eerste van een maand, op zijn vroegst {fmt(data.earliestStart)}. Bestaande versies worden nooit
-          aangepast.
+          Gaat in op de eerste van een maand, op zijn vroegst {fmt(data.earliestStart)}. Bestaande
+          versies worden nooit aangepast.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <div className="space-y-1.5">
             <Label htmlFor="c-quota">Leadplaatsen per maand</Label>
-            <Input id="c-quota" type="number" min={0} value={quota} onChange={(e) => setQuota(Number(e.target.value))} />
+            <Input
+              id="c-quota"
+              type="number"
+              min={0}
+              value={quota}
+              onChange={(e) => setQuota(Number(e.target.value))}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="c-seats">Extra gebruikersplekken</Label>
-            <Input id="c-seats" type="number" min={0} value={seats} onChange={(e) => setSeats(Number(e.target.value))} />
-            <span className="text-xs text-moss/60">Nu {data.memberCount} gebruiker(s), 1 inbegrepen</span>
+            <Input
+              id="c-seats"
+              type="number"
+              min={0}
+              value={seats}
+              onChange={(e) => setSeats(Number(e.target.value))}
+            />
+            <span className="text-xs text-moss/60">
+              Nu {data.memberCount} gebruiker(s), 1 inbegrepen
+            </span>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="c-from">Ingangsdatum</Label>
@@ -145,10 +174,12 @@ function CompanyContract({ companyId }: { companyId: string }) {
           <Input id="c-note" value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
         <div className="mt-4 rounded-xl bg-muted p-4 text-sm text-moss/80">
-          Platform {formatEuro(CONTRACT_DEFAULTS.platformFee)} + {seats} × {formatEuro(CONTRACT_DEFAULTS.seatFee)} +{" "}
-          {quota} × {formatEuro(CONTRACT_DEFAULTS.baseLeadPrice)} ={" "}
-          <strong>{formatEuro(contractMonthlyEstimate(quota, seats))}</strong> per maand excl. btw. Extra producten in
-          dezelfde toewijzing: + {formatEuro(CONTRACT_DEFAULTS.extraProductPrice)} per product.
+          Platform {formatEuro(CONTRACT_DEFAULTS.platformFee)} + {seats} ×{" "}
+          {formatEuro(CONTRACT_DEFAULTS.seatFee)} + {quota} ×{" "}
+          {formatEuro(CONTRACT_DEFAULTS.baseLeadPrice)} ={" "}
+          <strong>{formatEuro(contractMonthlyEstimate(quota, seats))}</strong> per maand excl. btw.
+          Extra producten in dezelfde toewijzing: +{" "}
+          {formatEuro(CONTRACT_DEFAULTS.extraProductPrice)} per product.
         </div>
         <Button className="mt-4" onClick={() => save.mutate()} disabled={save.isPending}>
           Contractversie opslaan

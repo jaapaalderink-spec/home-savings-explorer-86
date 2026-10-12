@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -12,11 +12,15 @@ import { FULFILLMENT_LABEL, type FulfillmentStatus } from "@/lib/lead-planner";
 import { CATEGORY_LABEL } from "@/lib/lead-pricing";
 
 const panel = { boxShadow: "var(--shadow-panel)" };
-const fmt = (d: string) => new Date(d).toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
+const fmt = (d: string) =>
+  new Date(d).toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
 
 export function AllocationQueue() {
   const qc = useQueryClient();
-  const { data } = useQuery({ queryKey: ["allocation-queue"], queryFn: () => getAllocationQueue() });
+  const { data } = useQuery({
+    queryKey: ["allocation-queue"],
+    queryFn: () => getAllocationQueue(),
+  });
   const [open, setOpen] = useState<string | null>(null);
   const retry = useMutation({
     mutationFn: () => runAllocationRetry(),
@@ -40,7 +44,8 @@ export function AllocationQueue() {
         </Button>
       </div>
       <p className="text-sm text-moss/70">
-        Wachtende en gedeeltelijk geleverde aanvragen worden elk uur opnieuw geprobeerd, tot 30 dagen na binnenkomst.
+        Wachtende en gedeeltelijk geleverde aanvragen worden elk uur opnieuw geprobeerd, tot 30
+        dagen na binnenkomst.
       </p>
       <div className="overflow-x-auto rounded-2xl bg-background" style={panel}>
         <table className="w-full text-sm">
@@ -57,34 +62,44 @@ export function AllocationQueue() {
           </thead>
           <tbody>
             {(data?.leads ?? []).map((l) => (
-              <>
-                <tr key={l.id} className="border-t border-moss/10">
+              <Fragment key={l.id}>
+                <tr className="border-t border-moss/10">
                   <td className="p-3">{fmt(l.created_at)}</td>
                   <td className="p-3">{`${l.postcode?.slice(0, 4) ?? ""} ${l.city ?? ""}`}</td>
-                  <td className="p-3">{(l.categories ?? []).map((c) => CATEGORY_LABEL[c] ?? c).join(", ")}</td>
+                  <td className="p-3">
+                    {(l.categories ?? []).map((c) => CATEGORY_LABEL[c] ?? c).join(", ")}
+                  </td>
                   <td className="p-3">
                     {l.purchase_count} / {Math.min(l.max_partners, 4)}
                   </td>
-                  <td className="p-3">{FULFILLMENT_LABEL[l.fulfillment_status as FulfillmentStatus]}</td>
+                  <td className="p-3">
+                    {FULFILLMENT_LABEL[l.fulfillment_status as FulfillmentStatus]}
+                  </td>
                   <td className="p-3">{l.retry_until ? fmt(l.retry_until) : "—"}</td>
                   <td className="p-3">
-                    <Button size="sm" variant="outline" onClick={() => setOpen(open === l.id ? null : l.id)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setOpen(open === l.id ? null : l.id)}
+                    >
                       Handmatig toewijzen
                     </Button>
                   </td>
                 </tr>
                 {open === l.id && (
-                  <tr key={`${l.id}-x`}>
+                  <tr>
                     <td colSpan={7} className="bg-muted/50 p-3">
                       <ManualAssign leadId={l.id} />
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             ))}
           </tbody>
         </table>
-        {data && data.leads.length === 0 && <p className="p-4 text-sm text-moss/70">Geen aanvragen in de wachtrij.</p>}
+        {data && data.leads.length === 0 && (
+          <p className="p-4 text-sm text-moss/70">Geen aanvragen in de wachtrij.</p>
+        )}
       </div>
     </div>
   );
@@ -106,7 +121,8 @@ function ManualAssign({ leadId }: { leadId: string }) {
     onError: (e: Error) => toast.error(e.message),
   });
   if (isLoading) return <p className="text-sm">Laden…</p>;
-  if (!data?.length) return <p className="text-sm text-moss/70">Geen bedrijf levert deze producten op deze plek.</p>;
+  if (!data?.length)
+    return <p className="text-sm text-moss/70">Geen bedrijf levert deze producten op deze plek.</p>;
   return (
     <ul className="space-y-1 text-sm">
       {data.map((c) => (
