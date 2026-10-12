@@ -60,7 +60,7 @@ export async function allocateLeadToCompany(params: {
   const { data, error } = await db.rpc("allocate_lead_bundle", {
     p_lead_id: params.leadId,
     p_company_id: params.companyId,
-    ...(params.products ? { p_products: params.products } : {}),
+    p_products: (params.products ?? null) as unknown as string[],
     p_source: params.source ?? "assigned",
     ...(params.purchasedBy ? { p_purchased_by: params.purchasedBy } : {}),
   });
