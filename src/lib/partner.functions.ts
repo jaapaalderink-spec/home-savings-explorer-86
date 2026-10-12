@@ -157,26 +157,12 @@ export const updateCompanyProfile = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Aansluiten met een bedrijfscode is vervangen door persoonlijke uitnodigingen. */
 export const joinCompany = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
-    z.object({ code: z.string().trim().min(4).max(12) }).parse(data),
-  )
-  .handler(async ({ data, context }) => {
-    const db = await adminDb();
-    const { data: company } = await db
-      .from("companies")
-      .select("id, name")
-      .eq("join_code", data.code.toUpperCase())
-      .maybeSingle();
-    if (!company) throw new Error("Onbekende bedrijfscode.");
-
-    await db.from("profiles").update({ company_id: company.id }).eq("id", context.userId);
-    await db
-      .from("user_roles")
-      .upsert({ user_id: context.userId, role: "account_manager" }, { onConflict: "user_id,role" });
-
-    return { companyId: company.id, companyName: company.name };
+  .inputValidator((data: unknown) => z.object({ code: z.string().trim().max(12) }).parse(data))
+  .handler(async (): Promise<{ companyId: string; companyName: string }> => {
+    throw new Error("Aansluiten gaat nu via een persoonlijke uitnodiging van de eigenaar.");
   });
 
 /** Werkgebied en productcapaciteit van het eigen bedrijf. */

@@ -1,6 +1,15 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { BarChart3, Calculator, SlidersHorizontal, FileText, Gauge, Map, Table } from "lucide-react";
+import {
+  BarChart3,
+  Calculator,
+  SlidersHorizontal,
+  FileText,
+  Gauge,
+  Map,
+  Table,
+  UserCog,
+} from "lucide-react";
 import { CalculatorSettings } from "@/components/admin/CalculatorSettings";
 import { CalculationDebug } from "@/components/admin/CalculationDebug";
 import { PlatformStats } from "@/components/admin/PlatformStats";
@@ -9,6 +18,7 @@ import { RegionMapPanel } from "@/components/admin/RegionMapPanel";
 import { CoverageGaps } from "@/components/admin/CoverageGaps";
 import { BillingAdmin } from "@/components/admin/BillingAdmin";
 import { QualityScores } from "@/components/admin/QualityScores";
+import { PlatformTeam } from "@/components/admin/PlatformTeam";
 import { AdminOverview } from "@/components/dashboard/AdminOverview";
 import { FilterBar } from "@/components/admin/FilterBar";
 import type { LeadFilters } from "@/components/admin/filters";
@@ -35,7 +45,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type TabId = "overview" | "leads" | "map" | "quality" | "billing" | "calc" | "settings";
+type TabId = "overview" | "leads" | "map" | "quality" | "billing" | "calc" | "settings" | "staff";
 
 function AdminPage() {
   const [tab, setTab] = useState<TabId>("overview");
@@ -49,6 +59,7 @@ function AdminPage() {
     { id: "billing", label: "Facturatie", icon: FileText },
     { id: "settings", label: "Calculatorinstellingen", icon: SlidersHorizontal },
     { id: "calc", label: "Rekencontrole", icon: Calculator },
+    { id: "staff", label: "Platformteam", icon: UserCog },
   ];
 
   return (
@@ -97,6 +108,7 @@ function AdminPage() {
         {tab === "quality" && <QualityScores />}
         {tab === "billing" && <BillingAdmin />}
         {tab === "calc" && <CalculationDebug />}
+        {tab === "staff" && <PlatformTeam />}
         {tab === "settings" && <CalculatorSettings />}
       </div>
     </main>

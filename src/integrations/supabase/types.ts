@@ -195,6 +195,65 @@ export type Database = {
         }
         Relationships: []
       }
+      company_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          company_id: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          monthly_total_ex_vat: number | null
+          revoked_at: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          seat_fee_ex_vat: number
+          seat_start_date: string | null
+          token_hash: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          company_id: string
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          invited_by?: string | null
+          monthly_total_ex_vat?: number | null
+          revoked_at?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          seat_fee_ex_vat?: number
+          seat_start_date?: string | null
+          token_hash: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          company_id?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          monthly_total_ex_vat?: number | null
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          seat_fee_ex_vat?: number
+          seat_start_date?: string | null
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_invitations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_products: {
         Row: {
           active: boolean
@@ -1292,6 +1351,27 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_permissions: {
+        Row: {
+          created_at: string
+          granted_by: string | null
+          permission: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          granted_by?: string | null
+          permission: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          granted_by?: string | null
+          permission?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1318,6 +1398,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_company_invitation: {
+        Args: { p_email: string; p_token_hash: string; p_user: string }
+        Returns: {
+          company_id: string
+          result: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       allocate_lead_to_company: {
         Args: {
           p_company_id: string
@@ -1465,6 +1553,16 @@ export type Database = {
           result: string
         }[]
       }
+      team_update_member: {
+        Args: {
+          p_action: string
+          p_actor: string
+          p_company: string
+          p_source: string
+          p_target: string
+        }
+        Returns: string
+      }
       trial_lead_allowance: { Args: never; Returns: number }
       update_company_commercial: {
         Args: {
@@ -1490,7 +1588,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "owner" | "account_manager"
+      app_role: "admin" | "owner" | "account_manager" | "platform_staff"
       audit_entity:
         | "lead"
         | "lead_purchase"
@@ -1525,6 +1623,12 @@ export type Database = {
         | "QUALITY_SCORE_RECALCULATED"
         | "QUALITY_WARNING_SET"
         | "QUALITY_WARNING_CLEARED"
+        | "TEAM_INVITE_CREATED"
+        | "TEAM_INVITE_ACCEPTED"
+        | "TEAM_INVITE_REVOKED"
+        | "TEAM_ROLE_CHANGED"
+        | "TEAM_MEMBER_REMOVED"
+        | "STAFF_PERMISSIONS_CHANGED"
       audit_source: "partner" | "admin" | "system" | "webhook"
       complaint_reason:
         | "unreachable"
@@ -1682,7 +1786,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "owner", "account_manager"],
+      app_role: ["admin", "owner", "account_manager", "platform_staff"],
       audit_entity: [
         "lead",
         "lead_purchase",
@@ -1718,6 +1822,12 @@ export const Constants = {
         "QUALITY_SCORE_RECALCULATED",
         "QUALITY_WARNING_SET",
         "QUALITY_WARNING_CLEARED",
+        "TEAM_INVITE_CREATED",
+        "TEAM_INVITE_ACCEPTED",
+        "TEAM_INVITE_REVOKED",
+        "TEAM_ROLE_CHANGED",
+        "TEAM_MEMBER_REMOVED",
+        "STAFF_PERMISSIONS_CHANGED",
       ],
       audit_source: ["partner", "admin", "system", "webhook"],
       complaint_reason: [
