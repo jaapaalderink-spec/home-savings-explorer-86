@@ -295,6 +295,8 @@ export const listMarketplace = createServerFn({ method: "GET" })
         .select(
           "id, created_at, categories, postcode, city, house_type, estimated_savings, contract_type, annual_consumption_kwh, purchase_count, max_partners, region_code, lead_type, state",
         )
+        // De leadmarkt is gesloten voor nieuwe aanvragen; alleen oudere aanvragen staan er nog.
+        .eq("market_enabled", true)
         .order("created_at", { ascending: false })
         .limit(200),
       db.from("lead_purchases").select("lead_id").eq("company_id", profile.company_id),
@@ -415,6 +417,8 @@ export const purchaseLead = createServerFn({ method: "POST" })
         throw new Error("Jullie maandcapaciteit voor deze categorie is bereikt.");
       case "company_not_eligible":
         throw new Error("Deze lead valt buiten jullie werkgebied of categorieën.");
+      case "market_closed":
+        throw new Error("Deze aanvraag wordt niet via de leadmarkt aangeboden.");
       case "lead_not_found":
         throw new Error("Lead niet gevonden.");
       default:

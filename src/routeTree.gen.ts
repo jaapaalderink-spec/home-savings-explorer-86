@@ -19,6 +19,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedFacturenRouteImport } from './routes/_authenticated/facturen'
 import { Route as AuthenticatedUitnodigingRouteImport } from './routes/_authenticated/uitnodiging'
+import { Route as ApiPublicAllocationRetryRouteImport } from './routes/api/public/allocation-retry'
 import { Route as ApiPublicMollieWebhookRouteImport } from './routes/api/public/mollie-webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -71,6 +72,12 @@ const AuthenticatedUitnodigingRoute =
     path: '/uitnodiging',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicAllocationRetryRoute =
+  ApiPublicAllocationRetryRouteImport.update({
+    id: '/api/public/allocation-retry',
+    path: '/api/public/allocation-retry',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicMollieWebhookRoute = ApiPublicMollieWebhookRouteImport.update({
   id: '/api/public/mollie-webhook',
   path: '/api/public/mollie-webhook',
@@ -87,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/facturen': typeof AuthenticatedFacturenRoute
   '/uitnodiging': typeof AuthenticatedUitnodigingRoute
+  '/api/public/allocation-retry': typeof ApiPublicAllocationRetryRoute
   '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -99,6 +107,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/facturen': typeof AuthenticatedFacturenRoute
   '/uitnodiging': typeof AuthenticatedUitnodigingRoute
+  '/api/public/allocation-retry': typeof ApiPublicAllocationRetryRoute
   '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
 }
 export interface FileRoutesById {
@@ -113,6 +122,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/facturen': typeof AuthenticatedFacturenRoute
   '/_authenticated/uitnodiging': typeof AuthenticatedUitnodigingRoute
+  '/api/public/allocation-retry': typeof ApiPublicAllocationRetryRoute
   '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
 }
 export interface FileRouteTypes {
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/facturen'
     | '/uitnodiging'
+    | '/api/public/allocation-retry'
     | '/api/public/mollie-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/facturen'
     | '/uitnodiging'
+    | '/api/public/allocation-retry'
     | '/api/public/mollie-webhook'
   id:
     | '__root__'
@@ -152,6 +164,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/facturen'
     | '/_authenticated/uitnodiging'
+    | '/api/public/allocation-retry'
     | '/api/public/mollie-webhook'
   fileRoutesById: FileRoutesById
 }
@@ -162,6 +175,7 @@ export interface RootRouteChildren {
   BedanktRoute: typeof BedanktRoute
   OfferteRoute: typeof OfferteRoute
   ResultaatRoute: typeof ResultaatRoute
+  ApiPublicAllocationRetryRoute: typeof ApiPublicAllocationRetryRoute
   ApiPublicMollieWebhookRoute: typeof ApiPublicMollieWebhookRoute
 }
 
@@ -237,6 +251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUitnodigingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/allocation-retry': {
+      id: '/api/public/allocation-retry'
+      path: '/api/public/allocation-retry'
+      fullPath: '/api/public/allocation-retry'
+      preLoaderRoute: typeof ApiPublicAllocationRetryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/mollie-webhook': {
       id: '/api/public/mollie-webhook'
       path: '/api/public/mollie-webhook'
@@ -271,6 +292,7 @@ const rootRouteChildren: RootRouteChildren = {
   BedanktRoute: BedanktRoute,
   OfferteRoute: OfferteRoute,
   ResultaatRoute: ResultaatRoute,
+  ApiPublicAllocationRetryRoute: ApiPublicAllocationRetryRoute,
   ApiPublicMollieWebhookRoute: ApiPublicMollieWebhookRoute,
 }
 export const routeTree = rootRouteImport

@@ -43,6 +43,13 @@
       "when": 1791830407511,
       "tag": "0005_coverage_all_services",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791830874356,
+      "tag": "0006_contracts_quota_bundled_allocation",
+      "breakpoints": true
     }
   ]
 }

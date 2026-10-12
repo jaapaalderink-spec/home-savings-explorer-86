@@ -1,5 +1,6 @@
 /** Server-only leadopslag en automatische leadverdeling. */
 import { adminDb, monthStart } from "@/lib/partner-util";
+import { MAX_COMPANIES_PER_REQUEST, planAllocation } from "@/lib/lead-planner";
 import { leadTypeFor, maxPartnersFor, regionFromPostcode } from "@/lib/lead-pricing";
 import type { LeadInput } from "@/lib/leads.functions";
 
@@ -89,6 +90,7 @@ export async function distributeLead(leadId: string) {
 
   const categories = lead.categories ?? [];
   const since = monthStart();
+  const today = new Date().toISOString().slice(0, 10);
 
   const [
     { data: companies },
@@ -96,25 +98,42 @@ export async function distributeLead(leadId: string) {
     { data: productRows },
     { data: purchases },
     { data: existing },
+    { data: contracts },
   ] = await Promise.all([
     db.from("companies").select("id, active"),
     db.rpc("eligible_companies_for_lead", { p_lead: leadId }),
     db.from("company_products").select("company_id, category, active, monthly_max"),
     db
       .from("lead_purchases")
-      .select("company_id, created_at, lead:leads(categories)")
+      .select("company_id, created_at, subscription_version_id, lead:leads(categories)")
       .gte("created_at", since),
-    db.from("lead_purchases").select("company_id").eq("lead_id", leadId),
+    db.from("lead_purchases").select("company_id, products, credited").eq("lead_id", leadId),
+    db
+      .from("subscription_versions")
+      .select("company_id, valid_from, lead_quota_per_month")
+      .lte("valid_from", today)
+      .order("valid_from", { ascending: false }),
   ]);
 
   const alreadyAssigned = new Set((existing ?? []).map((p) => p.company_id));
-  const slotsLeft = lead.max_partners - alreadyAssigned.size;
+  const cap = Math.min(lead.max_partners, MAX_COMPANIES_PER_REQUEST);
+  const slotsLeft = cap - alreadyAssigned.size;
   if (slotsLeft <= 0) {
+    await db.rpc("update_lead_fulfillment", { p_lead: leadId });
     return { assigned: 0, state: "assigned" as const, outcome: "already_full" as const };
   }
 
+  // Actief contract per bedrijf (nieuwste ingangsdatum t/m vandaag).
+  const quotaByCompany = new Map<string, number>();
+  (contracts ?? []).forEach((c) => {
+    if (!quotaByCompany.has(c.company_id)) quotaByCompany.set(c.company_id, c.lead_quota_per_month);
+  });
+
   const usedPerCategory = new Map<string, number>();
+  const usedContract = new Map<string, number>();
   (purchases ?? []).forEach((p) => {
+    if (p.subscription_version_id)
+      usedContract.set(p.company_id, (usedContract.get(p.company_id) ?? 0) + 1);
     const cats = ((p.lead as { categories?: string[] } | null)?.categories ?? []) as string[];
     cats.forEach((c) => {
       const key = `${p.company_id}:${c}`;
@@ -130,38 +149,56 @@ export async function distributeLead(leadId: string) {
     ]),
   );
 
-  // Voorfilter: bepaalt alleen de kandidatenlijst. De database beslist definitief.
-  const eligible = (companies ?? []).filter((c) => {
-    if (!c.active) return false;
-    const covered = coveredCats.get(c.id);
-    if (!covered) return false;
-    if (alreadyAssigned.has(c.id)) return false;
-    const products = (productRows ?? []).filter((p) => p.company_id === c.id && p.active);
-    const match = products.filter(
-      (p) => categories.includes(p.category) && covered.includes(p.category),
-    );
-    if (match.length === 0) return false;
-    // minstens één matchende categorie mag deze maand nog leads ontvangen
-    const hasRoom = match.some(
-      (p) => (usedPerCategory.get(`${c.id}:${p.category}`) ?? 0) < p.monthly_max,
-    );
-    return hasRoom;
-  });
+  // Voorfilter + bundel per bedrijf. De database beslist definitief.
+  const candidates = (companies ?? [])
+    .filter((c) => c.active && coveredCats.has(c.id) && !alreadyAssigned.has(c.id))
+    .map((c) => {
+      const covered = coveredCats.get(c.id)!;
+      const quota = quotaByCompany.get(c.id);
+      const active = (productRows ?? []).filter(
+        (p) =>
+          p.company_id === c.id &&
+          p.active &&
+          categories.includes(p.category) &&
+          covered.includes(p.category),
+      );
+      if (quota !== undefined) {
+        const left = quota - (usedContract.get(c.id) ?? 0);
+        return {
+          id: c.id,
+          products: left > 0 ? active.map((p) => p.category) : [],
+          remainingShare: quota > 0 ? Math.max(0, left) / quota : 0,
+        };
+      }
+      // Oud contract: per product de maandcapaciteit.
+      const withRoom = active.filter(
+        (p) => (usedPerCategory.get(`${c.id}:${p.category}`) ?? 0) < p.monthly_max,
+      );
+      const share = withRoom.length
+        ? Math.max(
+            ...withRoom.map(
+              (p) => 1 - (usedPerCategory.get(`${c.id}:${p.category}`) ?? 0) / p.monthly_max,
+            ),
+          )
+        : 0;
+      return { id: c.id, products: withRoom.map((p) => p.category), remainingShare: share };
+    })
+    .filter((c) => c.products.length > 0);
 
   const { allocateLeadToCompany, isLeadTerminal } = await import("@/lib/lead-allocation.server");
   const { loadRankingInputs } = await import("@/lib/quality.server");
   const { rankEligibleCompaniesForLead } = await import("@/lib/quality-policy");
 
-  // Ranking: alleen de volgorde van geschikte kandidaten, nooit de toewijzing zelf.
-  const eligibleIds = eligible.map((c) => c.id);
+  // Kwaliteitsranking bepaalt alleen de volgorde bij gelijke stand.
+  const ids = candidates.map((c) => c.id);
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const [scores, { data: recentRows }] = await Promise.all([
-    loadRankingInputs(eligibleIds),
-    eligibleIds.length
+    loadRankingInputs(ids),
+    ids.length
       ? db
           .from("lead_purchases")
           .select("company_id")
-          .in("company_id", eligibleIds)
+          .in("company_id", ids)
           .gte("assigned_at", weekAgo)
       : Promise.resolve({ data: [] as Array<{ company_id: string }> }),
   ]);
@@ -169,46 +206,67 @@ export async function distributeLead(leadId: string) {
   (recentRows ?? []).forEach((r) => {
     recentPerCompany.set(r.company_id, (recentPerCompany.get(r.company_id) ?? 0) + 1);
   });
-
   const ranked = rankEligibleCompaniesForLead(
-    eligible.map((c) => ({
+    candidates.map((c) => ({
       companyId: c.id,
       overall: scores.get(c.id)?.overall ?? null,
       sampleSize: scores.get(c.id)?.sampleSize ?? 0,
       recent7d: recentPerCompany.get(c.id) ?? 0,
     })),
   );
+  const rankOf = new Map(ranked.map((r, i) => [r.companyId, i]));
 
+  const alreadyCovered = (existing ?? [])
+    .filter((p) => !p.credited)
+    .flatMap((p) =>
+      (p.products as string[] | null)?.length ? (p.products as string[]) : categories,
+    );
+  let pending = candidates;
   let assigned = 0;
   let stopped: string | null = null;
-  for (const company of ranked.map((r) => ({ id: r.companyId }))) {
-    if (assigned >= slotsLeft) break;
-    const allocation = await allocateLeadToCompany({
-      leadId,
-      companyId: company.id,
-      source: "assigned",
-    });
-    if (allocation.result === "allocated") {
-      assigned += 1;
-      continue;
+  const covered = [...alreadyCovered];
+
+  // Plan, wijs toe; mislukt er een (bv. net vol), dan plannen we opnieuw zonder dat bedrijf.
+  for (let round = 0; round < 6 && assigned < slotsLeft && !stopped; round++) {
+    const plan = planAllocation(
+      categories,
+      slotsLeft - assigned,
+      pending.map((c) => ({
+        companyId: c.id,
+        products: c.products,
+        remainingShare: c.remainingShare,
+        rank: rankOf.get(c.id) ?? 999,
+      })),
+      covered,
+    );
+    if (plan.length === 0) break;
+    const failed = new Set<string>();
+    for (const item of plan) {
+      const allocation = await allocateLeadToCompany({
+        leadId,
+        companyId: item.companyId,
+        source: "assigned",
+        products: item.products,
+      });
+      if (allocation.result === "allocated") {
+        assigned += 1;
+        covered.push(...item.products);
+      } else if (isLeadTerminal(allocation.result)) {
+        stopped = allocation.result;
+        break;
+      } else {
+        failed.add(item.companyId);
+      }
     }
-    if (isLeadTerminal(allocation.result)) {
-      stopped = allocation.result;
-      break;
-    }
-    // already_assigned / company_capacity_full / company_not_eligible: volgende kandidaat.
+    const done = new Set(plan.map((p) => p.companyId));
+    pending = pending.filter((c) => !done.has(c.id));
+    if (failed.size === 0) break;
   }
 
   const total = alreadyAssigned.size + assigned;
   const state =
-    total === 0
-      ? ("new" as const)
-      : total < lead.max_partners
-        ? ("underfilled" as const)
-        : ("assigned" as const);
+    total === 0 ? ("new" as const) : total < cap ? ("underfilled" as const) : ("assigned" as const);
 
-  // Bij nul toewijzingen zet de databasefunctie niets; hier leggen we vast dat
-  // de verdeling wél is uitgevoerd, zodat de lead in de leadmarkt komt.
   if (total === 0) {
     await db
       .from("leads")
@@ -216,6 +274,12 @@ export async function distributeLead(leadId: string) {
       .eq("id", leadId)
       .is("distributed_at", null);
   }
+  const { data: fulfillment } = await db.rpc("update_lead_fulfillment", { p_lead: leadId });
 
-  return { assigned, state, outcome: stopped ?? ("distributed" as const) };
+  return {
+    assigned,
+    state,
+    fulfillment: (fulfillment as string | null) ?? null,
+    outcome: stopped ?? ("distributed" as const),
+  };
 }
