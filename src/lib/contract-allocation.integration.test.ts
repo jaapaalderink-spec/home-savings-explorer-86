@@ -23,7 +23,10 @@ const monthStart = () => {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString().slice(0, 10);
 };
 
-async function company(products: string[], opts: { quota?: number; area?: "national" | "none" } = {}) {
+async function company(
+  products: string[],
+  opts: { quota?: number; area?: "national" | "none" } = {},
+) {
   const { rows } = await db.query(
     `INSERT INTO companies (name, active, monthly_lead_limit, categories) VALUES ($1, true, 0, $2) RETURNING id`,
     [`CTest ${crypto.randomUUID().slice(0, 8)}`, products],
@@ -36,7 +39,10 @@ async function company(products: string[], opts: { quota?: number; area?: "natio
       [id, p],
     );
     if (opts.area !== "none")
-      await db.query(`INSERT INTO service_areas (company_id, category, mode) VALUES ($1, $2, 'national')`, [id, p]);
+      await db.query(
+        `INSERT INTO service_areas (company_id, category, mode) VALUES ($1, $2, 'national')`,
+        [id, p],
+      );
   }
   if (opts.quota !== undefined) {
     await db.query(
@@ -58,7 +64,12 @@ async function lead(categories: string[], max = 4, market = false) {
   return rows[0].id as string;
 }
 
-async function bundle(leadId: string, companyId: string, products: string[] | null, source = "assigned") {
+async function bundle(
+  leadId: string,
+  companyId: string,
+  products: string[] | null,
+  source = "assigned",
+) {
   const { data, error } = await sb.rpc("allocate_lead_bundle", {
     p_lead_id: leadId,
     p_company_id: companyId,
@@ -133,8 +144,12 @@ suite("fase 3: contracten en gebundelde toewijzing (echte database)", () => {
 
   it("de leadmarkt is dicht voor nieuwe aanvragen, open voor oude", async () => {
     const c = await company(["solar"], { quota: 5 });
-    expect((await bundle(await lead(["solar"], 4, false), c, null, "market")).result).toBe("market_closed");
-    expect((await bundle(await lead(["solar"], 4, true), c, null, "market")).result).toBe("allocated");
+    expect((await bundle(await lead(["solar"], 4, false), c, null, "market")).result).toBe(
+      "market_closed",
+    );
+    expect((await bundle(await lead(["solar"], 4, true), c, null, "market")).result).toBe(
+      "allocated",
+    );
   });
 
   it("leverstatus: wachtend, gedeeltelijk, volledig, niet leverbaar", async () => {
@@ -155,7 +170,9 @@ suite("fase 3: contracten en gebundelde toewijzing (echte database)", () => {
   it("contractversies zijn onwijzigbaar", async () => {
     const c = await company(["solar"], { quota: 5 });
     await expect(
-      db.query(`UPDATE subscription_versions SET lead_quota_per_month = 99 WHERE company_id = $1`, [c]),
+      db.query(`UPDATE subscription_versions SET lead_quota_per_month = 99 WHERE company_id = $1`, [
+        c,
+      ]),
     ).rejects.toThrow(/IMMUTABLE/);
   });
 });
