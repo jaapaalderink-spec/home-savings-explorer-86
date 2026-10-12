@@ -1339,17 +1339,76 @@ export type Database = {
       regions: {
         Row: {
           code: string
+          lat: number | null
+          lng: number | null
           name: string
+          province: string | null
         }
         Insert: {
           code: string
+          lat?: number | null
+          lng?: number | null
           name: string
+          province?: string | null
         }
         Update: {
           code?: string
+          lat?: number | null
+          lng?: number | null
           name?: string
+          province?: string | null
         }
         Relationships: []
+      }
+      service_areas: {
+        Row: {
+          category: string
+          center_label: string | null
+          center_lat: number | null
+          center_lng: number | null
+          company_id: string
+          created_at: string
+          id: string
+          mode: string
+          provinces: string[]
+          radius_km: number | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          center_label?: string | null
+          center_lat?: number | null
+          center_lng?: number | null
+          company_id: string
+          created_at?: string
+          id?: string
+          mode: string
+          provinces?: string[]
+          radius_km?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          center_label?: string | null
+          center_lat?: number | null
+          center_lng?: number | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          mode?: string
+          provinces?: string[]
+          radius_km?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_areas_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       staff_permissions: {
         Row: {
@@ -1464,7 +1523,30 @@ export type Database = {
           won_count: number
         }[]
       }
+      coverage_by_region: {
+        Args: { p_days?: number }
+        Returns: {
+          capacity: number
+          category: string
+          demand: number
+          gap_reason: string
+          lat: number
+          lng: number
+          providers: number
+          province: string
+          region_code: string
+          region_name: string
+        }[]
+      }
       current_company_id: { Args: never; Returns: string }
+      eligible_companies_for_lead: {
+        Args: { p_lead: string }
+        Returns: {
+          categories: string[]
+          company_id: string
+          distance_km: number
+        }[]
+      }
       ensure_credit_note_for_complaint: {
         Args: { p_actor?: string; p_complaint_id: string }
         Returns: {
@@ -1480,6 +1562,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      haversine_km: {
+        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Returns: number
       }
       log_audit_event:
         | {
@@ -1539,6 +1625,15 @@ export type Database = {
           total_inc_vat: number
         }[]
       }
+      service_area_covers: {
+        Args: {
+          a: Database["public"]["Tables"]["service_areas"]["Row"]
+          p_lat: number
+          p_lng: number
+          p_province: string
+        }
+        Returns: boolean
+      }
       set_purchase_status: {
         Args: {
           p_actor?: string
@@ -1552,6 +1647,10 @@ export type Database = {
           changed: boolean
           result: string
         }[]
+      }
+      sync_company_regions_from_areas: {
+        Args: { p_company: string }
+        Returns: number
       }
       team_update_member: {
         Args: {

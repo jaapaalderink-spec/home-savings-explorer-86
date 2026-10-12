@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LogOut, Store, Inbox, Users, ShieldCheck, Gauge } from "lucide-react";
+import { LogOut, Store, Inbox, Users, ShieldCheck, Gauge, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,6 +10,7 @@ import { getPartnerContext } from "@/lib/partner.functions";
 import { Onboarding } from "@/components/dashboard/Onboarding";
 import { Marketplace } from "@/components/dashboard/Marketplace";
 import { MyLeads } from "@/components/dashboard/MyLeads";
+import { ServiceAreas } from "@/components/dashboard/ServiceAreas";
 import { TeamManager } from "@/components/dashboard/TeamManager";
 import { TeamOverview } from "@/components/dashboard/TeamOverview";
 import { AdminOverview } from "@/components/dashboard/AdminOverview";
@@ -31,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
-type TabId = "market" | "leads" | "performance" | "team" | "admin";
+type TabId = "market" | "leads" | "performance" | "areas" | "team" | "admin";
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -63,6 +64,7 @@ function DashboardPage() {
     { id: "market", label: "Leadmarkt", icon: Store, show: true },
     { id: "leads", label: "Mijn leads", icon: Inbox, show: true },
     { id: "performance", label: "Prestaties", icon: Gauge, show: true },
+    { id: "areas", label: "Werkgebied", icon: MapPin, show: true },
     { id: "team", label: "Team", icon: Users, show: isOwner || isAdmin },
     { id: "admin", label: "Platform", icon: ShieldCheck, show: isAdmin },
   ];
@@ -168,6 +170,7 @@ function DashboardPage() {
               {tab === "market" && <Marketplace remaining={remaining} />}
               {tab === "leads" && <MyLeads />}
               {tab === "performance" && <MyPerformance />}
+              {tab === "areas" && <ServiceAreas />}
               {tab === "team" && (
                 <div className="space-y-6">
                   {isOwner && <TeamManager />}
