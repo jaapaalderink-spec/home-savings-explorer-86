@@ -92,13 +92,13 @@ export async function distributeLead(leadId: string) {
 
   const [
     { data: companies },
-    { data: regionRows },
+    { data: areaRows },
     { data: productRows },
     { data: purchases },
     { data: existing },
   ] = await Promise.all([
     db.from("companies").select("id, active"),
-    db.from("company_regions").select("company_id, region_code"),
+    db.rpc("eligible_companies_for_lead", { p_lead: leadId }),
     db.from("company_products").select("company_id, category, active, monthly_max"),
     db
       .from("lead_purchases")
@@ -122,19 +122,24 @@ export async function distributeLead(leadId: string) {
     });
   });
 
-  const inRegion = new Set(
-    (regionRows ?? [])
-      .filter((r) => lead.region_code && r.region_code === lead.region_code)
-      .map((r) => r.company_id),
+  // Werkgebied per product (straal, provincies of heel Nederland), berekend in de database.
+  const coveredCats = new Map<string, string[]>(
+    ((areaRows ?? []) as Array<{ company_id: string; categories: string[] }>).map((r) => [
+      r.company_id,
+      r.categories,
+    ]),
   );
 
   // Voorfilter: bepaalt alleen de kandidatenlijst. De database beslist definitief.
   const eligible = (companies ?? []).filter((c) => {
     if (!c.active) return false;
-    if (!inRegion.has(c.id)) return false;
+    const covered = coveredCats.get(c.id);
+    if (!covered) return false;
     if (alreadyAssigned.has(c.id)) return false;
     const products = (productRows ?? []).filter((p) => p.company_id === c.id && p.active);
-    const match = products.filter((p) => categories.includes(p.category));
+    const match = products.filter(
+      (p) => categories.includes(p.category) && covered.includes(p.category),
+    );
     if (match.length === 0) return false;
     // minstens één matchende categorie mag deze maand nog leads ontvangen
     const hasRoom = match.some(
