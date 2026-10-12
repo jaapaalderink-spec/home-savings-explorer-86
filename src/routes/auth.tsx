@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { PENDING_INVITE_KEY } from "@/lib/team-policy";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,11 +38,16 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    const go = () => {
+      const token = localStorage.getItem(PENDING_INVITE_KEY);
+      if (token) navigate({ to: "/uitnodiging", search: { token }, replace: true });
+      else navigate({ to: "/dashboard", replace: true });
+    };
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard", replace: true });
+      if (data.session) go();
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) navigate({ to: "/dashboard", replace: true });
+      if (event === "SIGNED_IN" && session) go();
     });
     return () => sub.subscription.unsubscribe();
   }, [navigate]);
@@ -86,8 +92,14 @@ function AuthPage() {
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center px-5 py-12" style={{ backgroundColor: "var(--color-cloud)" }}>
-      <div className="w-full max-w-md rounded-3xl bg-background p-7" style={{ boxShadow: "var(--shadow-panel-lg)" }}>
+    <main
+      className="flex min-h-dvh items-center justify-center px-5 py-12"
+      style={{ backgroundColor: "var(--color-cloud)" }}
+    >
+      <div
+        className="w-full max-w-md rounded-3xl bg-background p-7"
+        style={{ boxShadow: "var(--shadow-panel-lg)" }}
+      >
         <Link to="/" className="font-display text-lg font-bold text-moss">
           Onafhankelijke Offerte
         </Link>
@@ -107,7 +119,14 @@ function AuthPage() {
           )}
           <div className="space-y-1.5">
             <Label htmlFor="email">E-mailadres</Label>
-            <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="password">Wachtwoord</Label>
@@ -121,7 +140,12 @@ function AuthPage() {
               required
             />
           </div>
-          <Button type="submit" disabled={busy} className="w-full" style={{ backgroundColor: "#4f8f62", color: "white" }}>
+          <Button
+            type="submit"
+            disabled={busy}
+            className="w-full"
+            style={{ backgroundColor: "#4f8f62", color: "white" }}
+          >
             {mode === "login" ? "Inloggen" : "Account aanmaken"}
           </Button>
         </form>

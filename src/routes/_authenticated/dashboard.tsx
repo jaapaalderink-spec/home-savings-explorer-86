@@ -10,6 +10,7 @@ import { getPartnerContext } from "@/lib/partner.functions";
 import { Onboarding } from "@/components/dashboard/Onboarding";
 import { Marketplace } from "@/components/dashboard/Marketplace";
 import { MyLeads } from "@/components/dashboard/MyLeads";
+import { TeamManager } from "@/components/dashboard/TeamManager";
 import { TeamOverview } from "@/components/dashboard/TeamOverview";
 import { AdminOverview } from "@/components/dashboard/AdminOverview";
 import { MyPerformance } from "@/components/dashboard/MyPerformance";
@@ -168,7 +169,10 @@ function DashboardPage() {
               {tab === "leads" && <MyLeads />}
               {tab === "performance" && <MyPerformance />}
               {tab === "team" && (
-                <TeamOverview joinCode={isOwner ? data.company.join_code : null} />
+                <div className="space-y-6">
+                  {isOwner && <TeamManager />}
+                  <TeamOverview />
+                </div>
               )}
               {tab === "admin" && <AdminOverview />}
             </section>

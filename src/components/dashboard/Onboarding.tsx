@@ -38,11 +38,14 @@ export function Onboarding() {
   });
 
   return (
-    <div className="mx-auto max-w-xl rounded-3xl bg-background p-7" style={{ boxShadow: "var(--shadow-panel-lg)" }}>
+    <div
+      className="mx-auto max-w-xl rounded-3xl bg-background p-7"
+      style={{ boxShadow: "var(--shadow-panel-lg)" }}
+    >
       <h2 className="font-display text-xl font-bold text-ink">Aan de slag als partner</h2>
       <p className="mt-1 text-sm text-moss/70">
-        Maak je bedrijf aan als eigenaar, of sluit je aan bij een bestaand bedrijf met de code van je
-        eigenaar.
+        Maak je bedrijf aan als eigenaar. Werk je bij een bestaand bedrijf? Vraag de eigenaar dan om
+        een persoonlijke uitnodiging per e-mail.
       </p>
 
       <div className="mt-5 flex gap-2 rounded-full bg-muted p-1 text-sm font-semibold">
@@ -52,7 +55,10 @@ export function Onboarding() {
             type="button"
             onClick={() => setTab(t)}
             className="flex-1 rounded-full px-3 py-1.5"
-            style={{ backgroundColor: tab === t ? "#4f8f62" : "transparent", color: tab === t ? "white" : "#315642" }}
+            style={{
+              backgroundColor: tab === t ? "#4f8f62" : "transparent",
+              color: tab === t ? "white" : "#315642",
+            }}
           >
             {t === "create" ? "Bedrijf aanmaken" : "Aansluiten met code"}
           </button>
@@ -76,7 +82,9 @@ export function Onboarding() {
                     key={id}
                     type="button"
                     onClick={() =>
-                      setCategories((prev) => (active ? prev.filter((c) => c !== id) : [...prev, id]))
+                      setCategories((prev) =>
+                        active ? prev.filter((c) => c !== id) : [...prev, id],
+                      )
                     }
                     className="rounded-full border px-3 py-1.5 text-sm font-medium"
                     style={{
@@ -124,20 +132,11 @@ export function Onboarding() {
           </Button>
         </div>
       ) : (
-        <div className="mt-5 space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="code">Bedrijfscode</Label>
-            <Input id="code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="ABC123" />
-          </div>
-          <Button
-            onClick={() => join.mutate()}
-            disabled={join.isPending || code.trim().length < 4}
-            className="w-full"
-            style={{ backgroundColor: "#4f8f62", color: "white" }}
-          >
-            Aansluiten
-          </Button>
-        </div>
+        <p className="mt-5 rounded-xl bg-muted p-4 text-sm text-moss/80">
+          Aansluiten bij een bestaand bedrijf gaat via een persoonlijke uitnodiging. Vraag de
+          eigenaar om je uit te nodigen via Team in het dashboard en open daarna de link die je
+          krijgt.
+        </p>
       )}
     </div>
   );

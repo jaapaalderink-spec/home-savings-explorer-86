@@ -18,6 +18,7 @@ import { Route as ResultaatRouteImport } from './routes/resultaat'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedFacturenRouteImport } from './routes/_authenticated/facturen'
+import { Route as AuthenticatedUitnodigingRouteImport } from './routes/_authenticated/uitnodiging'
 import { Route as ApiPublicMollieWebhookRouteImport } from './routes/api/public/mollie-webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -64,6 +65,12 @@ const AuthenticatedFacturenRoute = AuthenticatedFacturenRouteImport.update({
   path: '/facturen',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedUitnodigingRoute =
+  AuthenticatedUitnodigingRouteImport.update({
+    id: '/uitnodiging',
+    path: '/uitnodiging',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicMollieWebhookRoute = ApiPublicMollieWebhookRouteImport.update({
   id: '/api/public/mollie-webhook',
   path: '/api/public/mollie-webhook',
@@ -79,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/facturen': typeof AuthenticatedFacturenRoute
+  '/uitnodiging': typeof AuthenticatedUitnodigingRoute
   '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -90,6 +98,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/facturen': typeof AuthenticatedFacturenRoute
+  '/uitnodiging': typeof AuthenticatedUitnodigingRoute
   '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
 }
 export interface FileRoutesById {
@@ -103,6 +112,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/facturen': typeof AuthenticatedFacturenRoute
+  '/_authenticated/uitnodiging': typeof AuthenticatedUitnodigingRoute
   '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
 }
 export interface FileRouteTypes {
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/facturen'
+    | '/uitnodiging'
     | '/api/public/mollie-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/facturen'
+    | '/uitnodiging'
     | '/api/public/mollie-webhook'
   id:
     | '__root__'
@@ -139,6 +151,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/_authenticated/facturen'
+    | '/_authenticated/uitnodiging'
     | '/api/public/mollie-webhook'
   fileRoutesById: FileRoutesById
 }
@@ -217,6 +230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFacturenRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/uitnodiging': {
+      id: '/_authenticated/uitnodiging'
+      path: '/uitnodiging'
+      fullPath: '/uitnodiging'
+      preLoaderRoute: typeof AuthenticatedUitnodigingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/mollie-webhook': {
       id: '/api/public/mollie-webhook'
       path: '/api/public/mollie-webhook'
@@ -231,12 +251,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedFacturenRoute: typeof AuthenticatedFacturenRoute
+  AuthenticatedUitnodigingRoute: typeof AuthenticatedUitnodigingRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedFacturenRoute: AuthenticatedFacturenRoute,
+  AuthenticatedUitnodigingRoute: AuthenticatedUitnodigingRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
