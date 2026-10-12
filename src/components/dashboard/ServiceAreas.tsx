@@ -57,7 +57,7 @@ function AreaCard({
 }: {
   category: string;
   active: boolean;
-  area?: Area;
+  area?: Area | undefined;
   canEdit: boolean;
 }) {
   const qc = useQueryClient();
