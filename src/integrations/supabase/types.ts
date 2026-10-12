@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      allocation_products: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          lead_purchase_id: string
+          price_ex_vat: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          lead_purchase_id: string
+          price_ex_vat?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          lead_purchase_id?: string
+          price_ex_vat?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "allocation_products_lead_purchase_id_fkey"
+            columns: ["lead_purchase_id"]
+            isOneToOne: false
+            referencedRelation: "lead_purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_events: {
         Row: {
           actor_company_id: string | null
@@ -894,10 +926,12 @@ export type Database = {
           note: string | null
           opened_at: string | null
           price_ex_vat: number
+          products: string[]
           purchased_by: string | null
           response_score: number
           source: Database["public"]["Enums"]["purchase_source"]
           status: Database["public"]["Enums"]["lead_status"]
+          subscription_version_id: string | null
           trial_sequence_number: number | null
           updated_at: string
         }
@@ -918,10 +952,12 @@ export type Database = {
           note?: string | null
           opened_at?: string | null
           price_ex_vat?: number
+          products?: string[]
           purchased_by?: string | null
           response_score?: number
           source?: Database["public"]["Enums"]["purchase_source"]
           status?: Database["public"]["Enums"]["lead_status"]
+          subscription_version_id?: string | null
           trial_sequence_number?: number | null
           updated_at?: string
         }
@@ -942,10 +978,12 @@ export type Database = {
           note?: string | null
           opened_at?: string | null
           price_ex_vat?: number
+          products?: string[]
           purchased_by?: string | null
           response_score?: number
           source?: Database["public"]["Enums"]["purchase_source"]
           status?: Database["public"]["Enums"]["lead_status"]
+          subscription_version_id?: string | null
           trial_sequence_number?: number | null
           updated_at?: string
         }
@@ -976,6 +1014,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_purchases_subscription_version_id_fkey"
+            columns: ["subscription_version_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_versions"
             referencedColumns: ["id"]
           },
         ]
@@ -1037,12 +1082,15 @@ export type Database = {
           first_name: string
           fraud_score: number
           fraud_status: Database["public"]["Enums"]["lead_fraud_status"]
+          fulfillment_status: string | null
           house_number: string | null
           house_type: string | null
           id: string
           identity_fingerprint: string | null
+          last_allocation_attempt_at: string | null
           last_name: string
           lead_type: Database["public"]["Enums"]["lead_type"]
+          market_enabled: boolean
           max_partners: number
           notes: string | null
           panel_count: number | null
@@ -1052,6 +1100,7 @@ export type Database = {
           postcode: string
           purchase_count: number
           region_code: string | null
+          retry_until: string | null
           review_required: boolean
           smart_devices: string[]
           state: Database["public"]["Enums"]["lead_state"]
@@ -1077,12 +1126,15 @@ export type Database = {
           first_name: string
           fraud_score?: number
           fraud_status?: Database["public"]["Enums"]["lead_fraud_status"]
+          fulfillment_status?: string | null
           house_number?: string | null
           house_type?: string | null
           id?: string
           identity_fingerprint?: string | null
+          last_allocation_attempt_at?: string | null
           last_name: string
           lead_type?: Database["public"]["Enums"]["lead_type"]
+          market_enabled?: boolean
           max_partners?: number
           notes?: string | null
           panel_count?: number | null
@@ -1092,6 +1144,7 @@ export type Database = {
           postcode: string
           purchase_count?: number
           region_code?: string | null
+          retry_until?: string | null
           review_required?: boolean
           smart_devices?: string[]
           state?: Database["public"]["Enums"]["lead_state"]
@@ -1117,12 +1170,15 @@ export type Database = {
           first_name?: string
           fraud_score?: number
           fraud_status?: Database["public"]["Enums"]["lead_fraud_status"]
+          fulfillment_status?: string | null
           house_number?: string | null
           house_type?: string | null
           id?: string
           identity_fingerprint?: string | null
+          last_allocation_attempt_at?: string | null
           last_name?: string
           lead_type?: Database["public"]["Enums"]["lead_type"]
+          market_enabled?: boolean
           max_partners?: number
           notes?: string | null
           panel_count?: number | null
@@ -1132,6 +1188,7 @@ export type Database = {
           postcode?: string
           purchase_count?: number
           region_code?: string | null
+          retry_until?: string | null
           review_required?: boolean
           smart_devices?: string[]
           state?: Database["public"]["Enums"]["lead_state"]
@@ -1431,6 +1488,62 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_versions: {
+        Row: {
+          base_lead_price_ex_vat: number
+          company_id: string
+          created_at: string
+          created_by: string | null
+          extra_product_price_ex_vat: number
+          id: string
+          lead_quota_per_month: number
+          note: string | null
+          paid_seats: number
+          platform_fee_ex_vat: number
+          seat_fee_ex_vat: number
+          valid_from: string
+          version: number
+        }
+        Insert: {
+          base_lead_price_ex_vat?: number
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          extra_product_price_ex_vat?: number
+          id?: string
+          lead_quota_per_month: number
+          note?: string | null
+          paid_seats?: number
+          platform_fee_ex_vat?: number
+          seat_fee_ex_vat?: number
+          valid_from: string
+          version: number
+        }
+        Update: {
+          base_lead_price_ex_vat?: number
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          extra_product_price_ex_vat?: number
+          id?: string
+          lead_quota_per_month?: number
+          note?: string | null
+          paid_seats?: number
+          platform_fee_ex_vat?: number
+          seat_fee_ex_vat?: number
+          valid_from?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_versions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1463,6 +1576,48 @@ export type Database = {
           company_id: string
           result: string
           role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
+      active_subscription: {
+        Args: { p_company: string; p_on?: string }
+        Returns: {
+          base_lead_price_ex_vat: number
+          company_id: string
+          created_at: string
+          created_by: string | null
+          extra_product_price_ex_vat: number
+          id: string
+          lead_quota_per_month: number
+          note: string | null
+          paid_seats: number
+          platform_fee_ex_vat: number
+          seat_fee_ex_vat: number
+          valid_from: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "subscription_versions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      allocate_lead_bundle: {
+        Args: {
+          p_company_id: string
+          p_lead_id: string
+          p_products: string[]
+          p_purchased_by?: string
+          p_source?: Database["public"]["Enums"]["purchase_source"]
+        }
+        Returns: {
+          billable: boolean
+          is_trial: boolean
+          price_ex_vat: number
+          products: string[]
+          purchase_id: string
+          result: string
+          trial_sequence_number: number
         }[]
       }
       allocate_lead_to_company: {
@@ -1685,6 +1840,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_lead_fulfillment: { Args: { p_lead: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "owner" | "account_manager" | "platform_staff"
