@@ -133,7 +133,7 @@ suite("fase 3: contracten en gebundelde toewijzing (echte database)", () => {
     const l = await lead(["solar"], 4);
     const cs = await Promise.all([1, 2, 3, 4, 5].map(() => company(["solar"], { quota: 10 })));
     for (const c of cs.slice(0, 4)) expect((await bundle(l, c, null)).result).toBe("allocated");
-    await db.query(`UPDATE lead_purchases SET credited = true WHERE lead_id = $1`, [l]);
+    await sb.from("lead_purchases").update({ credited: true }).eq("lead_id", l);
     expect((await bundle(l, cs[4]!, null)).result).toBe("lead_full");
   });
 
@@ -163,16 +163,19 @@ suite("fase 3: contracten en gebundelde toewijzing (echte database)", () => {
     await bundle(l, b, null);
     expect(await st(l)).toBe("complete");
     const old = await lead(["airco"]);
-    await db.query(`UPDATE leads SET retry_until = now() - interval '1 day' WHERE id = $1`, [old]);
+    await sb
+      .from("leads")
+      .update({ retry_until: new Date(Date.now() - 864e5).toISOString() })
+      .eq("id", old);
     expect(await st(old)).toBe("undeliverable");
   });
 
   it("contractversies zijn onwijzigbaar", async () => {
     const c = await company(["solar"], { quota: 5 });
-    await expect(
-      db.query(`UPDATE subscription_versions SET lead_quota_per_month = 99 WHERE company_id = $1`, [
-        c,
-      ]),
-    ).rejects.toThrow(/IMMUTABLE/);
+    const { error } = await sb
+      .from("subscription_versions")
+      .update({ lead_quota_per_month: 99 })
+      .eq("company_id", c);
+    expect(error?.message).toMatch(/IMMUTABLE/);
   });
 });
