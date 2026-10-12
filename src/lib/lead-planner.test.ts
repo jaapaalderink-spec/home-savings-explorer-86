@@ -10,7 +10,11 @@ const c = (id: string, products: string[], remainingShare = 1, rank = 0): PlanCa
 
 describe("planAllocation", () => {
   it("nooit meer dan 4 bedrijven, ook als er meer plekken gevraagd worden", () => {
-    const plan = planAllocation(["solar"], 9, ["a", "b", "c", "d", "e", "f"].map((i) => c(i, ["solar"])));
+    const plan = planAllocation(
+      ["solar"],
+      9,
+      ["a", "b", "c", "d", "e", "f"].map((i) => c(i, ["solar"])),
+    );
     expect(plan).toHaveLength(4);
   });
 
@@ -43,7 +47,12 @@ describe("planAllocation", () => {
   });
 
   it("houdt rekening met al afgedekte producten bij een herpoging", () => {
-    const plan = planAllocation(["solar", "ev"], 1, [c("s", ["solar"], 1, 0), c("e", ["ev"], 0.2, 9)], ["solar"]);
+    const plan = planAllocation(
+      ["solar", "ev"],
+      1,
+      [c("s", ["solar"], 1, 0), c("e", ["ev"], 0.2, 9)],
+      ["solar"],
+    );
     expect(plan.map((p) => p.companyId)).toEqual(["e"]);
   });
 });

@@ -44,7 +44,9 @@ export function planAllocation(
     const gain = (c: PlanCandidate) => c.products.filter((p) => !covered.has(p)).length;
     const anyGain = pool.some((c) => gain(c) > 0);
     pool.sort((a, b) =>
-      anyGain ? gain(b) - gain(a) || fair(a, b) : b.products.length - a.products.length || fair(a, b),
+      anyGain
+        ? gain(b) - gain(a) || fair(a, b)
+        : b.products.length - a.products.length || fair(a, b),
     );
     const next = pool.shift()!;
     plan.push({ companyId: next.companyId, products: next.products });

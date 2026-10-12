@@ -21,6 +21,7 @@ export const ALLOCATION_RESULTS = [
   "lead_not_found",
   "company_not_eligible",
   "company_capacity_full",
+  "market_closed",
 ] as const;
 
 export type AllocationResult = (typeof ALLOCATION_RESULTS)[number];
@@ -52,11 +53,14 @@ export async function allocateLeadToCompany(params: {
   companyId: string;
   source?: "assigned" | "market";
   purchasedBy?: string | null;
+  /** Te bundelen producten; zonder lijst bundelt de database alles wat het bedrijf hier levert. */
+  products?: string[];
 }): Promise<Allocation> {
   const db = await adminDb();
-  const { data, error } = await db.rpc("allocate_lead_to_company", {
+  const { data, error } = await db.rpc("allocate_lead_bundle", {
     p_lead_id: params.leadId,
     p_company_id: params.companyId,
+    ...(params.products ? { p_products: params.products } : {}),
     p_source: params.source ?? "assigned",
     ...(params.purchasedBy ? { p_purchased_by: params.purchasedBy } : {}),
   });
@@ -73,7 +77,7 @@ export async function allocateLeadToCompany(params: {
         trialSequenceNumber: null,
       };
     }
-    console.error("allocate_lead_to_company failed", error.message);
+    console.error("allocate_lead_bundle failed", error.message);
     throw new Error("Toewijzen van de lead is mislukt.");
   }
 
