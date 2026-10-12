@@ -4,8 +4,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { adminDb } from "@/lib/partner-util";
 import { PROVINCES, SERVICE_CATEGORIES } from "@/lib/service-area-policy";
 
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/mapbox";
-
 async function memberContext(userId: string, requireOwner: boolean) {
   const db = await adminDb();
   const [{ data: profile }, { data: isOwner }] = await Promise.all([
@@ -115,32 +113,6 @@ export const saveServiceArea = createServerFn({ method: "POST" })
       p_metadata: { service_area: row },
     } as never);
     return { ok: true, regionCount: regionCount ?? 0 };
-  });
-
-/** Plaats zoeken; alleen een resultaat uit deze lijst kan als middelpunt dienen. */
-export const searchPlaces = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ q: z.string().trim().min(2).max(80) }).parse(d))
-  .handler(async ({ data }) => {
-    const lovableKey = process.env["LOVABLE_API_KEY"];
-    const mapboxKey = process.env["MAPBOX_API_KEY"];
-    if (!lovableKey || !mapboxKey) throw new Error("Plaatsen zoeken is nu niet beschikbaar.");
-    const res = await fetch(
-      `${GATEWAY_URL}/geocoding/v5/mapbox.places/${encodeURIComponent(data.q)}.json?country=nl&types=place,locality,postcode&language=nl&limit=6`,
-      { headers: { Authorization: `Bearer ${lovableKey}`, "X-Connection-Api-Key": mapboxKey } },
-    );
-    if (!res.ok) throw new Error("Plaatsen zoeken is mislukt.");
-    const json = (await res.json()) as {
-      features?: Array<{ id: string; center?: [number, number]; place_name?: string }>;
-    };
-    return (json.features ?? [])
-      .filter((f) => f.center?.length === 2)
-      .map((f) => ({
-        id: f.id,
-        label: (f.place_name ?? "").replace(/, Nederland$/, ""),
-        lng: f.center![0],
-        lat: f.center![1],
-      }));
   });
 
 export const getCoverageByRegion = createServerFn({ method: "GET" })

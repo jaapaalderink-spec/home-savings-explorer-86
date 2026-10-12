@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getServiceAreas, saveServiceArea, searchPlaces } from "@/lib/service-areas.functions";
+import { getServiceAreas, saveServiceArea } from "@/lib/service-areas.functions";
+import { searchPlaces } from "@/lib/place-search";
 import { PROVINCES, type AreaMode } from "@/lib/service-area-policy";
 import { CATEGORY_LABEL } from "@/lib/lead-pricing";
 
@@ -80,7 +81,7 @@ function AreaCard({
   }, [query]);
   const results = useQuery({
     queryKey: ["places", debounced],
-    queryFn: () => searchPlaces({ data: { q: debounced } }),
+    queryFn: () => searchPlaces(debounced),
     enabled: debounced.length >= 2,
   });
 
