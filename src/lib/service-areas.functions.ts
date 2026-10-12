@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { adminDb } from "@/lib/partner-util";
-import { PROVINCES } from "@/lib/service-area-policy";
+import { PROVINCES, SERVICE_CATEGORIES } from "@/lib/service-area-policy";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/mapbox";
 
@@ -33,7 +33,10 @@ export const getServiceAreas = createServerFn({ method: "GET" })
     ]);
     return {
       canEdit: isOwner,
-      products: products ?? [],
+      products: SERVICE_CATEGORIES.map((category) => {
+        const p = (products ?? []).find((x) => x.category === category);
+        return { category, active: p?.active ?? false, offered: !!p };
+      }),
       areas: (areas ?? []).map((a) => ({
         ...a,
         center_lat: a.center_lat === null ? null : Number(a.center_lat),
@@ -45,7 +48,7 @@ export const getServiceAreas = createServerFn({ method: "GET" })
 
 const areaSchema = z
   .object({
-    category: z.string().min(2).max(24),
+    category: z.enum(SERVICE_CATEGORIES),
     mode: z.enum(["radius", "provinces", "national"]),
     centerLabel: z.string().trim().max(160).optional(),
     centerLat: z.number().min(50.6).max(53.7).optional(),
@@ -77,7 +80,13 @@ export const saveServiceArea = createServerFn({ method: "POST" })
       .eq("company_id", companyId)
       .eq("category", data.category)
       .maybeSingle();
-    if (!product) throw new Error("Dit product hoort niet bij jouw diensten.");
+    if (!product) {
+      // Nieuwe dienst: aanzetten met een voorzichtige standaardcapaciteit.
+      const { error: pErr } = await db
+        .from("company_products")
+        .insert({ company_id: companyId, category: data.category, active: true, monthly_max: 10 });
+      if (pErr) throw new Error("Dienst toevoegen is mislukt.");
+    }
 
     const row = {
       company_id: companyId,

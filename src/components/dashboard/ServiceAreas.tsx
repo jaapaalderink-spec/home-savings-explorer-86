@@ -41,6 +41,7 @@ export function ServiceAreas() {
           key={p.category}
           category={p.category}
           active={p.active}
+          offered={p.offered}
           area={data.areas.find((a) => a.category === p.category)}
           canEdit={data.canEdit}
         />
@@ -52,11 +53,13 @@ export function ServiceAreas() {
 function AreaCard({
   category,
   active,
+  offered,
   area,
   canEdit,
 }: {
   category: string;
   active: boolean;
+  offered: boolean;
   area?: Area | undefined;
   canEdit: boolean;
 }) {
@@ -113,7 +116,13 @@ function AreaCard({
         <h3 className="font-display text-lg font-bold text-ink">
           {CATEGORY_LABEL[category] ?? category}
         </h3>
-        {!active && <span className="text-xs text-moss/60">Deze dienst staat uit</span>}
+        {!active && (
+          <span className="text-xs text-moss/60">
+            {offered
+              ? "Deze dienst staat uit"
+              : "Nog niet aangeboden — opslaan zet deze dienst aan"}
+          </span>
+        )}
       </div>
 
       <fieldset disabled={!canEdit} className="mt-3 space-y-4">

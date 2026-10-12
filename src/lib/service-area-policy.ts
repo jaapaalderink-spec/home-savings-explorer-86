@@ -21,3 +21,6 @@ export const GAP_REASON_LABEL: Record<string, string> = {
   geen_capaciteit: "Aanbieders hebben geen capaciteit ingesteld",
   capaciteit_te_laag: "Vraag hoger dan de capaciteit",
 };
+
+/** Diensten die partners kunnen aanbieden (komen overeen met de calculator). */
+export const SERVICE_CATEGORIES = ["solar", "heatpump", "battery", "ev", "airco"] as const;
