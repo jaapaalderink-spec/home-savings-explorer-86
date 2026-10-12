@@ -90,7 +90,8 @@ export const createContractVersion = createServerFn({ method: "POST" })
       created_by: context.userId,
     });
     if (error) {
-      if (error.code === "23505") throw new Error("Er bestaat al een contractversie met die ingangsdatum.");
+      if (error.code === "23505")
+        throw new Error("Er bestaat al een contractversie met die ingangsdatum.");
       throw new Error("Contractversie opslaan is mislukt.");
     }
     await db.rpc("log_audit_event_api", {
@@ -119,7 +120,10 @@ export const getAllocationQueue = createServerFn({ method: "GET" })
       .in("fulfillment_status", ["partial", "waiting", "undeliverable"])
       .order("created_at", { ascending: false })
       .limit(100);
-    const { data: counts } = await db.from("leads").select("fulfillment_status").not("fulfillment_status", "is", null);
+    const { data: counts } = await db
+      .from("leads")
+      .select("fulfillment_status")
+      .not("fulfillment_status", "is", null);
     const totals: Record<string, number> = {};
     (counts ?? []).forEach((r) => {
       const k = r.fulfillment_status as string;
@@ -138,8 +142,13 @@ export const getEligibleForLead = createServerFn({ method: "POST" })
       db.from("lead_purchases").select("company_id").eq("lead_id", data.leadId),
     ]);
     const taken = new Set((existing ?? []).map((e) => e.company_id));
-    const list = ((rows ?? []) as Array<{ company_id: string; categories: string[]; distance_km: number | null }>)
-      .filter((r) => !taken.has(r.company_id));
+    const list = (
+      (rows ?? []) as Array<{
+        company_id: string;
+        categories: string[];
+        distance_km: number | null;
+      }>
+    ).filter((r) => !taken.has(r.company_id));
     const ids = list.map((r) => r.company_id);
     const { data: companies } = ids.length
       ? await db.from("companies").select("id, name, active").in("id", ids)
@@ -183,7 +192,8 @@ export const assignLeadManually = createServerFn({ method: "POST" })
       purchasedBy: context.userId,
     });
     await db.rpc("update_lead_fulfillment", { p_lead: data.leadId });
-    if (r.result !== "allocated") throw new Error(MANUAL_MESSAGES[r.result] ?? "Toewijzen is mislukt.");
+    if (r.result !== "allocated")
+      throw new Error(MANUAL_MESSAGES[r.result] ?? "Toewijzen is mislukt.");
     return { ok: true, price: r.priceExVat };
   });
 

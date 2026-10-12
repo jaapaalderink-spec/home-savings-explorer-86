@@ -7,7 +7,11 @@ export const CONTRACT_DEFAULTS = {
 } as const;
 
 /** Prijs van één toewijzing met `products` gebundelde producten. */
-export function bundlePrice(products: number, base: number = CONTRACT_DEFAULTS.baseLeadPrice, extra: number = CONTRACT_DEFAULTS.extraProductPrice) {
+export function bundlePrice(
+  products: number,
+  base: number = CONTRACT_DEFAULTS.baseLeadPrice,
+  extra: number = CONTRACT_DEFAULTS.extraProductPrice,
+) {
   return products <= 0 ? 0 : base + extra * (products - 1);
 }
 

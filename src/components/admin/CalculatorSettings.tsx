@@ -47,11 +47,10 @@ const fullValues = (stored: Record<string, unknown> | null | undefined): Overrid
     SETTINGS.map((s) => [s.key, (stored?.[s.key] as SettingValue) ?? defaultValue(s.key)]),
   );
 const fmtDate = (iso?: string | null) =>
-  iso
-    ? new Date(iso).toLocaleString("nl-NL", { dateStyle: "medium", timeStyle: "short" })
-    : "—";
+  iso ? new Date(iso).toLocaleString("nl-NL", { dateStyle: "medium", timeStyle: "short" }) : "—";
 const show = (d: SettingDef, v: unknown) => {
-  if (d.kind === "number") return String(+((v as number) * (d.scale ?? 1)).toFixed(4)).replace(".", ",");
+  if (d.kind === "number")
+    return String(+((v as number) * (d.scale ?? 1)).toFixed(4)).replace(".", ",");
   if (d.kind === "list") return (v as number[]).join("; ");
   if (d.kind === "boolean") return v ? "aan" : "uit";
   if (d.kind === "select") return d.options[String(v)] ?? String(v);
@@ -98,7 +97,9 @@ export function CalculatorSettings() {
   const save = useMutation({
     mutationFn: () => saveCalculatorDraft({ data: { values, tariffSets: tariffs, resetKeys } }),
     onSuccess: (r) => {
-      toast.success(`Concept opgeslagen (${r.changed} wijziging${r.changed === 1 ? "" : "en"}). Nog niet live.`);
+      toast.success(
+        `Concept opgeslagen (${r.changed} wijziging${r.changed === 1 ? "" : "en"}). Nog niet live.`,
+      );
       qc.invalidateQueries({ queryKey: ["calculator-config"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -131,14 +132,19 @@ export function CalculatorSettings() {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl bg-background p-5" style={{ boxShadow: "var(--shadow-panel)" }}>
+      <section
+        className="rounded-2xl bg-background p-5"
+        style={{ boxShadow: "var(--shadow-panel)" }}
+      >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="font-display text-lg font-bold text-ink">Calculatorinstellingen</h2>
             <p className="text-sm text-moss/70">
               Actief voor consumenten:{" "}
               <strong>
-                {data?.published ? `versie ${data.published.version}` : "standaardwaarden (nog niets gepubliceerd)"}
+                {data?.published
+                  ? `versie ${data.published.version}`
+                  : "standaardwaarden (nog niets gepubliceerd)"}
               </strong>
               {data?.published && ` sinds ${fmtDate(data.published.published_at)}`}.{" "}
               {data?.draft
@@ -187,9 +193,14 @@ export function CalculatorSettings() {
         ))}
       </nav>
 
-      <section className="rounded-2xl bg-background p-5" style={{ boxShadow: "var(--shadow-panel)" }}>
+      <section
+        className="rounded-2xl bg-background p-5"
+        style={{ boxShadow: "var(--shadow-panel)" }}
+      >
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="font-semibold text-ink">{SETTING_TABS.find((t) => t.id === tab)?.label}</h3>
+          <h3 className="font-semibold text-ink">
+            {SETTING_TABS.find((t) => t.id === tab)?.label}
+          </h3>
           <Button variant="ghost" size="sm" onClick={() => setConfirmReset(true)}>
             <RotateCcw size={14} className="mr-1" /> Standaardwaarden herstellen
           </Button>
@@ -232,13 +243,17 @@ export function CalculatorSettings() {
         {tab === "rules" && <LegalRules />}
       </section>
 
-      <section className="rounded-2xl bg-background p-5" style={{ boxShadow: "var(--shadow-panel)" }}>
+      <section
+        className="rounded-2xl bg-background p-5"
+        style={{ boxShadow: "var(--shadow-panel)" }}
+      >
         <h3 className="flex items-center gap-1.5 font-semibold text-ink">
           <Scale size={16} /> Voorbeeldberekening
         </h3>
         <p className="text-xs text-moss/70">
           Testwoning met gasketel, 3.500 kWh stroom, 1.500 m³ gas en een elektrische auto, met alle
-          vijf maatregelen. Vergelijkt de actieve instellingen met wat je nu op dit scherm hebt staan.
+          vijf maatregelen. Vergelijkt de actieve instellingen met wat je nu op dit scherm hebt
+          staan.
         </p>
         <table className="mt-3 w-full text-sm">
           <thead className="text-left text-xs text-moss/70">
@@ -268,7 +283,10 @@ export function CalculatorSettings() {
         )}
       </section>
 
-      <section className="rounded-2xl bg-background p-5" style={{ boxShadow: "var(--shadow-panel)" }}>
+      <section
+        className="rounded-2xl bg-background p-5"
+        style={{ boxShadow: "var(--shadow-panel)" }}
+      >
         <h3 className="flex items-center gap-1.5 font-semibold text-ink">
           <History size={16} /> Wijzigingshistorie
         </h3>
@@ -287,7 +305,8 @@ export function CalculatorSettings() {
                     <strong>Gepubliceerd</strong>
                   ) : (
                     <>
-                      {d?.label ?? (h.setting_key === "tariffSets" ? "Leverancierstarieven" : h.setting_key)}
+                      {d?.label ??
+                        (h.setting_key === "tariffSets" ? "Leverancierstarieven" : h.setting_key)}
                       {h.action === "reset" && " (standaard hersteld)"}:{" "}
                       {d ? `${show(d, h.old_value)} → ${show(d, h.new_value)}` : "bijgewerkt"}
                     </>
@@ -315,7 +334,10 @@ export function CalculatorSettings() {
             <AlertDialogAction
               onClick={() => {
                 const keys = tabSettings.map((s) => s.key);
-                setValues((s) => ({ ...s, ...Object.fromEntries(keys.map((k) => [k, defaultValue(k)])) }));
+                setValues((s) => ({
+                  ...s,
+                  ...Object.fromEntries(keys.map((k) => [k, defaultValue(k)])),
+                }));
                 setText({});
                 setResetKeys((r) => [...new Set([...r, ...keys])]);
               }}
@@ -423,7 +445,9 @@ function LegalRules() {
   const L = DEFAULT_ENERGY_CONFIG.legalMinExport;
   return (
     <div className="mt-4 rounded-xl bg-cloud p-3 text-xs text-moss/80">
-      <p className="font-semibold text-ink">Wettelijke regels (vast in de rekenlogica, niet aanpasbaar)</p>
+      <p className="font-semibold text-ink">
+        Wettelijke regels (vast in de rekenlogica, niet aanpasbaar)
+      </p>
       <ul className="mt-1 list-disc space-y-0.5 pl-4">
         <li>
           Salderen geldt tot en met {DEFAULT_ENERGY_CONFIG.netMeteringLastYear}; de regeling eindigt
@@ -456,7 +480,13 @@ const EMPTY_TARIFF = (): TariffSet => ({
   exportCost: 0,
 });
 
-function TariffSets({ value, onChange }: { value: TariffSet[]; onChange: (v: TariffSet[]) => void }) {
+function TariffSets({
+  value,
+  onChange,
+}: {
+  value: TariffSet[];
+  onChange: (v: TariffSet[]) => void;
+}) {
   const upd = (i: number, patch: Partial<TariffSet>) =>
     onChange(value.map((t, j) => (j === i ? { ...t, ...patch } : t)));
   const txt = (i: number, k: keyof TariffSet, label: string, type = "text") => (
@@ -482,7 +512,8 @@ function TariffSets({ value, onChange }: { value: TariffSet[]; onChange: (v: Tar
         </Button>
       </div>
       <p className="text-xs text-moss/70">
-        Alleen gecontroleerde tarieven met bron en datum. Worden opgeslagen bij de configuratieversie.
+        Alleen gecontroleerde tarieven met bron en datum. Worden opgeslagen bij de
+        configuratieversie.
       </p>
       {value.map((t, i) => (
         <div key={t.id} className="mt-3 grid gap-2 rounded-xl border p-3 sm:grid-cols-3">
@@ -493,7 +524,9 @@ function TariffSets({ value, onChange }: { value: TariffSet[]; onChange: (v: Tar
             <select
               className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
               value={t.contractType}
-              onChange={(e) => upd(i, { contractType: e.target.value as TariffSet["contractType"] })}
+              onChange={(e) =>
+                upd(i, { contractType: e.target.value as TariffSet["contractType"] })
+              }
             >
               <option value="vast">Vast</option>
               <option value="variabel">Variabel</option>
