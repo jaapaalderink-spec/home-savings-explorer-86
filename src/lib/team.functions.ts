@@ -123,6 +123,15 @@ export const createInvitation = createServerFn({ method: "POST" })
     if (team.members.some((m) => m.email?.toLowerCase() === data.email)) {
       throw new Error("Deze persoon zit al in je team.");
     }
+    // verlopen, nooit gebruikte uitnodigingen voor dit adres eerst afsluiten
+    await db
+      .from("company_invitations")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("company_id", companyId)
+      .ilike("email", data.email)
+      .is("accepted_at", null)
+      .is("revoked_at", null)
+      .lt("expires_at", new Date().toISOString());
     const token = randomToken();
     const expires = new Date(Date.now() + INVITE_TTL_DAYS * 86_400_000).toISOString();
     const { data: inv, error } = await db
