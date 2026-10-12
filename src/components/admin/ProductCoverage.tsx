@@ -14,7 +14,10 @@ export function ProductCoverage() {
     queryKey: ["coverage-by-region"],
     queryFn: () => getCoverageByRegion(),
   });
-  const categories = useMemo(() => [...new Set((data ?? []).map((r) => r.category))].sort(), [data]);
+  const categories = useMemo(
+    () => [...new Set((data ?? []).map((r) => r.category))].sort(),
+    [data],
+  );
   const [cat, setCat] = useState<string>("");
   const active = cat || categories[0] || "";
   const rows = (data ?? []).filter((r) => r.category === active);
@@ -45,7 +48,11 @@ export function ProductCoverage() {
           ))}
         </select>
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={onlyGaps} onChange={(e) => setOnlyGaps(e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={onlyGaps}
+            onChange={(e) => setOnlyGaps(e.target.checked)}
+          />
           Alleen tekorten
         </label>
         <span className="text-sm text-moss/70">
@@ -55,7 +62,12 @@ export function ProductCoverage() {
 
       <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
         <div className="rounded-2xl bg-background p-4" style={panel}>
-          <svg viewBox="0 0 300 330" className="h-auto w-full" role="img" aria-label="Dekkingskaart">
+          <svg
+            viewBox="0 0 300 330"
+            className="h-auto w-full"
+            role="img"
+            aria-label="Dekkingskaart"
+          >
             {rows.map((r) => {
               const x = ((r.lng - BOX.minLng) / (BOX.maxLng - BOX.minLng)) * 300;
               const y = ((BOX.maxLat - r.lat) / (BOX.maxLat - BOX.minLat)) * 330;
@@ -65,9 +77,17 @@ export function ProductCoverage() {
                   ? "var(--color-sun, orange)"
                   : "var(--destructive)";
               return (
-                <circle key={r.region_code} cx={x} cy={y} r={4 + Math.min(r.demand, 20) / 3} fill={color} opacity={0.8}>
+                <circle
+                  key={r.region_code}
+                  cx={x}
+                  cy={y}
+                  r={4 + Math.min(r.demand, 20) / 3}
+                  fill={color}
+                  opacity={0.8}
+                >
                   <title>
-                    {r.region_name}: {r.providers} aanbieders, capaciteit {r.capacity}, vraag {r.demand}
+                    {r.region_name}: {r.providers} aanbieders, capaciteit {r.capacity}, vraag{" "}
+                    {r.demand}
                     {r.gap_reason ? ` — ${GAP_REASON_LABEL[r.gap_reason]}` : ""}
                   </title>
                 </circle>
@@ -75,7 +95,8 @@ export function ProductCoverage() {
             })}
           </svg>
           <p className="mt-2 text-xs text-moss/60">
-            Groen = gedekt, oranje = capaciteit te laag, rood = geen dekking. Grotere stip = meer vraag.
+            Groen = gedekt, oranje = capaciteit te laag, rood = geen dekking. Grotere stip = meer
+            vraag.
           </p>
         </div>
 
@@ -102,7 +123,9 @@ export function ProductCoverage() {
                   <td className="p-3 text-moss/80">{r.providers}</td>
                   <td className="p-3 text-moss/80">{r.capacity}</td>
                   <td className="p-3 text-moss/80">{r.demand}</td>
-                  <td className="p-3 text-moss/80">{r.gap_reason ? GAP_REASON_LABEL[r.gap_reason] : "—"}</td>
+                  <td className="p-3 text-moss/80">
+                    {r.gap_reason ? GAP_REASON_LABEL[r.gap_reason] : "—"}
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -16,7 +16,10 @@ const panel = { boxShadow: "var(--shadow-panel)" };
 type Area = Awaited<ReturnType<typeof getServiceAreas>>["areas"][number];
 
 export function ServiceAreas() {
-  const { data, isLoading } = useQuery({ queryKey: ["service-areas"], queryFn: () => getServiceAreas() });
+  const { data, isLoading } = useQuery({
+    queryKey: ["service-areas"],
+    queryFn: () => getServiceAreas(),
+  });
   if (isLoading) return <Skeleton className="h-40 w-full rounded-2xl" />;
   if (!data) return null;
   return (
@@ -24,7 +27,8 @@ export function ServiceAreas() {
       <p className="text-sm text-moss/70">
         Stel per dienst in waar je klanten wilt ontvangen: een straal rond een plaats, één of meer
         provincies, of heel Nederland.
-        {data.areas.length === 0 && data.legacyRegionCount > 0 &&
+        {data.areas.length === 0 &&
+          data.legacyRegionCount > 0 &&
           ` Nu gebruik je nog ${data.legacyRegionCount} postcodegebieden uit je oude instelling.`}
       </p>
       {data.products.length === 0 && (
@@ -84,7 +88,12 @@ function AreaCard({
           category,
           mode,
           ...(mode === "radius" && place
-            ? { centerLabel: place.label, centerLat: place.lat, centerLng: place.lng, radiusKm: radius }
+            ? {
+                centerLabel: place.label,
+                centerLat: place.lat,
+                centerLng: place.lng,
+                radiusKm: radius,
+              }
             : {}),
           ...(mode === "provinces" ? { provinces: provinces as never } : {}),
         },
@@ -101,7 +110,9 @@ function AreaCard({
   return (
     <section className="rounded-2xl bg-background p-5" style={panel}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="font-display text-lg font-bold text-ink">{CATEGORY_LABEL[category] ?? category}</h3>
+        <h3 className="font-display text-lg font-bold text-ink">
+          {CATEGORY_LABEL[category] ?? category}
+        </h3>
         {!active && <span className="text-xs text-moss/60">Deze dienst staat uit</span>}
       </div>
 
@@ -147,7 +158,9 @@ function AreaCard({
               {debounced.length >= 2 && (
                 <ul className="divide-y divide-moss/10 rounded-md border border-input text-sm">
                   {results.isLoading && <li className="p-2 text-moss/60">Zoeken…</li>}
-                  {results.data?.length === 0 && <li className="p-2 text-moss/60">Niets gevonden.</li>}
+                  {results.data?.length === 0 && (
+                    <li className="p-2 text-moss/60">Niets gevonden.</li>
+                  )}
                   {results.data?.map((r) => (
                     <li key={r.id}>
                       <button
@@ -167,7 +180,13 @@ function AreaCard({
             </div>
             <div className="space-y-2">
               <Label>Straal: {radius} km</Label>
-              <Slider min={1} max={250} step={1} value={[radius]} onValueChange={(v) => setRadius(v[0] ?? 30)} />
+              <Slider
+                min={1}
+                max={250}
+                step={1}
+                value={[radius]}
+                onValueChange={(v) => setRadius(v[0] ?? 30)}
+              />
             </div>
           </div>
         )}
@@ -194,7 +213,9 @@ function AreaCard({
           </Button>
         )}
       </fieldset>
-      {!canEdit && <p className="mt-2 text-xs text-moss/60">Alleen de eigenaar kan dit wijzigen.</p>}
+      {!canEdit && (
+        <p className="mt-2 text-xs text-moss/60">Alleen de eigenaar kan dit wijzigen.</p>
+      )}
     </section>
   );
 }

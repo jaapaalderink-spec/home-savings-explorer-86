@@ -25,7 +25,9 @@ export const getServiceAreas = createServerFn({ method: "GET" })
       db.from("company_products").select("category, active").eq("company_id", companyId),
       db
         .from("service_areas")
-        .select("category, mode, center_label, center_lat, center_lng, radius_km, provinces, updated_at")
+        .select(
+          "category, mode, center_label, center_lat, center_lng, radius_km, provinces, updated_at",
+        )
         .eq("company_id", companyId),
       db.from("company_regions").select("region_code").eq("company_id", companyId),
     ]);
@@ -52,8 +54,14 @@ const areaSchema = z
     provinces: z.array(z.enum(PROVINCES)).max(PROVINCES.length).optional(),
   })
   .superRefine((v, ctx) => {
-    if (v.mode === "radius" && (v.centerLat === undefined || v.centerLng === undefined || !v.radiusKm))
-      ctx.addIssue({ code: "custom", message: "Kies een plaats uit de zoekresultaten en een straal." });
+    if (
+      v.mode === "radius" &&
+      (v.centerLat === undefined || v.centerLng === undefined || !v.radiusKm)
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "Kies een plaats uit de zoekresultaten en een straal.",
+      });
     if (v.mode === "provinces" && !v.provinces?.length)
       ctx.addIssue({ code: "custom", message: "Kies minstens één provincie." });
   });
@@ -81,7 +89,9 @@ export const saveServiceArea = createServerFn({ method: "POST" })
       radius_km: data.mode === "radius" ? data.radiusKm! : null,
       provinces: data.mode === "provinces" ? data.provinces! : [],
     };
-    const { error } = await db.from("service_areas").upsert(row, { onConflict: "company_id,category" });
+    const { error } = await db
+      .from("service_areas")
+      .upsert(row, { onConflict: "company_id,category" });
     if (error) throw new Error("Werkgebied opslaan is mislukt.");
     const { data: regionCount } = await db.rpc("sync_company_regions_from_areas", {
       p_company: companyId,
@@ -128,7 +138,10 @@ export const getCoverageByRegion = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const db = await adminDb();
-    const { data: isAdmin } = await db.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    const { data: isAdmin } = await db.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
     if (!isAdmin) throw new Error("Alleen platformbeheerders.");
     const { data, error } = await db.rpc("coverage_by_region", { p_days: 90 });
     if (error) throw new Error("Dekking ophalen is mislukt.");

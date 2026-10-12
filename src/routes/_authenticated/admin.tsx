@@ -18,6 +18,7 @@ import { RegionMapPanel } from "@/components/admin/RegionMapPanel";
 import { CoverageGaps } from "@/components/admin/CoverageGaps";
 import { BillingAdmin } from "@/components/admin/BillingAdmin";
 import { QualityScores } from "@/components/admin/QualityScores";
+import { ProductCoverage } from "@/components/admin/ProductCoverage";
 import { PlatformTeam } from "@/components/admin/PlatformTeam";
 import { AdminOverview } from "@/components/dashboard/AdminOverview";
 import { FilterBar } from "@/components/admin/FilterBar";
@@ -45,7 +46,8 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type TabId = "overview" | "leads" | "map" | "quality" | "billing" | "calc" | "settings" | "staff";
+type TabId =
+  "overview" | "leads" | "map" | "quality" | "billing" | "calc" | "settings" | "staff" | "coverage";
 
 function AdminPage() {
   const [tab, setTab] = useState<TabId>("overview");
@@ -55,6 +57,7 @@ function AdminPage() {
     { id: "overview", label: "Overzicht", icon: BarChart3 },
     { id: "leads", label: "Aanvragen", icon: Table },
     { id: "map", label: "Kaart & regio's", icon: Map },
+    { id: "coverage", label: "Dekking per product", icon: Map },
     { id: "quality", label: "Kwaliteit", icon: Gauge },
     { id: "billing", label: "Facturatie", icon: FileText },
     { id: "settings", label: "Calculatorinstellingen", icon: SlidersHorizontal },
@@ -109,6 +112,7 @@ function AdminPage() {
         {tab === "billing" && <BillingAdmin />}
         {tab === "calc" && <CalculationDebug />}
         {tab === "staff" && <PlatformTeam />}
+        {tab === "coverage" && <ProductCoverage />}
         {tab === "settings" && <CalculatorSettings />}
       </div>
     </main>
