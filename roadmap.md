@@ -4,5 +4,5 @@
 - [ ] Fase 2 — Diensten, werkgebieden, kaart
 - [x] Fase 3 — Contracten, quota, nieuwe toewijzing
 - [x] Fase 4 — Facturatie, credits, Mollie
-- [ ] Fase 5 — CRM, statistieken, voorbeeldweergave
+- [x] Fase 5 — CRM, statistieken, voorbeeldweergave
 - [ ] Fase 6 — Achtergrondtaken, beveiliging
