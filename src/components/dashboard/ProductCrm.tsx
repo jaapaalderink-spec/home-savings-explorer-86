@@ -50,7 +50,7 @@ export function ProductCrm({ purchaseId }: { purchaseId: string }) {
           row={p}
           busy={save.isPending || quote.isPending}
           onSave={(v) => save.mutate({ category: p.category, ...v })}
-          onQuote={(amount, note) => quote.mutate({ category: p.category, amount, note })}
+          onQuote={(amount, note) => quote.mutate({ category: p.category, amount, ...(note ? { note } : {}) })}
         />
       ))}
     </div>

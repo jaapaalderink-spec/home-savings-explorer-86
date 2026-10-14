@@ -87,7 +87,7 @@ export const saveProductCrm = createServerFn({ method: "POST" })
         category: data.category,
         status: data.status,
         follow_up_date: data.status === "won" || data.status === "lost" ? null : (data.followUpDate ?? null),
-        lost_reason: data.status === "lost" ? data.lostReason : null,
+        lost_reason: data.status === "lost" ? (data.lostReason ?? null) : null,
         updated_by: context.userId,
       },
       { onConflict: "purchase_id,category" },
