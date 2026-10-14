@@ -954,19 +954,71 @@ export const generateInvoices = createServerFn({ method: "POST" })
 
     let created = 0;
 
+    const { contractInvoiceLines } = await import("@/lib/contract-billing");
+
     for (const company of companies ?? []) {
+      // Betaalde, gecrediteerde of geannuleerde facturen nooit herschrijven.
+      const { data: existingInv } = await db
+        .from("invoices")
+        .select("status, payment_status")
+        .eq("company_id", company.id)
+        .eq("period_start", period.start)
+        .maybeSingle();
+      if (
+        existingInv &&
+        (["paid", "credited", "cancelled"].includes(existingInv.status) ||
+          ["paid", "pending"].includes(existingInv.payment_status))
+      )
+        continue;
+
+      const { data: contract } = await db.rpc("active_subscription", {
+        p_company: company.id,
+        p_on: period.start,
+      });
+      const terms = (contract as { id?: string | null } | null)?.id ? contract : null;
+
       const { data: purchases } = await db
         .from("lead_purchases")
-        .select("id, price_ex_vat, billable, credited, is_trial, lead:leads(lead_type)")
+        .select("id, price_ex_vat, billable, credited, is_trial, products, lead:leads(lead_type)")
         .eq("company_id", company.id)
         .gte("created_at", period.startIso)
         .lt("created_at", period.endIso);
 
       // Proefleads zijn nooit factureerbaar; ze blijven wel in de historie staan.
       const billable = (purchases ?? []).filter((p) => p.billable && !p.credited && !p.is_trial);
-      const subscription = Number(company.monthly_fee_ex_vat ?? 0);
-      const leadTotal = billable.reduce((s, p) => s + Number(p.price_ex_vat ?? 0), 0);
-      const subtotal = Math.round((subscription + leadTotal) * 100) / 100;
+
+      type L = { description: string; quantity: number; unit_price_ex_vat: number; amount_ex_vat: number };
+      let draftLines: L[];
+      if (terms) {
+        draftLines = contractInvoiceLines(terms as never, billable as never);
+      } else {
+        const subscription = Number(company.monthly_fee_ex_vat ?? 0);
+        draftLines = [
+          {
+            description: `Abonnement ${planByName(company.plan_name).name}`,
+            quantity: 1,
+            unit_price_ex_vat: subscription,
+            amount_ex_vat: subscription,
+          },
+        ];
+        const grouped = new Map<string, { count: number; price: number }>();
+        billable.forEach((p) => {
+          const type = ((p.lead as { lead_type?: string } | null)?.lead_type ?? "shared_4") as string;
+          const entry = grouped.get(type) ?? { count: 0, price: Number(p.price_ex_vat ?? 0) };
+          entry.count += 1;
+          grouped.set(type, entry);
+        });
+        grouped.forEach((entry, type) => {
+          draftLines.push({
+            description: `Extra leads boven bundel (${type === "shared_2" ? "2 partners" : "4 partners"})`,
+            quantity: entry.count,
+            unit_price_ex_vat: entry.price,
+            amount_ex_vat: Math.round(entry.count * entry.price * 100) / 100,
+          });
+        });
+      }
+      const subtotal =
+        Math.round(draftLines.reduce((s, l) => s + l.amount_ex_vat, 0) * 100) / 100;
       if (subtotal <= 0) continue;
 
       const { vat, total } = withVat(subtotal);
@@ -992,41 +1044,9 @@ export const generateInvoices = createServerFn({ method: "POST" })
       if (error || !invoice) continue;
 
       await db.from("invoice_lines").delete().eq("invoice_id", invoice.id);
-      const lines: Array<{
-        invoice_id: string;
-        description: string;
-        quantity: number;
-        unit_price_ex_vat: number;
-        amount_ex_vat: number;
-        vat_rate: number;
-      }> = [
-        {
-          invoice_id: invoice.id,
-          description: `Abonnement ${planByName(company.plan_name).name}`,
-          quantity: 1,
-          unit_price_ex_vat: subscription,
-          amount_ex_vat: subscription,
-          vat_rate: VAT_RATE,
-        },
-      ];
-
-      const grouped = new Map<string, { count: number; price: number }>();
-      billable.forEach((p) => {
-        const type = ((p.lead as { lead_type?: string } | null)?.lead_type ?? "shared_4") as string;
-        const entry = grouped.get(type) ?? { count: 0, price: Number(p.price_ex_vat ?? 0) };
-        entry.count += 1;
-        grouped.set(type, entry);
-      });
-      grouped.forEach((entry, type) => {
-        lines.push({
-          invoice_id: invoice.id,
-          description: `Extra leads boven bundel (${type === "shared_2" ? "2 partners" : "4 partners"})`,
-          quantity: entry.count,
-          unit_price_ex_vat: entry.price,
-          amount_ex_vat: Math.round(entry.count * entry.price * 100) / 100,
-          vat_rate: VAT_RATE,
-        });
-      });
+      const lines = draftLines
+        .filter((l) => l.amount_ex_vat > 0 || l.description.startsWith("Abonnement"))
+        .map((l) => ({ ...l, invoice_id: invoice.id, vat_rate: VAT_RATE }));
 
       await db.from("invoice_lines").insert(lines);
       await db
