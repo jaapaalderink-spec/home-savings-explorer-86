@@ -93,6 +93,45 @@ export type Database = {
           },
         ]
       }
+      background_jobs: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          kind: string
+          last_error: string | null
+          max_attempts: number
+          next_run_at: string
+          ref_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          kind: string
+          last_error?: string | null
+          max_attempts?: number
+          next_run_at?: string
+          ref_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          last_error?: string | null
+          max_attempts?: number
+          next_run_at?: string
+          ref_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       calculator_config_changes: {
         Row: {
           action: string
