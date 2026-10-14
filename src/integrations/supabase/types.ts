@@ -1393,6 +1393,111 @@ export type Database = {
           },
         ]
       }
+      purchase_product_crm: {
+        Row: {
+          category: string
+          company_id: string
+          created_at: string
+          follow_up_date: string | null
+          id: string
+          lost_reason: string | null
+          purchase_id: string
+          status: Database["public"]["Enums"]["lead_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category: string
+          company_id: string
+          created_at?: string
+          follow_up_date?: string | null
+          id?: string
+          lost_reason?: string | null
+          purchase_id: string
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category?: string
+          company_id?: string
+          created_at?: string
+          follow_up_date?: string | null
+          id?: string
+          lost_reason?: string | null
+          purchase_id?: string
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_product_crm_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_product_crm_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "lead_purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_quotes: {
+        Row: {
+          amount_ex_vat: number
+          category: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          purchase_id: string
+          version: number
+        }
+        Insert: {
+          amount_ex_vat: number
+          category: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          purchase_id: string
+          version: number
+        }
+        Update: {
+          amount_ex_vat?: number
+          category?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          purchase_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_quotes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_quotes_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "lead_purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       regions: {
         Row: {
           code: string
@@ -1884,6 +1989,9 @@ export type Database = {
         | "TEAM_ROLE_CHANGED"
         | "TEAM_MEMBER_REMOVED"
         | "STAFF_PERMISSIONS_CHANGED"
+        | "ADMIN_PREVIEW_OPENED"
+        | "PRODUCT_STATUS_CHANGED"
+        | "QUOTE_ADDED"
       audit_source: "partner" | "admin" | "system" | "webhook"
       complaint_reason:
         | "unreachable"
@@ -2083,6 +2191,9 @@ export const Constants = {
         "TEAM_ROLE_CHANGED",
         "TEAM_MEMBER_REMOVED",
         "STAFF_PERMISSIONS_CHANGED",
+        "ADMIN_PREVIEW_OPENED",
+        "PRODUCT_STATUS_CHANGED",
+        "QUOTE_ADDED",
       ],
       audit_source: ["partner", "admin", "system", "webhook"],
       complaint_reason: [
