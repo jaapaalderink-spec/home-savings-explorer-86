@@ -1,12 +1,13 @@
+import { adminRole } from "@/lib/admin-guard";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { adminDb, average, monthStart, percentage } from "@/lib/partner-util";
 
 /** Gooit als de ingelogde gebruiker geen platformbeheerder is. */
-async function assertAdmin(userId: string) {
+async function assertAdmin(userId: string, claims: { aal?: unknown }) {
   const db = await adminDb();
-  const { data: isAdmin } = await db.rpc("has_role", { _user_id: userId, _role: "admin" });
+  const { data: isAdmin } = await adminRole(db, userId, claims);
   if (!isAdmin) throw new Error("Alleen platformbeheerders.");
   return db;
 }
@@ -36,7 +37,7 @@ export const listAllLeads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => filterSchema.parse(data ?? {}))
   .handler(async ({ data, context }) => {
-    const db = await assertAdmin(context.userId);
+    const db = await assertAdmin(context.userId, context.claims);
 
     let query = db
       .from("leads")
@@ -121,7 +122,7 @@ export const listAllLeads = createServerFn({ method: "POST" })
 export const getPlatformStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const db = await assertAdmin(context.userId);
+    const db = await assertAdmin(context.userId, context.claims);
 
     const [{ data: leads }, { data: purchases }, { data: companies }, { data: complaints }] =
       await Promise.all([
@@ -195,7 +196,7 @@ export const listLeadsByRegion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => filterSchema.parse(data ?? {}))
   .handler(async ({ data, context }) => {
-    const db = await assertAdmin(context.userId);
+    const db = await assertAdmin(context.userId, context.claims);
     const since = sinceIso(data.days);
 
     let leadQuery = db.from("leads").select("region_code, categories, state, purchase_count");
@@ -265,7 +266,7 @@ export const listLeadsByRegion = createServerFn({ method: "POST" })
 export const listCoverageGaps = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const db = await assertAdmin(context.userId);
+    const db = await assertAdmin(context.userId, context.claims);
 
     const [{ data: leads }, { data: regions }, { data: coverage }, { data: products }] =
       await Promise.all([
@@ -324,7 +325,7 @@ export const listLeadPostcodes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => filterSchema.parse(data ?? {}))
   .handler(async ({ data, context }) => {
-    const db = await assertAdmin(context.userId);
+    const db = await assertAdmin(context.userId, context.claims);
     const { normalizePostcode, resolvePostcodes } = await import("@/lib/geocode.server");
     const since = sinceIso(data.days);
 

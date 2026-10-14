@@ -1,3 +1,4 @@
+import { adminRole } from "@/lib/admin-guard";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -5,9 +6,9 @@ import { adminDb } from "@/lib/partner-util";
 import { nextMonthStart } from "@/lib/team-policy";
 import { CONTRACT_DEFAULTS } from "@/lib/contract-policy";
 
-async function assertAdmin(userId: string) {
+async function assertAdmin(userId: string, claims: { aal?: unknown }) {
   const db = await adminDb();
-  const { data: isAdmin } = await db.rpc("has_role", { _user_id: userId, _role: "admin" });
+  const { data: isAdmin } = await adminRole(db, userId, claims);
   if (!isAdmin) throw new Error("Alleen platformbeheerders.");
   return db;
 }
@@ -16,7 +17,7 @@ export const searchCompanies = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ q: z.string().trim().max(80) }).parse(d))
   .handler(async ({ data, context }) => {
-    const db = await assertAdmin(context.userId);
+    const db = await assertAdmin(context.userId, context.claims);
     let q = db.from("companies").select("id, name, plan_name, active").order("name").limit(20);
     if (data.q) q = q.ilike("name", `%${data.q}%`);
     const { data: rows } = await q;
@@ -27,7 +28,7 @@ export const getCompanyContracts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ companyId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const db = await assertAdmin(context.userId);
+    const db = await assertAdmin(context.userId, context.claims);
     const [{ data: company }, { data: versions }, { data: members }] = await Promise.all([
       db
         .from("companies")
@@ -66,7 +67,7 @@ export const createContractVersion = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const db = await assertAdmin(context.userId);
+    const db = await assertAdmin(context.userId, context.claims);
     if (data.validFrom < nextMonthStart())
       throw new Error("Een wijziging gaat op zijn vroegst in op de eerste van volgende maand.");
     const { data: last } = await db
@@ -111,7 +112,7 @@ export const createContractVersion = createServerFn({ method: "POST" })
 export const getAllocationQueue = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const db = await assertAdmin(context.userId);
+    const db = await assertAdmin(context.userId, context.claims);
     const { data: leads } = await db
       .from("leads")
       .select(
@@ -136,7 +137,7 @@ export const getEligibleForLead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ leadId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const db = await assertAdmin(context.userId);
+    const db = await assertAdmin(context.userId, context.claims);
     const [{ data: rows }, { data: existing }] = await Promise.all([
       db.rpc("eligible_companies_for_lead", { p_lead: data.leadId }),
       db.from("lead_purchases").select("company_id").eq("lead_id", data.leadId),
@@ -183,7 +184,7 @@ export const assignLeadManually = createServerFn({ method: "POST" })
     z.object({ leadId: z.string().uuid(), companyId: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const db = await assertAdmin(context.userId);
+    const db = await assertAdmin(context.userId, context.claims);
     const { allocateLeadToCompany } = await import("@/lib/lead-allocation.server");
     const r = await allocateLeadToCompany({
       leadId: data.leadId,
@@ -200,7 +201,7 @@ export const assignLeadManually = createServerFn({ method: "POST" })
 export const runAllocationRetry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.userId, context.claims);
     const { retryPendingLeads } = await import("@/lib/allocation-queue.server");
     return retryPendingLeads();
   });

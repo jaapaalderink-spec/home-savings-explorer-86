@@ -1,3 +1,4 @@
+import { adminRole } from "@/lib/admin-guard";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
@@ -5,11 +6,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { adminDb } from "@/lib/partner-util";
 
 /** Mag deze gebruiker bij deze factuur? Eigen bedrijf of platformbeheer. */
-async function authorizeInvoice(userId: string, invoiceId: string) {
+async function authorizeInvoice(userId: string, invoiceId: string, claims: { aal?: unknown }) {
   const db = await adminDb();
   const [{ data: profile }, { data: isAdmin }, { data: invoice }] = await Promise.all([
     db.from("profiles").select("company_id").eq("id", userId).maybeSingle(),
-    db.rpc("has_role", { _user_id: userId, _role: "admin" }),
+    adminRole(db, userId, claims),
     db.from("invoices").select("id, company_id").eq("id", invoiceId).maybeSingle(),
   ]);
   if (!invoice) throw new Error("Factuur niet gevonden.");
@@ -33,7 +34,7 @@ export const createInvoicePayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ invoiceId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    await authorizeInvoice(context.userId, data.invoiceId);
+    await authorizeInvoice(context.userId, data.invoiceId, context.claims);
     const { startInvoicePayment } = await import("@/lib/payments.server");
     const origin =
       process.env["APP_URL"] ??
@@ -53,7 +54,7 @@ export const refreshInvoicePayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ invoiceId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    await authorizeInvoice(context.userId, data.invoiceId);
+    await authorizeInvoice(context.userId, data.invoiceId, context.claims);
     const { invoicePaymentState, syncPayment } = await import("@/lib/payments.server");
     const state = await invoicePaymentState(data.invoiceId);
     const latest = state.attempts[0];
