@@ -1,3 +1,4 @@
+import { adminRole } from "@/lib/admin-guard";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -7,10 +8,10 @@ import {
   defaultValue,
 } from "@/lib/home-savings/calculator-settings";
 
-type Ctx = { supabase: any; userId: string }; // eslint-disable-line @typescript-eslint/no-explicit-any
+type Ctx = { supabase: any; userId: string; claims: { aal?: unknown } }; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-async function assertAdmin({ supabase, userId }: Ctx) {
-  const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+async function assertAdmin({ supabase, userId, claims }: Ctx) {
+  const { data } = await adminRole(supabase, userId, claims);
   if (!data) throw new Error("Alleen platformbeheerders kunnen calculatorinstellingen beheren.");
 }
 

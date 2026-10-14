@@ -1,3 +1,4 @@
+import { adminRole } from "@/lib/admin-guard";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -43,11 +44,11 @@ async function audit(
 }
 
 /** Bepaalt het bedrijf waarvoor de gebruiker het team mag beheren. */
-async function teamContext(userId: string, companyIdForAdmin?: string) {
+async function teamContext(userId: string, companyIdForAdmin: string | undefined, claims: { aal?: unknown }) {
   const db = await adminDb();
   const [{ data: isOwner }, { data: isAdmin }, { data: profile }] = await Promise.all([
     db.rpc("has_role", { _user_id: userId, _role: "owner" }),
-    db.rpc("has_role", { _user_id: userId, _role: "admin" }),
+    adminRole(db, userId, claims),
     db.from("profiles").select("company_id").eq("id", userId).maybeSingle(),
   ]);
   if (isAdmin && companyIdForAdmin) {
@@ -101,7 +102,7 @@ export const getTeamSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => companyArg.parse(d))
   .handler(async ({ data, context }) => {
-    const { db, companyId } = await teamContext(context.userId, data.companyId);
+    const { db, companyId } = await teamContext(context.userId, data.companyId, context.claims);
     return { ...(await loadTeam(db, companyId)), me: context.userId };
   });
 
@@ -118,7 +119,7 @@ export const createInvitation = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { db, companyId, source } = await teamContext(context.userId, data.companyId);
+    const { db, companyId, source } = await teamContext(context.userId, data.companyId, context.claims);
     const team = await loadTeam(db, companyId);
     if (team.members.some((m) => m.email?.toLowerCase() === data.email)) {
       throw new Error("Deze persoon zit al in je team.");
@@ -170,7 +171,7 @@ export const revokeInvitation = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), companyId: z.string().uuid().optional() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { db, companyId, source } = await teamContext(context.userId, data.companyId);
+    const { db, companyId, source } = await teamContext(context.userId, data.companyId, context.claims);
     const { data: rows } = await db
       .from("company_invitations")
       .update({ revoked_at: new Date().toISOString() })
@@ -198,7 +199,7 @@ export const updateTeamMember = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { db, companyId, source } = await teamContext(context.userId, data.companyId);
+    const { db, companyId, source } = await teamContext(context.userId, data.companyId, context.claims);
     const { data: result, error } = await db.rpc("team_update_member", {
       p_company: companyId,
       p_target: data.userId,
@@ -252,9 +253,9 @@ export const acceptInvitation = createServerFn({ method: "POST" })
 
 /* ---------------- Platformteam (alleen platformbeheerders) ---------------- */
 
-async function assertAdmin(userId: string) {
+async function assertAdmin(userId: string, claims: { aal?: unknown }) {
   const db = await adminDb();
-  const { data: isAdmin } = await db.rpc("has_role", { _user_id: userId, _role: "admin" });
+  const { data: isAdmin } = await adminRole(db, userId, claims);
   if (!isAdmin) throw new Error("Alleen platformbeheerders.");
   return db;
 }
@@ -262,7 +263,7 @@ async function assertAdmin(userId: string) {
 export const listPlatformTeam = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const db = await assertAdmin(context.userId);
+    const db = await assertAdmin(context.userId, context.claims);
     const { data: roles } = await db
       .from("user_roles")
       .select("user_id, role")
@@ -303,7 +304,7 @@ export const setPlatformMember = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const db = await assertAdmin(context.userId);
+    const db = await assertAdmin(context.userId, context.claims);
     const { data: target } = await db
       .from("profiles")
       .select("id")

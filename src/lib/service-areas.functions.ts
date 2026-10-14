@@ -1,3 +1,4 @@
+import { adminRole } from "@/lib/admin-guard";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -119,10 +120,7 @@ export const getCoverageByRegion = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const db = await adminDb();
-    const { data: isAdmin } = await db.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
+    const { data: isAdmin } = await adminRole(db, context.userId, context.claims);
     if (!isAdmin) throw new Error("Alleen platformbeheerders.");
     const { data, error } = await db.rpc("coverage_by_region", { p_days: 90 });
     if (error) throw new Error("Dekking ophalen is mislukt.");

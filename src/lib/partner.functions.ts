@@ -1,3 +1,4 @@
+import { adminRole } from "@/lib/admin-guard";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -491,7 +492,7 @@ export const listAssignableMembers = createServerFn({ method: "GET" })
     const [{ data: profile }, { data: isOwner }, { data: isAdmin }] = await Promise.all([
       db.from("profiles").select("company_id").eq("id", context.userId).maybeSingle(),
       db.rpc("has_role", { _user_id: context.userId, _role: "owner" }),
-      db.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+      adminRole(db, context.userId, context.claims),
     ]);
     if (!profile?.company_id) return { members: [], canAssign: false, me: context.userId };
 
@@ -526,7 +527,7 @@ export const assignPurchases = createServerFn({ method: "POST" })
     const [{ data: profile }, { data: isOwner }, { data: isAdmin }] = await Promise.all([
       db.from("profiles").select("company_id").eq("id", context.userId).maybeSingle(),
       db.rpc("has_role", { _user_id: context.userId, _role: "owner" }),
-      db.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+      adminRole(db, context.userId, context.claims),
     ]);
     if (!profile?.company_id) throw new Error("Geen bedrijf gekoppeld.");
     if (!isOwner && !isAdmin) throw new Error("Alleen de eigenaar kan leads toewijzen.");
@@ -639,7 +640,7 @@ export const updatePurchase = createServerFn({ method: "POST" })
     const db = await adminDb();
     const [{ data: profile }, { data: isAdmin }] = await Promise.all([
       db.from("profiles").select("company_id").eq("id", context.userId).maybeSingle(),
-      db.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+      adminRole(db, context.userId, context.claims),
     ]);
     if (!profile?.company_id) throw new Error("Geen bedrijf gekoppeld.");
 
@@ -689,7 +690,7 @@ export const getPurchaseTimeline = createServerFn({ method: "GET" })
     const db = await adminDb();
     const [{ data: profile }, { data: isAdmin }] = await Promise.all([
       db.from("profiles").select("company_id").eq("id", context.userId).maybeSingle(),
-      db.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+      adminRole(db, context.userId, context.claims),
     ]);
 
     const { data: purchase } = await db
@@ -753,10 +754,7 @@ export const listAuditEvents = createServerFn({ method: "GET" })
   )
   .handler(async ({ data, context }) => {
     const db = await adminDb();
-    const { data: isAdmin } = await db.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
+    const { data: isAdmin } = await adminRole(db, context.userId, context.claims);
     if (!isAdmin) throw new Error("Alleen beheer kan het logboek inzien.");
 
     let query = db
@@ -830,7 +828,7 @@ export const listComplaints = createServerFn({ method: "GET" })
     const db = await adminDb();
     const [{ data: profile }, { data: isAdmin }] = await Promise.all([
       db.from("profiles").select("company_id").eq("id", context.userId).maybeSingle(),
-      db.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+      adminRole(db, context.userId, context.claims),
     ]);
 
     let query = db
@@ -862,10 +860,7 @@ export const reviewComplaint = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const db = await adminDb();
-    const { data: isAdmin } = await db.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
+    const { data: isAdmin } = await adminRole(db, context.userId, context.claims);
     if (!isAdmin) throw new Error("Alleen platformbeheerders beoordelen reclamaties.");
 
     // Beoordeling, leadmarkering en eventuele creditnota gebeuren in één
@@ -909,7 +904,7 @@ export const listInvoices = createServerFn({ method: "GET" })
     const db = await adminDb();
     const [{ data: profile }, { data: isAdmin }] = await Promise.all([
       db.from("profiles").select("company_id").eq("id", context.userId).maybeSingle(),
-      db.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+      adminRole(db, context.userId, context.claims),
     ]);
 
     let query = db
@@ -941,10 +936,7 @@ export const generateInvoices = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const db = await adminDb();
-    const { data: isAdmin } = await db.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
+    const { data: isAdmin } = await adminRole(db, context.userId, context.claims);
     if (!isAdmin) throw new Error("Alleen platformbeheerders factureren.");
 
     const period = monthRange(data.year, data.month);
@@ -1072,7 +1064,7 @@ export const listTeam = createServerFn({ method: "GET" })
     const db = await adminDb();
     const [{ data: isOwner }, { data: isAdmin }] = await Promise.all([
       db.rpc("has_role", { _user_id: context.userId, _role: "owner" }),
-      db.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+      adminRole(db, context.userId, context.claims),
     ]);
     if (!isOwner && !isAdmin) throw new Error("Alleen de bedrijfseigenaar ziet het teamoverzicht.");
 
@@ -1148,10 +1140,7 @@ export const listPlatformOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const db = await adminDb();
-    const { data: isAdmin } = await db.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
+    const { data: isAdmin } = await adminRole(db, context.userId, context.claims);
     if (!isAdmin) throw new Error("Alleen platformbeheerders.");
 
     const [{ data: companies }, { count: leadCount }, { data: purchases }, { data: leadStates }] =
@@ -1208,7 +1197,7 @@ export const listCreditNotes = createServerFn({ method: "GET" })
     const db = await adminDb();
     const [{ data: profile }, { data: isAdmin }] = await Promise.all([
       db.from("profiles").select("company_id").eq("id", context.userId).maybeSingle(),
-      db.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+      adminRole(db, context.userId, context.claims),
     ]);
 
     let query = db
@@ -1240,10 +1229,7 @@ export const listQualityScores = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const db = await adminDb();
-    const { data: isAdmin } = await db.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
+    const { data: isAdmin } = await adminRole(db, context.userId, context.claims);
     if (!isAdmin) throw new Error("Alleen beheer ziet kwaliteitsscores.");
 
     const { data } = await db
@@ -1290,10 +1276,7 @@ export const recalculateQuality = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const db = await adminDb();
-    const { data: isAdmin } = await db.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
+    const { data: isAdmin } = await adminRole(db, context.userId, context.claims);
     if (!isAdmin) throw new Error("Alleen beheer kan scores herberekenen.");
 
     const { recalculateQualityScores } = await import("@/lib/quality.server");

@@ -1,3 +1,4 @@
+import { adminRole } from "@/lib/admin-guard";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -175,7 +176,7 @@ export const adminPreviewCompany = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ companyId: z.string().uuid(), days: z.number().int().min(7).max(365) }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    const { data: isAdmin } = await adminRole(context.supabase, context.userId, context.claims);
     if (!isAdmin) throw new Error("Alleen platformbeheerders.");
     const db = await adminDb();
     const { data: company } = await db.from("companies").select("id, name, active").eq("id", data.companyId).maybeSingle();
