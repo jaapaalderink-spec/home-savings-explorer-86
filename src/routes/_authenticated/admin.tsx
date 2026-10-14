@@ -11,6 +11,7 @@ import {
   Map,
   Table,
   UserCog,
+  Eye,
 } from "lucide-react";
 import { CalculatorSettings } from "@/components/admin/CalculatorSettings";
 import { CalculationDebug } from "@/components/admin/CalculationDebug";
@@ -24,6 +25,7 @@ import { ProductCoverage } from "@/components/admin/ProductCoverage";
 import { ContractsAdmin } from "@/components/admin/ContractsAdmin";
 import { AllocationQueue } from "@/components/admin/AllocationQueue";
 import { PlatformTeam } from "@/components/admin/PlatformTeam";
+import { CompanyPreview } from "@/components/admin/CompanyPreview";
 import { AdminOverview } from "@/components/dashboard/AdminOverview";
 import { FilterBar } from "@/components/admin/FilterBar";
 import type { LeadFilters } from "@/components/admin/filters";
@@ -61,7 +63,8 @@ type TabId =
   | "staff"
   | "coverage"
   | "contracts"
-  | "queue";
+  | "queue"
+  | "preview";
 
 function AdminPage() {
   const [tab, setTab] = useState<TabId>("overview");
@@ -79,6 +82,7 @@ function AdminPage() {
     { id: "settings", label: "Calculatorinstellingen", icon: SlidersHorizontal },
     { id: "calc", label: "Rekencontrole", icon: Calculator },
     { id: "staff", label: "Platformteam", icon: UserCog },
+    { id: "preview", label: "Voorbeeldweergave", icon: Eye },
   ];
 
   return (
@@ -132,6 +136,7 @@ function AdminPage() {
         {tab === "contracts" && <ContractsAdmin />}
         {tab === "queue" && <AllocationQueue />}
         {tab === "settings" && <CalculatorSettings />}
+        {tab === "preview" && <CompanyPreview />}
       </div>
     </main>
   );

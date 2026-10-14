@@ -7,6 +7,7 @@ const PartnerLeadsMap = lazy(() => import("@/components/dashboard/PartnerLeadsMa
 import { toast } from "sonner";
 import { Mail, Phone, MapPin, UserCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ProductCrm } from "@/components/dashboard/ProductCrm";
 import {
   assignPurchases,
   listAssignableMembers,
@@ -214,6 +215,14 @@ export function MyLeads() {
                     </label>
                   )}
                 </div>
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-xs font-semibold text-leaf">
+                    Opvolging per product
+                  </summary>
+                  <div className="mt-2">
+                    <ProductCrm purchaseId={p.id} />
+                  </div>
+                </details>
               </article>
             );
           })}

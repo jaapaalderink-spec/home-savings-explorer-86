@@ -15,6 +15,7 @@ import { TeamManager } from "@/components/dashboard/TeamManager";
 import { TeamOverview } from "@/components/dashboard/TeamOverview";
 import { AdminOverview } from "@/components/dashboard/AdminOverview";
 import { MyPerformance } from "@/components/dashboard/MyPerformance";
+import { CrmStats } from "@/components/dashboard/CrmStats";
 import { TRIAL_LEAD_ALLOWANCE, planByName } from "@/lib/lead-pricing";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -169,7 +170,12 @@ function DashboardPage() {
             <section className="mt-5">
               {tab === "market" && <Marketplace remaining={remaining} />}
               {tab === "leads" && <MyLeads />}
-              {tab === "performance" && <MyPerformance />}
+              {tab === "performance" && (
+                <div className="space-y-4">
+                  <CrmStats />
+                  <MyPerformance />
+                </div>
+              )}
               {tab === "areas" && <ServiceAreas />}
               {tab === "team" && (
                 <div className="space-y-6">
