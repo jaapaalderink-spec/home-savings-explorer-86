@@ -71,6 +71,13 @@
       "when": 1791995176043,
       "tag": "0009_phase6_jobs_admin_mfa",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792104854528,
+      "tag": "0010_close_public_lead_insert",
+      "breakpoints": true
     }
   ]
 }
