@@ -5,4 +5,4 @@
 - [x] Fase 3 — Contracten, quota, nieuwe toewijzing
 - [x] Fase 4 — Facturatie, credits, Mollie
 - [x] Fase 5 — CRM, statistieken, voorbeeldweergave
-- [ ] Fase 6 — Achtergrondtaken, beveiliging
+- [x] Fase 6 — Achtergrondtaken, beveiliging

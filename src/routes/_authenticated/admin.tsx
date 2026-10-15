@@ -25,6 +25,8 @@ import { ProductCoverage } from "@/components/admin/ProductCoverage";
 import { ContractsAdmin } from "@/components/admin/ContractsAdmin";
 import { AllocationQueue } from "@/components/admin/AllocationQueue";
 import { PlatformTeam } from "@/components/admin/PlatformTeam";
+import { BackgroundJobs } from "@/components/admin/BackgroundJobs";
+import { AdminMfaGate } from "@/components/admin/AdminMfaGate";
 import { CompanyPreview } from "@/components/admin/CompanyPreview";
 import { AdminOverview } from "@/components/dashboard/AdminOverview";
 import { FilterBar } from "@/components/admin/FilterBar";
@@ -49,7 +51,11 @@ export const Route = createFileRoute("/_authenticated/admin")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: AdminPage,
+  component: () => (
+    <AdminMfaGate>
+      <AdminPage />
+    </AdminMfaGate>
+  ),
 });
 
 type TabId =
@@ -64,7 +70,8 @@ type TabId =
   | "coverage"
   | "contracts"
   | "queue"
-  | "preview";
+  | "preview"
+  | "jobs";
 
 function AdminPage() {
   const [tab, setTab] = useState<TabId>("overview");
@@ -83,6 +90,7 @@ function AdminPage() {
     { id: "calc", label: "Rekencontrole", icon: Calculator },
     { id: "staff", label: "Platformteam", icon: UserCog },
     { id: "preview", label: "Voorbeeldweergave", icon: Eye },
+    { id: "jobs", label: "Achtergrondtaken", icon: ListOrdered },
   ];
 
   return (
@@ -137,6 +145,7 @@ function AdminPage() {
         {tab === "queue" && <AllocationQueue />}
         {tab === "settings" && <CalculatorSettings />}
         {tab === "preview" && <CompanyPreview />}
+        {tab === "jobs" && <BackgroundJobs />}
       </div>
     </main>
   );
