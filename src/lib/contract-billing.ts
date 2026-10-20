@@ -7,7 +7,7 @@ export type ContractTerms = {
   extra_product_price_ex_vat: number | string;
 };
 
-export type BillablePurchase = { products: string[] | null };
+export type BillablePurchase = { products: string[] | null; price_ex_vat?: number | string };
 
 export type Line = { description: string; quantity: number; unit_price_ex_vat: number; amount_ex_vat: number };
 
@@ -18,8 +18,9 @@ export function contractInvoiceLines(terms: ContractTerms, purchases: BillablePu
   const seatFee = Number(terms.seat_fee_ex_vat);
   const base = Number(terms.base_lead_price_ex_vat);
   const extra = Number(terms.extra_product_price_ex_vat);
-  const leads = purchases.length;
-  const extras = purchases.reduce((s, p) => s + Math.max(0, (p.products?.length ?? 1) - 1), 0);
+  const standard = purchases.filter((p) => p.price_ex_vat === undefined);
+  const leads = standard.length;
+  const extras = standard.reduce((s, p) => s + Math.max(0, (p.products?.length ?? 1) - 1), 0);
   const lines: Line[] = [
     { description: "Platformbijdrage", quantity: 1, unit_price_ex_vat: platform, amount_ex_vat: r2(platform) },
   ];
@@ -34,5 +35,11 @@ export function contractInvoiceLines(terms: ContractTerms, purchases: BillablePu
     lines.push({ description: "Geleverde aanvragen", quantity: leads, unit_price_ex_vat: base, amount_ex_vat: r2(leads * base) });
   if (extras > 0)
     lines.push({ description: "Extra producten per aanvraag", quantity: extras, unit_price_ex_vat: extra, amount_ex_vat: r2(extras * extra) });
+  for (const purchase of purchases) {
+    if (purchase.price_ex_vat === undefined) continue;
+    const price = Number(purchase.price_ex_vat);
+    if (!Number.isFinite(price) || price < 0) throw new Error("Ongeldige vastgelegde leveringsprijs.");
+    lines.push({ description: "Geleverde aanvraag — vastgelegde bundelprijs", quantity: 1, unit_price_ex_vat: price, amount_ex_vat: r2(price) });
+  }
   return lines;
 }
