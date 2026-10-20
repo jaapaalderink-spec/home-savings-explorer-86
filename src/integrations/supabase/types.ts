@@ -693,6 +693,64 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_price_bookings: {
+        Row: {
+          amount_ex_vat: number
+          booked_at: string
+          company_id: string
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string | null
+          purchase_id: string
+          source_key: string
+        }
+        Insert: {
+          amount_ex_vat: number
+          booked_at: string
+          company_id: string
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id?: string | null
+          purchase_id: string
+          source_key: string
+        }
+        Update: {
+          amount_ex_vat?: number
+          booked_at?: string
+          company_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string | null
+          purchase_id?: string
+          source_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_price_bookings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_price_bookings_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_price_bookings_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "lead_purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_events: {
         Row: {
           actor_id: string | null
@@ -778,6 +836,7 @@ export type Database = {
           description: string
           id: string
           invoice_id: string
+          price_booking_id: string | null
           quantity: number
           unit_price_ex_vat: number
           vat_rate: number
@@ -788,6 +847,7 @@ export type Database = {
           description: string
           id?: string
           invoice_id: string
+          price_booking_id?: string | null
           quantity?: number
           unit_price_ex_vat?: number
           vat_rate?: number
@@ -798,6 +858,7 @@ export type Database = {
           description?: string
           id?: string
           invoice_id?: string
+          price_booking_id?: string | null
           quantity?: number
           unit_price_ex_vat?: number
           vat_rate?: number
@@ -808,6 +869,13 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_lines_price_booking_id_fkey"
+            columns: ["price_booking_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_price_bookings"
             referencedColumns: ["id"]
           },
         ]
@@ -1865,6 +1933,13 @@ export type Database = {
       haversine_km: {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
+      }
+      issue_company_month_invoice: {
+        Args: { p_company: string; p_month: number; p_year: number }
+        Returns: {
+          created: boolean
+          invoice_id: string
+        }[]
       }
       log_audit_event:
         | {
