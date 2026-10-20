@@ -11,6 +11,7 @@ import {
   reviewComplaint,
 } from "@/lib/partner.functions";
 import { formatEuro } from "@/lib/home-savings";
+import { lastClosedBillingMonth, isBillingMonthClosed } from "@/lib/billing-period";
 import { PAYMENT_STATUS_LABEL, type PaymentStatus } from "@/lib/payments-policy";
 import {
   COMPLAINT_OUTCOME_LABEL,
@@ -60,9 +61,9 @@ function financialResult(c: Record<string, unknown>): string {
 
 export function BillingAdmin() {
   const queryClient = useQueryClient();
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
+  const previous = lastClosedBillingMonth();
+  const [year, setYear] = useState(previous.year);
+  const [month, setMonth] = useState(previous.month);
 
   const complaints = useQuery({ queryKey: ["complaints"], queryFn: () => listComplaints() });
   const invoices = useQuery({ queryKey: ["invoices"], queryFn: () => listInvoices() });
@@ -85,8 +86,8 @@ export function BillingAdmin() {
 
   const generate = useMutation({
     mutationFn: () => generateInvoices({ data: { year, month } }),
-    onSuccess: () => {
-      toast.success("Facturen aangemaakt.");
+    onSuccess: (result) => {
+      toast.success(`${result.created} nieuwe facturen aangemaakt. Bestaande facturen zijn behouden.`);
       void queryClient.invalidateQueries({ queryKey: ["invoices"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -178,8 +179,8 @@ export function BillingAdmin() {
                 className="ml-2 w-16 rounded-lg border border-moss/20 px-2 py-1 text-sm text-ink"
               />
             </label>
-            <Button size="sm" onClick={() => generate.mutate()} disabled={generate.isPending}>
-              Facturen aanmaken
+            <Button size="sm" onClick={() => generate.mutate()} disabled={generate.isPending || !isBillingMonthClosed(year, month)}>
+              Maand afsluiten
             </Button>
           </div>
         </div>

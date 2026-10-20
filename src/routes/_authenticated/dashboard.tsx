@@ -1,14 +1,13 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LogOut, Store, Inbox, Users, ShieldCheck, Gauge, MapPin } from "lucide-react";
+import { LogOut, Inbox, Users, ShieldCheck, Gauge, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { getPartnerContext } from "@/lib/partner.functions";
 import { Onboarding } from "@/components/dashboard/Onboarding";
-import { Marketplace } from "@/components/dashboard/Marketplace";
 import { MyLeads } from "@/components/dashboard/MyLeads";
 import { ServiceAreas } from "@/components/dashboard/ServiceAreas";
 import { TeamManager } from "@/components/dashboard/TeamManager";
@@ -25,20 +24,24 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
       {
         name: "description",
         content:
-          "Koop leads in, volg je pipeline en beheer je account managers in het partnerdashboard.",
+          "Volg ontvangen aanvragen, resultaten en accountmanagers in het partnerdashboard.",
       },
+      { property: "og:title", content: "Partnerdashboard — Onafhankelijke Offerte" },
+      { property: "og:description", content: "Beheer ontvangen aanvragen, resultaten en je team." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),
   component: DashboardPage,
 });
 
-type TabId = "market" | "leads" | "performance" | "areas" | "team" | "admin";
+type TabId = "leads" | "performance" | "areas" | "team" | "admin";
 
 function DashboardPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<TabId>("market");
+  const [tab, setTab] = useState<TabId>("leads");
 
   const { data, isLoading } = useQuery({
     queryKey: ["partner-context"],
@@ -61,8 +64,7 @@ function DashboardPage() {
   const trialRemaining = data?.trialRemaining ?? 0;
   const trialActive = data?.trialActive ?? false;
 
-  const tabs: Array<{ id: TabId; label: string; icon: typeof Store; show: boolean }> = [
-    { id: "market", label: "Leadmarkt", icon: Store, show: true },
+  const tabs: Array<{ id: TabId; label: string; icon: typeof Inbox; show: boolean }> = [
     { id: "leads", label: "Mijn leads", icon: Inbox, show: true },
     { id: "performance", label: "Prestaties", icon: Gauge, show: true },
     { id: "areas", label: "Werkgebied", icon: MapPin, show: true },
@@ -150,25 +152,20 @@ function DashboardPage() {
                   const Icon = t.icon;
                   const active = tab === t.id;
                   return (
-                    <button
+                    <Button
                       key={t.id}
                       type="button"
                       onClick={() => setTab(t.id)}
-                      className="inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold"
-                      style={{
-                        backgroundColor: active ? "#4f8f62" : "var(--color-background)",
-                        color: active ? "white" : "#315642",
-                        boxShadow: "var(--shadow-panel)",
-                      }}
+                      variant={active ? "default" : "outline"}
+                      className="min-h-11 gap-2"
                     >
                       <Icon size={15} /> {t.label}
-                    </button>
+                    </Button>
                   );
                 })}
             </nav>
 
             <section className="mt-5">
-              {tab === "market" && <Marketplace remaining={remaining} />}
               {tab === "leads" && <MyLeads />}
               {tab === "performance" && (
                 <div className="space-y-4">

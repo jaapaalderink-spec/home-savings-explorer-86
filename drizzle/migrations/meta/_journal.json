@@ -78,6 +78,20 @@
       "when": 1792104854528,
       "tag": "0010_close_public_lead_insert",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792504453083,
+      "tag": "0011_close_market_and_transactional_month_invoices",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792504529897,
+      "tag": "0012_lock_month_sources_before_totals",
+      "breakpoints": true
     }
   ]
 }
