@@ -4,14 +4,12 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   TRIAL_LEAD_ALLOWANCE,
-  VAT_RATE,
-  leadTypePrice,
   planByName,
-  withVat,
 } from "@/lib/lead-pricing";
-import { adminDb, average, monthRange, monthStart, percentage } from "@/lib/partner-util";
+import { adminDb, average, monthStart, percentage } from "@/lib/partner-util";
 import { LEAD_STATUSES, checkStatusTransition, type LeadStatus } from "@/lib/lead-status-policy";
 import { PARTNER_VISIBLE_EVENTS } from "@/lib/audit-policy";
+import { isBillingMonthClosed } from "@/lib/billing-period";
 
 /** Profiel, bedrijf, rollen en het maandverbruik van de ingelogde partner. */
 export const getPartnerContext = createServerFn({ method: "GET" })
@@ -252,179 +250,18 @@ export const saveCoverage = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/**
- * Leadmarkt. Standaard automatisch gefilterd op de werkgebieden en actieve
- * categorieen van de installateur; de partner kan die filters verfijnen of
- * bewust buiten het eigen gebied kijken.
- */
+/** Oude marktacties blijven herkenbaar, maar geven geen aanvragen meer vrij. */
 export const listMarketplace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
-    z
-      .object({
-        regions: z.array(z.string()).optional(),
-        categories: z.array(z.string()).optional(),
-        includeOutsideArea: z.boolean().optional(),
-        query: z.string().optional(),
-        sort: z.string().optional(),
-      })
-      .partial()
-      .optional()
-      .parse(data ?? {}),
-  )
-  .handler(async ({ data, context }) => {
-    const filters = data ?? {};
-    const db = await adminDb();
-    const { data: profile } = await db
-      .from("profiles")
-      .select("company_id")
-      .eq("id", context.userId)
-      .maybeSingle();
-    if (!profile?.company_id) {
-      return { leads: [], myRegions: [], myCategories: [], regionOptions: [], hiddenByArea: 0 };
-    }
-
-    const [
-      { data: leads },
-      { data: mine },
-      { data: regionRows },
-      { data: products },
-      { data: allRegions },
-    ] = await Promise.all([
-      db
-        .from("leads")
-        .select(
-          "id, created_at, categories, postcode, city, house_type, estimated_savings, contract_type, annual_consumption_kwh, purchase_count, max_partners, region_code, lead_type, state",
-        )
-        // De leadmarkt is gesloten voor nieuwe aanvragen; alleen oudere aanvragen staan er nog.
-        .eq("market_enabled", true)
-        .order("created_at", { ascending: false })
-        .limit(200),
-      db.from("lead_purchases").select("lead_id").eq("company_id", profile.company_id),
-      db.from("company_regions").select("region_code").eq("company_id", profile.company_id),
-      db
-        .from("company_products")
-        .select("category, active")
-        .eq("company_id", profile.company_id)
-        .eq("active", true),
-      db.from("regions").select("code, name").order("code"),
-    ]);
-
-    const regionName = new Map((allRegions ?? []).map((r) => [r.code, r.name]));
-    const owned = new Set((mine ?? []).map((p) => p.lead_id));
-    const myRegionCodes = (regionRows ?? []).map((r) => r.region_code);
-    const myCategories = (products ?? []).map((p) => p.category);
-
-    // Standaard = het eigen werkgebied. Een expliciete selectie gaat voor.
-    const selectedRegions = new Set(
-      (filters.regions && filters.regions.length > 0 ? filters.regions : myRegionCodes).filter(
-        Boolean,
-      ),
-    );
-    const selectedCategories = new Set(
-      filters.categories && filters.categories.length > 0 ? filters.categories : myCategories,
-    );
-    const needle = (filters.query ?? "").trim().toLowerCase();
-
-    const available = (leads ?? []).filter(
-      (l) => !owned.has(l.id) && l.purchase_count < l.max_partners,
-    );
-
-    const inArea = (l: (typeof available)[number]) =>
-      selectedRegions.size === 0 || !l.region_code || selectedRegions.has(l.region_code);
-
-    const matched = available
-      .filter((l) => filters.includeOutsideArea === true || inArea(l))
-      .filter(
-        (l) =>
-          selectedCategories.size === 0 ||
-          (l.categories ?? []).some((c: string) => selectedCategories.has(c)),
-      )
-      .filter((l) => {
-        if (!needle) return true;
-        const haystack = [l.postcode, l.city, l.region_code ? regionName.get(l.region_code) : null]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        return haystack.includes(needle);
-      });
-
-    const shaped = matched.map((l) => ({
-      id: l.id,
-      createdAt: l.created_at,
-      categories: l.categories ?? [],
-      region: `${(l.postcode ?? "").slice(0, 4)} ${l.city ?? ""}`.trim(),
-      regionCode: l.region_code as string | null,
-      regionName: l.region_code ? (regionName.get(l.region_code) ?? null) : null,
-      inMyArea: !l.region_code || myRegionCodes.includes(l.region_code),
-      houseType: l.house_type,
-      contractType: l.contract_type,
-      consumption: l.annual_consumption_kwh,
-      estimatedSavings: l.estimated_savings,
-      slotsLeft: l.max_partners - l.purchase_count,
-      leadType: l.lead_type as string,
-      price: leadTypePrice(l.lead_type),
-    }));
-
-    if (filters.sort === "savings") shaped.sort((a, b) => b.estimatedSavings - a.estimatedSavings);
-    else if (filters.sort === "price") shaped.sort((a, b) => a.price - b.price);
-    else if (filters.sort === "slots") shaped.sort((a, b) => b.slotsLeft - a.slotsLeft);
-
-    return {
-      leads: shaped,
-      myRegions: myRegionCodes.map((code) => ({ code, name: regionName.get(code) ?? code })),
-      myCategories,
-      regionOptions: (allRegions ?? []).map((r) => ({ code: r.code, name: r.name })),
-      // Hoeveel leads buiten het eigen/gekozen werkgebied liggen.
-      hiddenByArea: available.filter((l) => !inArea(l)).length,
-    };
+  .handler(async () => {
+    throw new Error("De leadmarkt is gesloten. Ga naar Mijn leads voor ontvangen aanvragen.");
   });
 
-/**
- * Marktaankoop: gebruikt exact dezelfde gezaghebbende toewijzingsroute als de
- * automatische verdeling. Geen eigen slot- of prijsberekening meer, dus twee
- * gelijktijdige aankopen kunnen een lead nooit overvol maken.
- */
 export const purchaseLead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ leadId: z.string().uuid() }).parse(data))
-  .handler(async ({ data, context }) => {
-    const db = await adminDb();
-    const { data: profile } = await db
-      .from("profiles")
-      .select("company_id")
-      .eq("id", context.userId)
-      .maybeSingle();
-    if (!profile?.company_id) throw new Error("Je hebt nog geen bedrijf.");
-
-    const { allocateLeadToCompany } = await import("@/lib/lead-allocation.server");
-    const allocation = await allocateLeadToCompany({
-      leadId: data.leadId,
-      companyId: profile.company_id,
-      source: "market",
-      purchasedBy: context.userId,
-    });
-
-    switch (allocation.result) {
-      case "allocated":
-        return { ok: true, billed: allocation.billable, price: allocation.priceExVat };
-      case "already_assigned":
-        throw new Error("Deze lead staat al in jullie dossier.");
-      case "lead_full":
-        throw new Error("Deze lead is niet meer beschikbaar.");
-      case "lead_not_verified":
-        throw new Error("Deze aanvraag is nog niet bevestigd door de consument.");
-      case "company_capacity_full":
-        throw new Error("Jullie maandcapaciteit voor deze categorie is bereikt.");
-      case "company_not_eligible":
-        throw new Error("Deze lead valt buiten jullie werkgebied of categorieën.");
-      case "market_closed":
-        throw new Error("Deze aanvraag wordt niet via de leadmarkt aangeboden.");
-      case "lead_not_found":
-        throw new Error("Lead niet gevonden.");
-      default:
-        throw new Error("Deze lead is niet meer beschikbaar.");
-    }
+  .handler(async () => {
+    throw new Error("De leadmarkt is gesloten. Ga naar Mijn leads voor ontvangen aanvragen.");
   });
 
 /** Gekochte en toegewezen leads van het eigen bedrijf, met volledige contactgegevens. */
@@ -923,137 +760,30 @@ export const listInvoices = createServerFn({ method: "GET" })
     return { isAdmin: Boolean(isAdmin), items: data ?? [] };
   });
 
-/** Maandfacturen aanmaken: abonnement + leads boven het bundeltegoed, minus goedgekeurde credits. */
+/** Alleen afgesloten maanden; iedere bedrijfsfactuur wordt atomair eenmaal uitgegeven. */
 export const generateInvoices = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z
-      .object({
-        year: z.number().int().min(2025).max(2100),
-        month: z.number().int().min(1).max(12),
-      })
-      .parse(data),
+    z.object({ year: z.number().int().min(2025).max(2100), month: z.number().int().min(1).max(12) }).parse(data),
   )
   .handler(async ({ data, context }) => {
+    const { data: isAdmin, error: roleError } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId, _role: "admin",
+    });
+    if (roleError || !isAdmin) throw new Error("Alleen platformbeheerders factureren na tweestapsverificatie.");
+    if (!isBillingMonthClosed(data.year, data.month))
+      throw new Error("Deze kalendermaand is nog niet afgesloten in Nederland. Facturatie gebeurt uitsluitend achteraf.");
     const db = await adminDb();
-    const { data: isAdmin } = await adminRole(db, context.userId, context.claims);
-    if (!isAdmin) throw new Error("Alleen platformbeheerders factureren.");
-
-    const period = monthRange(data.year, data.month);
-    const { data: companies } = await db
-      .from("companies")
-      .select("id, name, plan_name, monthly_fee_ex_vat");
-
+    const { data: companies, error } = await db.from("companies").select("id");
+    if (error) throw new Error("Bedrijven ophalen is mislukt; er zijn geen facturen aangemaakt.");
     let created = 0;
-
-    const { contractInvoiceLines } = await import("@/lib/contract-billing");
-
     for (const company of companies ?? []) {
-      // Betaalde, gecrediteerde of geannuleerde facturen nooit herschrijven.
-      const { data: existingInv } = await db
-        .from("invoices")
-        .select("status, payment_status")
-        .eq("company_id", company.id)
-        .eq("period_start", period.start)
-        .maybeSingle();
-      if (
-        existingInv &&
-        (["paid", "credited", "cancelled"].includes(existingInv.status) ||
-          ["paid", "pending"].includes(existingInv.payment_status))
-      )
-        continue;
-
-      const { data: contract } = await db.rpc("active_subscription", {
-        p_company: company.id,
-        p_on: period.start,
+      const { data: result, error: invoiceError } = await db.rpc("issue_company_month_invoice", {
+        p_company: company.id, p_year: data.year, p_month: data.month,
       });
-      const terms = (contract as { id?: string | null } | null)?.id ? contract : null;
-
-      const { data: purchases } = await db
-        .from("lead_purchases")
-        .select("id, price_ex_vat, billable, credited, is_trial, products, lead:leads(lead_type)")
-        .eq("company_id", company.id)
-        .gte("created_at", period.startIso)
-        .lt("created_at", period.endIso);
-
-      // Proefleads zijn nooit factureerbaar; ze blijven wel in de historie staan.
-      const billable = (purchases ?? []).filter((p) => p.billable && !p.credited && !p.is_trial);
-
-      type L = { description: string; quantity: number; unit_price_ex_vat: number; amount_ex_vat: number };
-      let draftLines: L[];
-      if (terms) {
-        draftLines = contractInvoiceLines(terms as never, billable as never);
-      } else {
-        const subscription = Number(company.monthly_fee_ex_vat ?? 0);
-        draftLines = [
-          {
-            description: `Abonnement ${planByName(company.plan_name).name}`,
-            quantity: 1,
-            unit_price_ex_vat: subscription,
-            amount_ex_vat: subscription,
-          },
-        ];
-        const grouped = new Map<string, { count: number; price: number }>();
-        billable.forEach((p) => {
-          const type = ((p.lead as { lead_type?: string } | null)?.lead_type ?? "shared_4") as string;
-          const entry = grouped.get(type) ?? { count: 0, price: Number(p.price_ex_vat ?? 0) };
-          entry.count += 1;
-          grouped.set(type, entry);
-        });
-        grouped.forEach((entry, type) => {
-          draftLines.push({
-            description: `Extra leads boven bundel (${type === "shared_2" ? "2 partners" : "4 partners"})`,
-            quantity: entry.count,
-            unit_price_ex_vat: entry.price,
-            amount_ex_vat: Math.round(entry.count * entry.price * 100) / 100,
-          });
-        });
-      }
-      const subtotal =
-        Math.round(draftLines.reduce((s, l) => s + l.amount_ex_vat, 0) * 100) / 100;
-      if (subtotal <= 0) continue;
-
-      const { vat, total } = withVat(subtotal);
-      const number = `${data.year}${String(data.month).padStart(2, "0")}-${company.id.slice(0, 6).toUpperCase()}`;
-
-      const { data: invoice, error } = await db
-        .from("invoices")
-        .upsert(
-          {
-            company_id: company.id,
-            invoice_number: number,
-            period_start: period.start,
-            period_end: period.end,
-            subtotal_ex_vat: subtotal,
-            vat_amount: vat,
-            total_inc_vat: total,
-            status: "issued",
-          },
-          { onConflict: "company_id,period_start" },
-        )
-        .select("id")
-        .single();
-      if (error || !invoice) continue;
-
-      await db.from("invoice_lines").delete().eq("invoice_id", invoice.id);
-      const lines = draftLines
-        .filter((l) => l.amount_ex_vat > 0 || l.description.startsWith("Abonnement"))
-        .map((l) => ({ ...l, invoice_id: invoice.id, vat_rate: VAT_RATE }));
-
-      await db.from("invoice_lines").insert(lines);
-      await db
-        .from("lead_purchases")
-        .update({ invoice_id: invoice.id })
-        .in(
-          "id",
-          billable.map((p) => p.id),
-        );
-
-      // Openstaande creditnota's van dit bedrijf verlagen het te betalen bedrag.
-      await db.rpc("apply_open_credits", { p_company_id: company.id, p_invoice_id: invoice.id });
-      created += 1;
+      if (invoiceError) throw new Error(`Maandafsluiting onderbroken na ${created} nieuwe facturen. Probeer opnieuw; bestaande facturen worden niet dubbel gemaakt.`);
+      if (result?.[0]?.created) created += 1;
     }
-
     return { ok: true, created };
   });
 
