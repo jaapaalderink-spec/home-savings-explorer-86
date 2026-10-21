@@ -15,12 +15,12 @@ export const Route = createFileRoute("/auth")({
       {
         name: "description",
         content:
-          "Log in op het partnerdashboard van Onafhankelijke Offerte om leads in te kopen en je team te beheren.",
+          "Log in op het partnerdashboard van Onafhankelijke Offerte om ontvangen aanvragen en je team te beheren.",
       },
       { property: "og:title", content: "Partner inloggen — Onafhankelijke Offerte" },
       {
         property: "og:description",
-        content: "Toegang tot de leadmarkt, je eigen leads en het teamoverzicht.",
+        content: "Toegang tot je ontvangen aanvragen, resultaten en het teamoverzicht.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -107,7 +107,7 @@ function AuthPage() {
           {mode === "login" ? "Inloggen als partner" : "Partneraccount aanmaken"}
         </h1>
         <p className="mt-1 text-sm text-moss/70">
-          Koop leads in, volg je pipeline en beheer je account managers.
+          Volg je ontvangen aanvragen en beheer je accountmanagers.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
