@@ -79,7 +79,7 @@ export function MyLeads() {
         className="rounded-2xl bg-background p-6 text-sm text-moss/70"
         style={{ boxShadow: "var(--shadow-panel)" }}
       >
-        Nog geen leads ingekocht. Ga naar de leadmarkt om je eerste lead te claimen.
+        Nog geen aanvragen ontvangen.
       </p>
     );
   }

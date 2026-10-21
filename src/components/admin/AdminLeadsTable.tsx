@@ -181,7 +181,7 @@ export function AdminLeadsTable({ filters }: { filters: LeadFilters }) {
                             ) : null}
                             <p className="pt-2 font-semibold text-ink">Verdeeld naar</p>
                             {l.partners.length === 0 ? (
-                              <p className="mt-1">Nog geen partner — staat in de leadmarkt.</p>
+                              <p className="mt-1">Nog geen partner toegewezen.</p>
                             ) : (
                               <ul className="mt-1 space-y-0.5">
                                 {l.partners.map((p, i) => (
