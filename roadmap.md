@@ -19,3 +19,12 @@
 - [ ] Financiële aansluiting — productuitbreidingen, zichtbare conceptcorrecties, seat-entitlements, kostenteller, documenten en voorschotreconciliatie
 - [ ] Regressietests en desktop-/mobiele controle; geen echte SMS/betalingen of ongeaccordeerde testschrijfacties
 - [ ] Ingelogde eindcontrole — previewsessie is ongeldig; opnieuw inloggen nodig. Maandafsluiting/concurrency alleen in afgesproken geïsoleerde testomgeving.
+
+## Aanvulling 22 oktober 2026 — Partnerportaal en testomgeving
+- [ ] Bestaande ketens onderzoeken en aanvullend uitvoeringsplan vaststellen
+- [ ] Leadinstellingen: primaire productbudgetten, combinatievoorkeur en serverberekende kosten
+- [ ] Herstelbare productstatussen, afzonderlijke gewonnen bedragen, dossiersamenvatting en concurrencycontrole
+- [ ] Accountmanagerresultaten met gedeelde filters, cohorten en verantwoordelijke perspectieven
+- [ ] Beschermde testcontext, deterministisch scenario, testfacturen en afgeschermde providers
+- [ ] Admin-testbeheer, dry-run en hervatbare cleanup bouwen; nu geen cleanup uitvoeren
+- [ ] Gerichte regressietests, ingelogde controles en korte handleiding; echte providercontrole alleen met testcredentials
