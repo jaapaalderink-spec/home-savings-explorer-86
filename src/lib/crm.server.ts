@@ -12,7 +12,7 @@ export function purchaseProducts(p: { products?: string[] | null; lead?: unknown
   return cats && cats.length > 0 ? cats : ["algemeen"];
 }
 
-/** CRM-regels per product voor een set toewijzingen; ontbrekende producten krijgen de toewijzingsstatus. */
+/** Missing product rows are new, never inferred from a legacy global win. */
 export async function loadProductCrm(
   db: Db,
   purchases: Array<{ id: string; status: string; products?: string[] | null; lead?: unknown }>,

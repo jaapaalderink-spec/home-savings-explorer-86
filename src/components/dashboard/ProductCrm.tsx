@@ -17,7 +17,7 @@ export function ProductCrm({ purchaseId }: { purchaseId: string }) {
   const qc = useQueryClient();
   const saveFn = useServerFn(saveProductCrm);
   const quoteFn = useServerFn(addQuote);
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["purchase-crm", purchaseId],
     queryFn: () => getPurchaseCrm({ data: { purchaseId } }),
   });
@@ -48,6 +48,7 @@ export function ProductCrm({ purchaseId }: { purchaseId: string }) {
   });
 
   if (isLoading) return <p className="text-xs text-moss/60">Laden…</p>;
+  if (error) return <div role="alert" className="flex flex-wrap items-center gap-2 text-xs text-moss"><span>Productgegevens konden niet worden geladen.</span><Button size="sm" variant="outline" onClick={() => refetch()}>Opnieuw proberen</Button></div>;
 
   return (
     <div className="space-y-2">
