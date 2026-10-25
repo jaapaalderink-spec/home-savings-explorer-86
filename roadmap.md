@@ -23,6 +23,9 @@
 ## Aanvulling 22 oktober 2026 — Partnerportaal en testomgeving
 - [x] Bestaande ketens onderzoeken; aanvullend uitvoeringsplan ter beoordeling aangeboden
 - [ ] Leadinstellingen: primaire productbudgetten, combinatievoorkeur en serverberekende kosten
+  - [x] Tabblad Leadinstellingen: aantallen per ontvanger × dienst, totalen, diensten/gebied/pauze per ontvanger, delegatie, kostenkaart; opslag + herladen gecontroleerd
+  - [x] Verdeling in de database: primair product + ontvanger samen gekozen op resterend aandeel, langst niet bediend als tie-breaker, één plaats per aanvraag
+  - [ ] Verdeling end-to-end met testlead en meerdere accountmanagers — wacht op veilige testcontext (sandbox mag geen testgebruikers/leads schrijven)
 - [ ] Herstelbare productstatussen, afzonderlijke gewonnen bedragen, dossiersamenvatting en concurrencycontrole
   - [x] Atomaire opslag met revision, afzonderlijke winst, productbediening en afgeleide open/afgesloten samenvatting
   - [ ] Volledige controle van verwante rechten, historische samenvattingen en ingelogde opslag/refresh in veilige testcontext

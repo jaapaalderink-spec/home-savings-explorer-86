@@ -325,6 +325,38 @@ export type Database = {
           },
         ]
       }
+      company_lead_preferences: {
+        Row: {
+          accept_extra_products: boolean
+          company_id: string
+          settings_enabled: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          accept_extra_products?: boolean
+          company_id: string
+          settings_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          accept_extra_products?: boolean
+          company_id?: string
+          settings_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_lead_preferences_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_products: {
         Row: {
           active: boolean
@@ -1035,6 +1067,7 @@ export type Database = {
           note: string | null
           opened_at: string | null
           price_ex_vat: number
+          primary_product: string | null
           products: string[]
           purchased_by: string | null
           response_score: number
@@ -1063,6 +1096,7 @@ export type Database = {
           note?: string | null
           opened_at?: string | null
           price_ex_vat?: number
+          primary_product?: string | null
           products?: string[]
           purchased_by?: string | null
           response_score?: number
@@ -1091,6 +1125,7 @@ export type Database = {
           note?: string | null
           opened_at?: string | null
           price_ex_vat?: number
+          primary_product?: string | null
           products?: string[]
           purchased_by?: string | null
           response_score?: number
@@ -1134,6 +1169,94 @@ export type Database = {
             columns: ["subscription_version_id"]
             isOneToOne: false
             referencedRelation: "subscription_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_recipient_services: {
+        Row: {
+          area_mode: string | null
+          category: string
+          center_label: string | null
+          center_lat: number | null
+          center_lng: number | null
+          company_id: string
+          enabled: boolean
+          monthly_max: number
+          provinces: string[]
+          radius_km: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          area_mode?: string | null
+          category: string
+          center_label?: string | null
+          center_lat?: number | null
+          center_lng?: number | null
+          company_id: string
+          enabled?: boolean
+          monthly_max?: number
+          provinces?: string[]
+          radius_km?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          area_mode?: string | null
+          category?: string
+          center_label?: string | null
+          center_lat?: number | null
+          center_lng?: number | null
+          company_id?: string
+          enabled?: boolean
+          monthly_max?: number
+          provinces?: string[]
+          radius_km?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_recipient_services_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_recipients: {
+        Row: {
+          can_edit_settings: boolean
+          company_id: string
+          paused: boolean
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          can_edit_settings?: boolean
+          company_id: string
+          paused?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          can_edit_settings?: boolean
+          company_id?: string
+          paused?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_recipients_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -2032,6 +2155,19 @@ export type Database = {
       }
       next_credit_number: { Args: never; Returns: string }
       publish_calculator_config: { Args: { _id: string }; Returns: number }
+      recipient_area_covers: {
+        Args: {
+          p_center_lat: number
+          p_center_lng: number
+          p_lat: number
+          p_lng: number
+          p_mode: string
+          p_province: string
+          p_provinces: string[]
+          p_radius: number
+        }
+        Returns: boolean
+      }
       review_complaint_with_credit: {
         Args: {
           p_actor?: string
