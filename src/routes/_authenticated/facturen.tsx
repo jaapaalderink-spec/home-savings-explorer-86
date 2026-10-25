@@ -68,6 +68,11 @@ function InvoicesPage() {
           Terug naar dashboard
         </Link>
       </div>
+      <p className="text-sm text-moss/70">
+        Je ontvangt na afloop van elke kalendermaand één factuur achteraf: de vaste platformbijdrage,
+        eventuele extra accountmanagerplekken en alleen de aanvragen die je werkelijk hebt ontvangen.
+        Goedgekeurde reclamaties worden als tegoed verrekend met je volgende factuur.
+      </p>
 
       {invoices.isLoading ? (
         <Skeleton className="h-40 w-full rounded-2xl" />
@@ -127,6 +132,27 @@ function InvoicesPage() {
                     )}
                   </div>
                 </div>
+                <details className="mt-3 text-sm">
+                  <summary className="cursor-pointer font-semibold text-leaf">Specificatie</summary>
+                  <table className="mt-2 w-full text-left">
+                    <tbody>
+                      {((i.lines as { description: string; quantity: number; unit_price_ex_vat: number; amount_ex_vat: number }[] | null) ?? []).map((l, n) => (
+                        <tr key={n} className="border-b border-border">
+                          <td className="py-1 pr-2 text-ink">{l.description}</td>
+                          <td className="py-1 pr-2 text-moss/70">{Number(l.quantity)} × {formatEuro(Number(l.unit_price_ex_vat))}</td>
+                          <td className="py-1 text-right text-ink">{formatEuro(Number(l.amount_ex_vat))}</td>
+                        </tr>
+                      ))}
+                      <tr><td className="pt-2 text-moss/70" colSpan={2}>Subtotaal excl. btw</td><td className="pt-2 text-right">{formatEuro(Number(i.subtotal_ex_vat ?? 0))}</td></tr>
+                      <tr><td className="text-moss/70" colSpan={2}>Btw 21%</td><td className="text-right">{formatEuro(Number(i.vat_amount ?? 0))}</td></tr>
+                      <tr><td className="font-semibold" colSpan={2}>Totaal incl. btw</td><td className="text-right font-semibold">{formatEuro(Number(i.total_inc_vat ?? 0))}</td></tr>
+                      {Number(i.credit_applied_inc_vat ?? 0) > 0 && (
+                        <tr><td className="text-moss/70" colSpan={2}>Verrekend tegoed</td><td className="text-right">−{formatEuro(Number(i.credit_applied_inc_vat))}</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                  {i.due_date ? <p className="mt-2 text-xs text-moss/70">Vervaldatum {new Date(i.due_date as string).toLocaleDateString("nl-NL")} · betaaltermijn 14 dagen</p> : null}
+                </details>
               </li>
             );
           })}
