@@ -27,13 +27,15 @@ const STATUSES = [
 
 type LeadRow = { categories?: string[] | null } & Record<string, unknown>;
 
-export function MyLeads() {
+export function MyLeads({ viewAs }: { viewAs?: string | null } = {}) {
   const queryClient = useQueryClient();
   const [view, setView] = useState<"list" | "map">("list");
-  const { data, isLoading } = useQuery({
+  const { data: all, isLoading } = useQuery({
     queryKey: ["my-leads"],
     queryFn: () => listPurchasedLeads(),
   });
+  // Voorbeeldweergave: toon alleen wat deze accountmanager zelf zou zien.
+  const data = viewAs ? all?.filter((p) => (p as { assigned_to?: string | null }).assigned_to === viewAs) : all;
 
   const team = useQuery({
     queryKey: ["assignable-members"],

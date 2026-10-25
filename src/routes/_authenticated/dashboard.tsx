@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { getPartnerContext } from "@/lib/partner.functions";
+import { getPartnerContext, listAssignableMembers } from "@/lib/partner.functions";
 import { Onboarding } from "@/components/dashboard/Onboarding";
 import { MyLeads } from "@/components/dashboard/MyLeads";
 import { ServiceAreas } from "@/components/dashboard/ServiceAreas";
@@ -56,8 +56,17 @@ function DashboardPage() {
     navigate({ to: "/auth", replace: true });
   }
 
-  const isOwner = data?.roles.includes("owner") ?? false;
-  const isAdmin = data?.roles.includes("admin") ?? false;
+  const realOwner = data?.roles.includes("owner") ?? false;
+  const [viewAs, setViewAs] = useState<string | null>(null);
+  const members = useQuery({
+    queryKey: ["assignable-members"],
+    queryFn: () => listAssignableMembers(),
+    enabled: realOwner,
+  });
+  const viewMember = members.data?.members.find((m) => m.id === viewAs);
+  const previewing = realOwner && !!viewMember;
+  const isOwner = realOwner && !previewing;
+  const isAdmin = (data?.roles.includes("admin") ?? false) && !previewing;
   const limit = data?.limit ?? 0;
   const used = data?.usedThisMonth ?? 0;
   const remaining = Math.max(limit - used, 0);
@@ -152,6 +161,29 @@ function DashboardPage() {
               </div>
             </div>
 
+            {realOwner && (members.data?.members.length ?? 0) > 1 && (
+              <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl bg-background p-3 text-sm" style={{ boxShadow: "var(--shadow-panel)" }}>
+                <label htmlFor="view-as" className="font-semibold text-ink">Bekijk als</label>
+                <select
+                  id="view-as"
+                  className="min-h-10 rounded-lg border border-moss/20 bg-background px-3"
+                  value={viewAs ?? ""}
+                  onChange={(e) => { setViewAs(e.target.value || null); setTab("leads"); }}
+                >
+                  <option value="">Hoofdaccount (eigenaar)</option>
+                  {members.data!.members.filter((m) => m.id !== members.data!.me).map((m) => (
+                    <option key={m.id} value={m.id}>Accountmanager: {m.name}</option>
+                  ))}
+                </select>
+                {previewing && (
+                  <span role="status" className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-accent-foreground">
+                    Voorbeeldweergave van {viewMember!.name} — alleen kijken, wijzigingen gaan via je eigen account
+                    <button type="button" className="ml-2 underline" onClick={() => setViewAs(null)}>Terug</button>
+                  </span>
+                )}
+              </div>
+            )}
+
             <nav className="mt-6 flex flex-wrap gap-2">
               {tabs
                 .filter((t) => t.show)
@@ -173,14 +205,18 @@ function DashboardPage() {
             </nav>
 
             <section className="mt-5">
-              {tab === "leads" && <MyLeads />}
+              {tab === "leads" && <MyLeads key={viewAs ?? "all"} viewAs={previewing ? viewAs : null} />}
               {tab === "performance" && (
                 <div className="space-y-4">
                   <CrmStats />
                   <MyPerformance />
                 </div>
               )}
-              {tab === "settings" && <LeadSettings />}
+              {tab === "settings" && (
+                <div className={previewing ? "pointer-events-none opacity-80" : undefined} aria-disabled={previewing}>
+                  <LeadSettings />
+                </div>
+              )}
               {tab === "areas" && <ServiceAreas />}
               {tab === "team" && (
                 <div className="space-y-6">
