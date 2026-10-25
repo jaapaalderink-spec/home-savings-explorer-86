@@ -707,7 +707,8 @@ export const listInvoices = createServerFn({ method: "GET" })
       query = query.eq("company_id", profile.company_id);
     }
 
-    const { data } = await query;
+    const { data, error } = await query;
+    if (error) throw new Error("Facturen konden niet worden geladen. Probeer het opnieuw.");
     return { isAdmin: Boolean(isAdmin), items: data ?? [] };
   });
 
