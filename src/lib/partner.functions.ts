@@ -7,7 +7,7 @@ import {
   planByName,
 } from "@/lib/lead-pricing";
 import { adminDb, average, monthStart, percentage } from "@/lib/partner-util";
-import { LEAD_STATUSES, checkStatusTransition, type LeadStatus } from "@/lib/lead-status-policy";
+import { LEAD_STATUSES } from "@/lib/lead-status-policy";
 import { PARTNER_VISIBLE_EVENTS } from "@/lib/audit-policy";
 import { isBillingMonthClosed } from "@/lib/billing-period";
 
@@ -397,22 +397,17 @@ export const assignPurchases = createServerFn({ method: "POST" })
 export const listCompanyLeadsByRegion = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const db = await adminDb();
-    const { data: profile } = await db
-      .from("profiles")
-      .select("company_id")
-      .eq("id", context.userId)
-      .maybeSingle();
-    if (!profile?.company_id) return [];
-
+    const { partnerAccess } = await import("@/lib/partner-access.server");
+    const { db, companyId, teamRead } = await partnerAccess(context.userId);
+    let query = db.from("lead_purchases")
+      .select("id, status, products, lead:leads(region_code, categories)").eq("company_id", companyId);
+    if (!teamRead) query = query.eq("assigned_to", context.userId);
     const [{ data: purchases }, { data: regions }] = await Promise.all([
-      db
-        .from("lead_purchases")
-        .select("status, lead:leads(region_code, categories)")
-        .eq("company_id", profile.company_id),
+      query,
       db.from("regions").select("code, name"),
     ]);
-
+    const { loadProductCrm } = await import("@/lib/crm.server");
+    const crm = await loadProductCrm(db, purchases ?? []);
     const nameByCode = new Map((regions ?? []).map((r) => [r.code, r.name]));
     const agg = new Map<
       string,
@@ -424,8 +419,8 @@ export const listCompanyLeadsByRegion = createServerFn({ method: "GET" })
       if (!code) return;
       const entry = agg.get(code) ?? { leads: 0, won: 0, categories: {} };
       entry.leads += 1;
-      if ((p.status as string) === "won") entry.won += 1;
-      (lead?.categories ?? []).forEach((c) => {
+      if (crm.get(p.id)?.some((r) => r.status === "won")) entry.won += 1;
+      (p.products.length ? p.products : lead?.categories ?? []).forEach((c) => {
         entry.categories[c] = (entry.categories[c] ?? 0) + 1;
       });
       agg.set(code, entry);
@@ -449,20 +444,16 @@ export const markLeadOpened = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ purchaseId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    const db = await adminDb();
-    const { data: profile } = await db
-      .from("profiles")
-      .select("company_id")
-      .eq("id", context.userId)
-      .maybeSingle();
-    if (!profile?.company_id) throw new Error("Geen bedrijf gekoppeld.");
+    const { accessiblePurchase } = await import("@/lib/partner-access.server");
+    const { db, companyId } = await accessiblePurchase(context.userId, data.purchaseId);
 
     // Via de RPC, zodat de geschiedenis de juiste persoon vastlegt.
-    const { data: opened } = await db.rpc("mark_purchase_opened", {
+    const { data: opened, error } = await db.rpc("mark_purchase_opened", {
       p_purchase_id: data.purchaseId,
-      p_company_id: profile.company_id,
+      p_company_id: companyId,
       p_actor: context.userId,
     });
+    if (error) throw new Error("Openen registreren is mislukt.");
     return { ok: true, firstOpen: opened === true };
   });
 
@@ -498,8 +489,9 @@ export const getPurchaseTimeline = createServerFn({ method: "GET" })
       .eq("id", data.purchaseId)
       .maybeSingle();
     if (!purchase) throw new Error("Lead niet gevonden.");
-    if (isAdmin !== true && purchase.company_id !== profile?.company_id) {
-      throw new Error("Geen toegang tot deze lead.");
+    if (isAdmin !== true) {
+      const { accessiblePurchase } = await import("@/lib/partner-access.server");
+      await accessiblePurchase(context.userId, data.purchaseId);
     }
 
     const [{ data: history }, { data: events }] = await Promise.all([
@@ -592,26 +584,12 @@ export const fileComplaint = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const db = await adminDb();
-    const { data: profile } = await db
-      .from("profiles")
-      .select("company_id")
-      .eq("id", context.userId)
-      .maybeSingle();
-    if (!profile?.company_id) throw new Error("Geen bedrijf gekoppeld.");
-
-    const { data: purchase } = await db
-      .from("lead_purchases")
-      .select("id, company_id")
-      .eq("id", data.purchaseId)
-      .maybeSingle();
-    if (!purchase || purchase.company_id !== profile.company_id) {
-      throw new Error("Deze lead hoort niet bij jullie bedrijf.");
-    }
+    const { accessiblePurchase } = await import("@/lib/partner-access.server");
+    const { db, companyId } = await accessiblePurchase(context.userId, data.purchaseId);
 
     const { error } = await db.from("complaints").insert({
       purchase_id: data.purchaseId,
-      company_id: profile.company_id,
+      company_id: companyId,
       created_by: context.userId,
       reason: data.reason,
       details: data.details ?? null,
@@ -640,6 +618,15 @@ export const listComplaints = createServerFn({ method: "GET" })
     if (!isAdmin) {
       if (!profile?.company_id) return { isAdmin: false, items: [] };
       query = query.eq("company_id", profile.company_id);
+      const { partnerAccess } = await import("@/lib/partner-access.server");
+      const access = await partnerAccess(context.userId);
+      if (!access.teamRead) {
+        const { data: assigned, error } = await db.from("lead_purchases").select("id")
+          .eq("company_id", access.companyId).eq("assigned_to", context.userId);
+        if (error) throw new Error("Reclamaties laden is mislukt.");
+        if (!assigned?.length) return { isAdmin: false, items: [] };
+        query = query.in("purchase_id", assigned.map((p) => p.id));
+      }
     }
 
     const { data } = await query;
@@ -715,6 +702,8 @@ export const listInvoices = createServerFn({ method: "GET" })
 
     if (!isAdmin) {
       if (!profile?.company_id) return { isAdmin: false, items: [] };
+      const { partnerAccess } = await import("@/lib/partner-access.server");
+      if (!(await partnerAccess(context.userId)).teamRead) throw new Error("Alleen de eigenaar ziet bedrijfsfacturen.");
       query = query.eq("company_id", profile.company_id);
     }
 
@@ -901,6 +890,8 @@ export const listCreditNotes = createServerFn({ method: "GET" })
 
     if (!isAdmin) {
       if (!profile?.company_id) return { isAdmin: false, items: [], openCreditIncVat: 0 };
+      const { partnerAccess } = await import("@/lib/partner-access.server");
+      if (!(await partnerAccess(context.userId)).teamRead) throw new Error("Alleen de eigenaar ziet bedrijfscreditnota's.");
       query = query.eq("company_id", profile.company_id);
     }
 

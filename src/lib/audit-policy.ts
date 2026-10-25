@@ -15,6 +15,8 @@ export const PARTNER_VISIBLE_EVENTS = new Set<string>([
   "CREDIT_APPLIED",
   "COMPANY_PROFILE_UPDATED",
   "CURRENT_STATUS_SNAPSHOT",
+  "PRODUCT_STATUS_CHANGED",
+  "QUOTE_ADDED",
 ]);
 
 export const AUDIT_EVENT_LABEL: Record<string, string> = {
@@ -40,6 +42,8 @@ export const AUDIT_EVENT_LABEL: Record<string, string> = {
   COMPANY_ACTIVATED: "Bedrijf geactiveerd",
   COMPANY_DEACTIVATED: "Bedrijf gedeactiveerd",
   CURRENT_STATUS_SNAPSHOT: "Beginstand vastgelegd",
+  PRODUCT_STATUS_CHANGED: "Productresultaat gewijzigd",
+  QUOTE_ADDED: "Offerteversie vastgelegd",
 };
 
 export const AUDIT_SOURCE_LABEL: Record<string, string> = {

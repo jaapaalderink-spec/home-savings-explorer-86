@@ -18,13 +18,17 @@
 - [x] Financiële basis — transactionele maandfactuur, Amsterdamse maandgrens, onveranderlijke uitgegeven regels en unieke leveringsboekingen
 - [ ] Financiële aansluiting — productuitbreidingen, zichtbare conceptcorrecties, seat-entitlements, kostenteller, documenten en voorschotreconciliatie
 - [ ] Regressietests en desktop-/mobiele controle; geen echte SMS/betalingen of ongeaccordeerde testschrijfacties
-- [ ] Ingelogde eindcontrole — previewsessie is ongeldig; opnieuw inloggen nodig. Maandafsluiting/concurrency alleen in afgesproken geïsoleerde testomgeving.
+- [ ] Ingelogde eindcontrole — beschikbare sessie toont geen bestaand partnerdossier; opslag/refresh en concurrency wachten op een veilige testcontext. Geen bestaand bedrijf aangemaakt of gewijzigd tijdens controle.
 
 ## Aanvulling 22 oktober 2026 — Partnerportaal en testomgeving
 - [x] Bestaande ketens onderzoeken; aanvullend uitvoeringsplan ter beoordeling aangeboden
 - [ ] Leadinstellingen: primaire productbudgetten, combinatievoorkeur en serverberekende kosten
 - [ ] Herstelbare productstatussen, afzonderlijke gewonnen bedragen, dossiersamenvatting en concurrencycontrole
+  - [x] Atomaire opslag met revision, afzonderlijke winst, productbediening en afgeleide open/afgesloten samenvatting
+  - [ ] Volledige controle van verwante rechten, historische samenvattingen en ingelogde opslag/refresh in veilige testcontext
+  - [x] Serverinzage en klachten begrensd tot eigenaar/eigen toegewezen dossiers; bedrijfsfacturen en betaalacties eigenaar/beheer
 - [ ] Accountmanagerresultaten met gedeelde filters, cohorten en verantwoordelijke perspectieven
 - [ ] Beschermde testcontext, deterministisch scenario, testfacturen en afgeschermde providers
 - [ ] Admin-testbeheer, dry-run en hervatbare cleanup bouwen; nu geen cleanup uitvoeren
 - [ ] Gerichte regressietests, ingelogde controles en korte handleiding; echte providercontrole alleen met testcredentials
+  - [x] 194 lokale unit tests geslaagd, integratietests uitgesloten; geen provider- of opruimacties uitgevoerd

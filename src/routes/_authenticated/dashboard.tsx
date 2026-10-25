@@ -43,7 +43,7 @@ function DashboardPage() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<TabId>("leads");
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["partner-context"],
     queryFn: () => getPartnerContext(),
   });
@@ -87,12 +87,12 @@ function DashboardPage() {
               Platformbeheer
             </Link>
           )}
-          <Link
+          {(isOwner || isAdmin) && <Link
             to="/facturen"
             className="text-sm font-semibold text-leaf underline-offset-4 hover:underline"
           >
             Facturen
-          </Link>
+          </Link>}
           <span className="text-sm text-moss/70">{data?.profile?.email}</span>
 
           <Button variant="outline" size="sm" onClick={signOut}>
@@ -104,6 +104,11 @@ function DashboardPage() {
       <div className="mx-auto max-w-6xl px-5 pb-20">
         {isLoading ? (
           <Skeleton className="h-64 w-full rounded-3xl" />
+        ) : error ? (
+          <div role="alert" className="space-y-3 py-6 text-sm text-moss">
+            <p>Je partnergegevens konden niet worden geladen. Er is geen nieuw bedrijf aangemaakt.</p>
+            <Button variant="outline" onClick={() => refetch()}>Opnieuw proberen</Button>
+          </div>
         ) : !data?.company ? (
           <Onboarding />
         ) : (
