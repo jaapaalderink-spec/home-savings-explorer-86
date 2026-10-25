@@ -13,6 +13,17 @@ export type LostReason = keyof typeof LOST_REASONS;
 
 const RANK: Record<LeadStatus, number> = { new: 0, contacted: 1, quoted: 2, lost: 3, won: 4 };
 
+export function dossierSummary(statuses: LeadStatus[]): { status: LeadStatus | "partial_won"; closed: boolean } {
+  if (statuses.length === 0) return { status: "new", closed: false };
+  const closed = statuses.every((s) => s === "won" || s === "lost");
+  const status = statuses.every((s) => s === "won") ? "won"
+    : statuses.includes("won") ? "partial_won"
+    : statuses.every((s) => s === "lost") ? "lost"
+    : statuses.includes("quoted") ? "quoted"
+    : statuses.includes("contacted") ? "contacted" : "new";
+  return { status, closed };
+}
+
 /** Totaalstatus van een aanvraag: gewonnen als één product gewonnen is, verloren als alles verloren is. */
 export function overallStatus(statuses: LeadStatus[]): LeadStatus {
   if (statuses.length === 0) return "new";

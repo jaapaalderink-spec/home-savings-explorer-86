@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { overallStatus, productStats } from "./crm-policy";
+import { dossierSummary, overallStatus, productStats } from "./crm-policy";
+
+describe("dossiersamenvatting", () => {
+  it("gedeeltelijke winst met open product blijft open", () => expect(dossierSummary(["won", "new"])).toEqual({ status: "partial_won", closed: false }));
+  it("gemengde gesloten uitkomsten blijven gedeeltelijk gewonnen", () => expect(dossierSummary(["won", "lost"])).toEqual({ status: "partial_won", closed: true }));
+  it("alle producten gewonnen sluiten het dossier", () => expect(dossierSummary(["won", "won"])).toEqual({ status: "won", closed: true }));
+});
 
 describe("overallStatus", () => {
   it("gewonnen wint", () => expect(overallStatus(["lost", "won", "quoted"])).toBe("won"));
