@@ -276,14 +276,14 @@ export const listPurchasedLeads = createServerFn({ method: "GET" })
       .maybeSingle();
     if (!profile?.company_id) return [];
 
+    const { partnerAccess } = await import("@/lib/partner-access.server");
+    const access = await partnerAccess(context.userId);
+    let purchaseQuery = db.from("lead_purchases").select(
+      "id, status, crm_summary, crm_closed, products, note, created_at, purchased_by, assigned_to, source, price_ex_vat, billable, credited, opened_at, first_contact_at, contacted_within_24h, response_score, lead:leads(*)",
+    ).eq("company_id", profile.company_id).order("created_at", { ascending: false });
+    if (!access.teamRead) purchaseQuery = purchaseQuery.eq("assigned_to", context.userId);
     const [{ data }, { data: members }, { data: complaints }] = await Promise.all([
-      db
-        .from("lead_purchases")
-        .select(
-          "id, status, note, created_at, purchased_by, assigned_to, source, price_ex_vat, billable, credited, opened_at, first_contact_at, contacted_within_24h, response_score, lead:leads(*)",
-        )
-        .eq("company_id", profile.company_id)
-        .order("created_at", { ascending: false }),
+      purchaseQuery,
       db.from("profiles").select("id, full_name, email").eq("company_id", profile.company_id),
       db
         .from("complaints")
@@ -300,9 +300,13 @@ export const listPurchasedLeads = createServerFn({ method: "GET" })
       ]),
     );
 
+    const { loadProductCrm } = await import("@/lib/crm.server");
+    const { dossierSummary } = await import("@/lib/crm-policy");
+    const crm = await loadProductCrm(db, data ?? []);
     return (data ?? []).map((p) => ({
       id: p.id,
-      status: p.status as string,
+      status: dossierSummary((crm.get(p.id) ?? []).map((r) => r.status)).status,
+      closed: dossierSummary((crm.get(p.id) ?? []).map((r) => r.status)).closed,
       note: p.note,
       createdAt: p.created_at,
       source: p.source as string,
@@ -473,50 +477,8 @@ export const updatePurchase = createServerFn({ method: "POST" })
       })
       .parse(data),
   )
-  .handler(async ({ data, context }) => {
-    const db = await adminDb();
-    const [{ data: profile }, { data: isAdmin }] = await Promise.all([
-      db.from("profiles").select("company_id").eq("id", context.userId).maybeSingle(),
-      adminRole(db, context.userId, context.claims),
-    ]);
-    if (!profile?.company_id) throw new Error("Geen bedrijf gekoppeld.");
-
-    const { data: current } = await db
-      .from("lead_purchases")
-      .select("status, company_id")
-      .eq("id", data.purchaseId)
-      .eq("company_id", profile.company_id)
-      .maybeSingle();
-    if (!current) throw new Error("Lead niet gevonden.");
-
-    const check = checkStatusTransition(
-      current.status as LeadStatus,
-      data.status,
-      isAdmin === true,
-    );
-    if (!check.ok) throw new Error(check.reason);
-
-    const { data: rows, error } = await db.rpc("set_purchase_status", {
-      p_purchase_id: data.purchaseId,
-      p_company_id: profile.company_id,
-      p_status: data.status,
-      ...(data.note ? { p_note: data.note } : {}),
-      p_actor: context.userId,
-      p_source: isAdmin === true ? "admin" : "partner",
-    });
-    if (error) throw new Error("Bijwerken is mislukt.");
-    const row = Array.isArray(rows) ? rows[0] : rows;
-    if (row?.result === "not_found") throw new Error("Lead niet gevonden.");
-
-    // Kwaliteitsscore bijwerken: direct bij een eindstatus, anders alleen als verouderd.
-    const quality = await import("@/lib/quality.server");
-    if (data.status === "won" || data.status === "lost") {
-      await quality.recalculateQualityScores(profile.company_id).catch(() => undefined);
-    } else {
-      await quality.refreshQualityScoreIfStale(profile.company_id);
-    }
-
-    return { ok: true, changed: row?.changed === true };
+  .handler(async (): Promise<{ ok: boolean; changed: boolean }> => {
+    throw new Error("Wijzig de status bij het betreffende product; een afzonderlijke algemene status is niet meer toegestaan.");
   });
 
 /** Tijdlijn van één ingekochte lead: statusgeschiedenis plus gebeurtenissen. */

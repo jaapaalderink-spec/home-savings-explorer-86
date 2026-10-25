@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { Button } from "@/components/ui/button";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { addQuote, getPurchaseCrm, saveProductCrm } from "@/lib/crm.functions";
 import { LOST_REASONS, type LostReason } from "@/lib/crm-policy";
 import { CATEGORY_LABEL } from "@/lib/lead-pricing";
-import { STATUS_LABEL, checkStatusTransition, LEAD_STATUSES, type LeadStatus } from "@/lib/lead-status-policy";
+import { STATUS_LABEL, LEAD_STATUSES, type LeadStatus } from "@/lib/lead-status-policy";
 import { formatEuro } from "@/lib/home-savings";
 
 const input =
@@ -13,6 +15,8 @@ const input =
 /** Opvolging per product binnen één aanvraag: status, vervolgdatum, verliesreden en offerteversies. */
 export function ProductCrm({ purchaseId }: { purchaseId: string }) {
   const qc = useQueryClient();
+  const saveFn = useServerFn(saveProductCrm);
+  const quoteFn = useServerFn(addQuote);
   const { data, isLoading } = useQuery({
     queryKey: ["purchase-crm", purchaseId],
     queryFn: () => getPurchaseCrm({ data: { purchaseId } }),
@@ -21,23 +25,26 @@ export function ProductCrm({ purchaseId }: { purchaseId: string }) {
     qc.invalidateQueries({ queryKey: ["purchase-crm", purchaseId] });
     qc.invalidateQueries({ queryKey: ["my-leads"] });
     qc.invalidateQueries({ queryKey: ["crm-stats"] });
+    qc.invalidateQueries({ queryKey: ["manager-stats"] });
+    qc.invalidateQueries({ queryKey: ["team"] });
+    qc.invalidateQueries({ queryKey: ["my-quality"] });
   };
   const save = useMutation({
-    mutationFn: (v: { category: string; status: LeadStatus; followUpDate?: string | null; lostReason?: LostReason | null }) =>
-      saveProductCrm({ data: { purchaseId, ...v } }),
+    mutationFn: (v: { category: string; revision: number; status: LeadStatus; wonAmount?: number | null; reopenReason?: string; followUpDate?: string | null; lostReason?: LostReason | null }) =>
+      saveFn({ data: { purchaseId, ...v } }),
     onSuccess: () => {
       toast.success("Opgeslagen");
       refresh();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => { toast.error(e.message); refresh(); },
   });
   const quote = useMutation({
-    mutationFn: (v: { category: string; amount: number; note?: string }) => addQuote({ data: { purchaseId, ...v } }),
+    mutationFn: (v: { category: string; revision: number; amount: number; note?: string }) => quoteFn({ data: { purchaseId, ...v } }),
     onSuccess: (r) => {
       toast.success(`Offerte versie ${r.version} vastgelegd`);
       refresh();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => { toast.error(e.message); refresh(); },
   });
 
   if (isLoading) return <p className="text-xs text-moss/60">Laden…</p>;
@@ -46,11 +53,11 @@ export function ProductCrm({ purchaseId }: { purchaseId: string }) {
     <div className="space-y-2">
       {(data ?? []).map((p) => (
         <ProductRow
-          key={p.category}
+          key={`${p.category}:${p.revision}`}
           row={p}
           busy={save.isPending || quote.isPending}
-          onSave={(v) => save.mutate({ category: p.category, ...v })}
-          onQuote={(amount, note) => quote.mutate({ category: p.category, amount, ...(note ? { note } : {}) })}
+          onSave={(v) => save.mutate({ category: p.category, revision: p.revision, ...v })}
+          onQuote={(amount, note) => quote.mutate({ category: p.category, revision: p.revision, amount, ...(note ? { note } : {}) })}
         />
       ))}
     </div>
@@ -67,7 +74,7 @@ function ProductRow({
 }: {
   row: Row;
   busy: boolean;
-  onSave: (v: { status: LeadStatus; followUpDate?: string | null; lostReason?: LostReason | null }) => void;
+  onSave: (v: { status: LeadStatus; wonAmount?: number | null; reopenReason?: string; followUpDate?: string | null; lostReason?: LostReason | null }) => void;
   onQuote: (amount: number, note?: string) => void;
 }) {
   const [status, setStatus] = useState<LeadStatus>(row.status);
@@ -75,10 +82,14 @@ function ProductRow({
   const [reason, setReason] = useState<LostReason | "">((row.lostReason as LostReason) ?? "");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
+  const [wonAmount, setWonAmount] = useState(row.wonAmount == null ? "" : String(row.wonAmount));
+  const [reopenReason, setReopenReason] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
   const closed = row.status === "won" || row.status === "lost";
+  const reopening = closed && status !== row.status;
 
   return (
-    <div className="rounded-xl border border-moss/15 p-3">
+    <div className="border-t border-moss/15 py-3">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-bold text-ink">{CATEGORY_LABEL[row.category] ?? row.category}</span>
         <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-moss">{STATUS_LABEL[row.status]}</span>
@@ -95,8 +106,8 @@ function ProductRow({
       <div className="mt-2 flex flex-wrap items-end gap-2">
         <label className="flex flex-col gap-1 text-xs text-moss/70">
           Status
-          <select className={input} value={status} onChange={(e) => setStatus(e.target.value as LeadStatus)}>
-            {LEAD_STATUSES.filter((s) => s === row.status || checkStatusTransition(row.status, s).ok).map((s) => (
+          <select disabled={busy} className={input} value={status} onChange={(e) => { setStatus(e.target.value as LeadStatus); setConfirmed(false); }}>
+            {LEAD_STATUSES.map((s) => (
               <option key={s} value={s}>
                 {STATUS_LABEL[s]}
               </option>
@@ -120,16 +131,30 @@ function ProductRow({
             Vervolgdatum
             <input type="date" className={input} value={followUp} onChange={(e) => setFollowUp(e.target.value)} />
           </label>
-        ) : null}
-        <button
+        ) : (
+          <label className="flex flex-col gap-1 text-xs text-moss/70">
+            Gewonnen bedrag excl. btw
+            <input type="number" min={0} step="0.01" className={`${input} w-40`} value={wonAmount} onChange={(e) => setWonAmount(e.target.value)} />
+          </label>
+        )}
+        <Button
           type="button"
-          disabled={busy || (status === "lost" && !reason)}
-          onClick={() => onSave({ status, followUpDate: followUp || null, lostReason: reason || null })}
-          className="min-h-9 rounded-full bg-leaf px-3 text-xs font-semibold text-background disabled:opacity-40"
+          size="sm"
+          disabled={busy || (status === "lost" && !reason) || (status === "won" && (wonAmount === "" || !Number.isFinite(Number(wonAmount)) || Number(wonAmount) < 0)) || (reopening && (!confirmed || reopenReason.trim().length < 3))}
+          onClick={() => onSave({ status, wonAmount: status === "won" ? Number(wonAmount) : null, ...(reopening ? { reopenReason } : {}), followUpDate: followUp || null, lostReason: reason || null })}
         >
           Opslaan
-        </button>
+        </Button>
       </div>
+      {reopening && (
+        <div className="mt-3 space-y-2 bg-muted p-3 text-xs text-moss">
+          <p>Dit herstelt het CRM-resultaat. Eerdere winst vervalt uit actuele rapportage; historie blijft bewaard. Dit geeft geen credit voor de geleverde lead.</p>
+          <label className="flex flex-col gap-1">Reden van herstel
+            <input className={input} value={reopenReason} maxLength={500} onChange={(e) => setReopenReason(e.target.value)} />
+          </label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />Ik bevestig de wijziging van resultaat en opvolging.</label>
+        </div>
+      )}
 
       {!closed && (
         <div className="mt-2 flex flex-wrap items-end gap-2">
@@ -141,18 +166,19 @@ function ProductRow({
             Toelichting
             <input className={input} value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} />
           </label>
-          <button
+          <Button
             type="button"
+            size="sm"
+            variant="outline"
             disabled={busy || amount === "" || Number(amount) < 0}
             onClick={() => {
               onQuote(Number(amount), note || undefined);
               setAmount("");
               setNote("");
             }}
-            className="min-h-9 rounded-full border border-leaf px-3 text-xs font-semibold text-leaf disabled:opacity-40"
           >
             Offerte vastleggen
-          </button>
+          </Button>
         </div>
       )}
 
