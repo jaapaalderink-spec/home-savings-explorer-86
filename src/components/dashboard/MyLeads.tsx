@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 import type { MapLead } from "@/components/dashboard/PartnerLeadsMap";
 
 const PartnerLeadsMap = lazy(() => import("@/components/dashboard/PartnerLeadsMap"));
@@ -12,10 +13,8 @@ import {
   assignPurchases,
   listAssignableMembers,
   listPurchasedLeads,
-  updatePurchase,
 } from "@/lib/partner.functions";
 import { CATEGORY_LABEL } from "@/lib/lead-pricing";
-import { checkStatusTransition, type LeadStatus } from "@/lib/lead-status-policy";
 import { formatEuro } from "@/lib/home-savings";
 
 const STATUSES = [
@@ -39,17 +38,6 @@ export function MyLeads() {
   const team = useQuery({
     queryKey: ["assignable-members"],
     queryFn: () => listAssignableMembers(),
-  });
-
-  const update = useMutation({
-    mutationFn: (vars: { purchaseId: string; status: (typeof STATUSES)[number]["id"] }) =>
-      updatePurchase({ data: vars }),
-    onSuccess: () => {
-      toast.success("Status bijgewerkt");
-      queryClient.invalidateQueries({ queryKey: ["my-leads"] });
-      queryClient.invalidateQueries({ queryKey: ["team"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
   });
 
   const assign = useMutation({
@@ -93,7 +81,7 @@ export function MyLeads() {
             ["map", "Kaart"],
           ] as const
         ).map(([value, label]) => (
-          <button
+          <Button
             key={value}
             type="button"
             onClick={() => setView(value)}
@@ -103,7 +91,7 @@ export function MyLeads() {
             }`}
           >
             {label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -171,28 +159,7 @@ export function MyLeads() {
                 ) : null}
 
                 <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                  {STATUSES.map((s) => {
-                    const active = p.status === s.id;
-                    const allowed =
-                      active || checkStatusTransition(p.status as LeadStatus, s.id).ok;
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        disabled={!allowed || update.isPending}
-                        title={allowed ? undefined : "Deze stap kan niet vanuit de huidige status"}
-                        onClick={() => update.mutate({ purchaseId: p.id, status: s.id })}
-                        className="min-h-9 rounded-full border px-3 py-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf disabled:cursor-not-allowed disabled:opacity-40"
-                        style={{
-                          borderColor: active ? "#4f8f62" : "#dfe6e0",
-                          backgroundColor: active ? "#4f8f62" : "transparent",
-                          color: active ? "white" : "#315642",
-                        }}
-                      >
-                        {s.label}
-                      </button>
-                    );
-                  })}
+                  <span className="text-xs font-semibold text-moss">{p.status === "partial_won" ? "Gedeeltelijk gewonnen" : STATUSES.find((s) => s.id === p.status)?.label ?? p.status} · {p.closed ? "Afgesloten" : "Open"}</span>
 
                   {team.data?.canAssign && (
                     <label className="ml-auto flex items-center gap-2 text-xs text-moss/70">
@@ -215,14 +182,7 @@ export function MyLeads() {
                     </label>
                   )}
                 </div>
-                <details className="mt-3">
-                  <summary className="cursor-pointer text-xs font-semibold text-leaf">
-                    Opvolging per product
-                  </summary>
-                  <div className="mt-2">
-                    <ProductCrm purchaseId={p.id} />
-                  </div>
-                </details>
+                <div className="mt-3"><ProductCrm purchaseId={p.id} /></div>
               </article>
             );
           })}
