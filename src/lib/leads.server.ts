@@ -99,13 +99,15 @@ export async function distributeLead(leadId: string) {
     { data: purchases },
     { data: existing },
     { data: contracts },
+    { data: memberPrefs },
+    { data: memberCaps },
   ] = await Promise.all([
     db.from("companies").select("id, active"),
     db.rpc("eligible_companies_for_lead", { p_lead: leadId }),
     db.from("company_products").select("company_id, category, active, monthly_max"),
     db
       .from("lead_purchases")
-      .select("company_id, created_at, subscription_version_id, lead:leads(categories)")
+      .select("company_id, created_at, subscription_version_id, primary_product, lead:leads(categories)")
       .gte("created_at", since),
     db.from("lead_purchases").select("company_id, products, credited").eq("lead_id", leadId),
     db
@@ -113,6 +115,8 @@ export async function distributeLead(leadId: string) {
       .select("company_id, valid_from, lead_quota_per_month")
       .lte("valid_from", today)
       .order("valid_from", { ascending: false }),
+    db.from("company_lead_preferences").select("company_id").eq("settings_enabled", true),
+    db.from("lead_recipient_services").select("company_id, monthly_max").eq("enabled", true),
   ]);
 
   const alreadyAssigned = new Set((existing ?? []).map((p) => p.company_id));
@@ -129,10 +133,18 @@ export async function distributeLead(leadId: string) {
     if (!quotaByCompany.has(c.company_id)) quotaByCompany.set(c.company_id, c.lead_quota_per_month);
   });
 
+  // Leadinstellingen per ontvanger: het bedrijfstotaal is de som van de interne aantallen.
+  const memberMode = new Set((memberPrefs ?? []).map((p) => p.company_id));
+  memberMode.forEach((id) => quotaByCompany.set(id, 0));
+  (memberCaps ?? []).forEach((c) => {
+    if (memberMode.has(c.company_id))
+      quotaByCompany.set(c.company_id, (quotaByCompany.get(c.company_id) ?? 0) + c.monthly_max);
+  });
+
   const usedPerCategory = new Map<string, number>();
   const usedContract = new Map<string, number>();
   (purchases ?? []).forEach((p) => {
-    if (p.subscription_version_id)
+    if (memberMode.has(p.company_id) ? p.primary_product : p.subscription_version_id)
       usedContract.set(p.company_id, (usedContract.get(p.company_id) ?? 0) + 1);
     const cats = ((p.lead as { categories?: string[] } | null)?.categories ?? []) as string[];
     cats.forEach((c) => {
