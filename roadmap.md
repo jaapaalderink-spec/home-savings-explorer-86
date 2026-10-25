@@ -24,6 +24,8 @@
 - [x] Bestaande ketens onderzoeken; aanvullend uitvoeringsplan ter beoordeling aangeboden
 - [ ] Leadinstellingen: primaire productbudgetten, combinatievoorkeur en serverberekende kosten
 - [ ] Herstelbare productstatussen, afzonderlijke gewonnen bedragen, dossiersamenvatting en concurrencycontrole
+  - [x] Atomaire opslag met revision, afzonderlijke winst, productbediening en afgeleide open/afgesloten samenvatting
+  - [ ] Volledige controle van verwante rechten, historische samenvattingen en ingelogde opslag/refresh in veilige testcontext
 - [ ] Accountmanagerresultaten met gedeelde filters, cohorten en verantwoordelijke perspectieven
 - [ ] Beschermde testcontext, deterministisch scenario, testfacturen en afgeschermde providers
 - [ ] Admin-testbeheer, dry-run en hervatbare cleanup bouwen; nu geen cleanup uitvoeren
