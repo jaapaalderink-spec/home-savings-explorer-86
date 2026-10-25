@@ -696,7 +696,7 @@ export const listInvoices = createServerFn({ method: "GET" })
     let query = db
       .from("invoices")
       .select(
-        "id, invoice_number, period_start, period_end, subtotal_ex_vat, vat_amount, total_inc_vat, credit_applied_inc_vat, amount_due_inc_vat, status, due_date, paid_at, payment_status, last_payment_attempt_at, payment_review_required, credit_notes:credit_notes!credit_notes_original_invoice_id_fkey(credit_number, total_inc_vat, status), company:companies(name), lines:invoice_lines(description, quantity, unit_price_ex_vat, amount_ex_vat), payments(provider_payment_id, status, amount, paid_at, created_at)",
+        "id, invoice_number, period_start, period_end, subtotal_ex_vat, vat_amount, total_inc_vat, credit_applied_inc_vat, amount_due_inc_vat, status, due_date, paid_at, payment_status, last_payment_attempt_at, payment_review_required, credit_notes:credit_notes!credit_notes_original_invoice_id_fkey(credit_number, total_inc_vat, status), company:companies(name), lines:invoice_lines(description, quantity, unit_price_ex_vat, amount_ex_vat), payments:payments!payments_invoice_id_fkey(provider_payment_id, status, amount, paid_at, created_at)",
       )
       .order("period_start", { ascending: false });
 
@@ -707,7 +707,8 @@ export const listInvoices = createServerFn({ method: "GET" })
       query = query.eq("company_id", profile.company_id);
     }
 
-    const { data } = await query;
+    const { data, error } = await query;
+    if (error) throw new Error("Facturen konden niet worden geladen. Probeer het opnieuw.");
     return { isAdmin: Boolean(isAdmin), items: data ?? [] };
   });
 
