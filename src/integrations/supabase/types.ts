@@ -1025,6 +1025,8 @@ export type Database = {
           contacted_within_48h: boolean | null
           created_at: string
           credited: boolean
+          crm_closed: boolean
+          crm_summary: string | null
           first_contact_at: string | null
           id: string
           invoice_id: string | null
@@ -1051,6 +1053,8 @@ export type Database = {
           contacted_within_48h?: boolean | null
           created_at?: string
           credited?: boolean
+          crm_closed?: boolean
+          crm_summary?: string | null
           first_contact_at?: string | null
           id?: string
           invoice_id?: string | null
@@ -1077,6 +1081,8 @@ export type Database = {
           contacted_within_48h?: boolean | null
           created_at?: string
           credited?: boolean
+          crm_closed?: boolean
+          crm_summary?: string | null
           first_contact_at?: string | null
           id?: string
           invoice_id?: string | null
@@ -1509,9 +1515,13 @@ export type Database = {
           id: string
           lost_reason: string | null
           purchase_id: string
+          result_owner_id: string | null
+          revision: number
           status: Database["public"]["Enums"]["lead_status"]
           updated_at: string
           updated_by: string | null
+          won_amount_ex_vat: number | null
+          won_at: string | null
         }
         Insert: {
           category: string
@@ -1521,9 +1531,13 @@ export type Database = {
           id?: string
           lost_reason?: string | null
           purchase_id: string
+          result_owner_id?: string | null
+          revision?: number
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
           updated_by?: string | null
+          won_amount_ex_vat?: number | null
+          won_at?: string | null
         }
         Update: {
           category?: string
@@ -1533,9 +1547,13 @@ export type Database = {
           id?: string
           lost_reason?: string | null
           purchase_id?: string
+          result_owner_id?: string | null
+          revision?: number
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
           updated_by?: string | null
+          won_amount_ex_vat?: number | null
+          won_at?: string | null
         }
         Relationships: [
           {
@@ -1871,6 +1889,36 @@ export type Database = {
               error: true
             } & "Could not choose the best candidate function between: public.audit_source_setting(_fallback => text), public.audit_source_setting(_fallback => audit_source). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
           }
+      can_access_purchase: {
+        Args: { p_actor: string; p_id: string }
+        Returns: boolean
+      }
+      commit_product_outcome: {
+        Args: {
+          p_actor: string
+          p_category: string
+          p_correlation?: string
+          p_follow?: string
+          p_id: string
+          p_lost?: string
+          p_reason?: string
+          p_revision: number
+          p_status: Database["public"]["Enums"]["lead_status"]
+          p_won?: number
+        }
+        Returns: Json
+      }
+      commit_product_quote: {
+        Args: {
+          p_actor: string
+          p_amount: number
+          p_category: string
+          p_id: string
+          p_note?: string
+          p_revision: number
+        }
+        Returns: number
+      }
       company_quality_metrics: {
         Args: { p_company_id?: string }
         Returns: {
@@ -2026,6 +2074,7 @@ export type Database = {
         Args: { p_company: string }
         Returns: number
       }
+      sync_product_summary: { Args: { p_id: string }; Returns: undefined }
       team_update_member: {
         Args: {
           p_action: string

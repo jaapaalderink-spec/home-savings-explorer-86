@@ -1,0 +1,62 @@
+ALTER TABLE public.purchase_product_crm ADD COLUMN IF NOT EXISTS revision integer NOT NULL DEFAULT 0, ADD COLUMN IF NOT EXISTS won_amount_ex_vat numeric(14,2), ADD COLUMN IF NOT EXISTS won_at timestamptz, ADD COLUMN IF NOT EXISTS result_owner_id uuid;
+ALTER TABLE public.lead_purchases ADD COLUMN IF NOT EXISTS crm_summary text, ADD COLUMN IF NOT EXISTS crm_closed boolean NOT NULL DEFAULT false;
+CREATE OR REPLACE FUNCTION public.can_access_purchase(p_id uuid, p_actor uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT EXISTS(SELECT 1 FROM public.lead_purchases lp JOIN public.profiles pr ON pr.id=p_actor AND pr.company_id=lp.company_id WHERE lp.id=p_id AND (lp.assigned_to=p_actor OR public.has_role(p_actor,'owner'))) OR (p_actor=auth.uid() AND public.has_role(p_actor,'admin')) $$;
+REVOKE ALL ON FUNCTION public.can_access_purchase(uuid,uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.can_access_purchase(uuid,uuid) TO authenticated, service_role;
+ALTER POLICY "Company sees own purchases" ON public.lead_purchases USING(public.can_access_purchase(id,auth.uid()));
+ALTER POLICY "Company updates own purchases" ON public.lead_purchases USING(false) WITH CHECK(false);
+ALTER POLICY "Company reads own product CRM" ON public.purchase_product_crm USING(public.can_access_purchase(purchase_id,auth.uid()));
+ALTER POLICY "Company reads own quotes" ON public.purchase_quotes USING(public.can_access_purchase(purchase_id,auth.uid()));
+CREATE OR REPLACE FUNCTION public.sync_product_summary(p_id uuid) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE s text; closed boolean; compat public.lead_status; BEGIN
+ SELECT CASE WHEN count(*)=0 THEN 'new' WHEN bool_and(status='won') THEN 'won' WHEN bool_and(status='lost') THEN 'lost' WHEN bool_or(status='won') THEN 'partial_won' WHEN bool_or(status='quoted') THEN 'quoted' WHEN bool_or(status='contacted') THEN 'contacted' ELSE 'new' END, coalesce(bool_and(status IN ('won','lost')),false) INTO s,closed FROM public.purchase_product_crm WHERE purchase_id=p_id;
+ compat:=CASE WHEN s='partial_won' THEN 'won'::public.lead_status ELSE s::public.lead_status END;
+ UPDATE public.lead_purchases SET crm_summary=s,crm_closed=closed,status=compat WHERE id=p_id;
+END $$;
+REVOKE ALL ON FUNCTION public.sync_product_summary(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.sync_product_summary(uuid) TO service_role;
+CREATE OR REPLACE FUNCTION public.commit_product_outcome(p_id uuid,p_actor uuid,p_category text,p_revision integer,p_status public.lead_status,p_won numeric DEFAULT NULL,p_reason text DEFAULT NULL,p_lost text DEFAULT NULL,p_follow date DEFAULT NULL,p_correlation uuid DEFAULT gen_random_uuid()) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE lp public.lead_purchases; r public.purchase_product_crm; cats text[]; old_won numeric;
+BEGIN
+ SELECT * INTO lp FROM public.lead_purchases WHERE id=p_id FOR UPDATE;
+ IF NOT FOUND OR NOT public.can_access_purchase(p_id,p_actor) THEN RAISE EXCEPTION 'NOT_ALLOWED'; END IF;
+ SELECT coalesce(nullif(lp.products,'{}'),l.categories) INTO cats FROM public.leads l WHERE l.id=lp.lead_id;
+ IF NOT p_category=ANY(cats) THEN RAISE EXCEPTION 'INVALID_PRODUCT'; END IF;
+ INSERT INTO public.purchase_product_crm(purchase_id,company_id,category,status) SELECT lp.id,lp.company_id,c,'new' FROM unnest(cats) c ON CONFLICT(purchase_id,category) DO NOTHING;
+ SELECT * INTO r FROM public.purchase_product_crm WHERE purchase_id=p_id AND category=p_category FOR UPDATE;
+ IF r.revision<>p_revision THEN RAISE EXCEPTION 'REVISION_CONFLICT'; END IF;
+ IF r.status IN ('won','lost') AND r.status<>p_status AND length(trim(coalesce(p_reason,'')))<3 THEN RAISE EXCEPTION 'REOPEN_REASON_REQUIRED'; END IF;
+ IF p_status='won' AND (p_won IS NULL OR p_won<0 OR p_won>1000000 OR p_won<>round(p_won,2)) THEN RAISE EXCEPTION 'WON_AMOUNT_REQUIRED'; END IF;
+ IF p_status='quoted' AND NOT EXISTS(SELECT 1 FROM public.purchase_quotes WHERE purchase_id=p_id AND category=p_category AND amount_ex_vat>=0) THEN RAISE EXCEPTION 'QUOTE_REQUIRED'; END IF;
+ IF p_status='lost' AND coalesce(p_lost,'') NOT IN ('price','competitor','no_response','postponed','not_suitable','other') THEN RAISE EXCEPTION 'LOST_REASON_REQUIRED'; END IF;
+ old_won:=r.won_amount_ex_vat;
+ UPDATE public.purchase_product_crm SET status=p_status,revision=revision+1,won_amount_ex_vat=CASE WHEN p_status='won' THEN p_won ELSE NULL END,won_at=CASE WHEN p_status='won' THEN CASE WHEN r.status='won' AND old_won IS NOT DISTINCT FROM p_won THEN coalesce(r.won_at,now()) ELSE now() END ELSE NULL END,result_owner_id=CASE WHEN p_status='won' THEN coalesce(lp.assigned_to,p_actor) ELSE r.result_owner_id END,follow_up_date=CASE WHEN p_status IN ('won','lost') THEN NULL ELSE p_follow END,lost_reason=CASE WHEN p_status='lost' THEN p_lost ELSE NULL END,updated_by=p_actor,updated_at=now() WHERE id=r.id;
+ PERFORM public.log_audit_event('PRODUCT_STATUS_CHANGED','lead_purchase',p_id,lp.company_id,p_actor,'partner',jsonb_build_object('category',p_category,'from',r.status,'to',p_status,'old_won_amount',old_won,'won_amount',CASE WHEN p_status='won' THEN p_won ELSE NULL END,'reason',p_reason,'correlation_id',p_correlation,'revision',r.revision+1));
+ PERFORM public.sync_product_summary(p_id);
+ RETURN jsonb_build_object('ok',true,'revision',r.revision+1);
+END $$;
+REVOKE ALL ON FUNCTION public.commit_product_outcome(uuid,uuid,text,integer,public.lead_status,numeric,text,text,date,uuid) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.commit_product_outcome(uuid,uuid,text,integer,public.lead_status,numeric,text,text,date,uuid) TO service_role;
+CREATE OR REPLACE FUNCTION public.commit_product_quote(p_id uuid,p_actor uuid,p_category text,p_revision integer,p_amount numeric,p_note text DEFAULT NULL) RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE lp public.lead_purchases; r public.purchase_product_crm; v integer; cats text[];
+BEGIN
+ SELECT * INTO lp FROM public.lead_purchases WHERE id=p_id FOR UPDATE;
+ IF NOT FOUND OR NOT public.can_access_purchase(p_id,p_actor) THEN RAISE EXCEPTION 'NOT_ALLOWED'; END IF;
+ SELECT coalesce(nullif(lp.products,'{}'),l.categories) INTO cats FROM public.leads l WHERE l.id=lp.lead_id;
+ IF NOT p_category=ANY(cats) THEN RAISE EXCEPTION 'INVALID_PRODUCT'; END IF;
+ IF p_amount IS NULL OR p_amount<0 OR p_amount>1000000 OR p_amount<>round(p_amount,2) THEN RAISE EXCEPTION 'INVALID_AMOUNT'; END IF;
+ INSERT INTO public.purchase_product_crm(purchase_id,company_id,category,status) SELECT lp.id,lp.company_id,c,'new' FROM unnest(cats) c ON CONFLICT(purchase_id,category) DO NOTHING;
+ SELECT * INTO r FROM public.purchase_product_crm WHERE purchase_id=p_id AND category=p_category FOR UPDATE;
+ IF r.revision<>p_revision THEN RAISE EXCEPTION 'REVISION_CONFLICT'; END IF;
+ IF r.status IN ('won','lost') THEN RAISE EXCEPTION 'REOPEN_FIRST'; END IF;
+ SELECT coalesce(max(version),0)+1 INTO v FROM public.purchase_quotes WHERE purchase_id=p_id AND category=p_category;
+ INSERT INTO public.purchase_quotes(purchase_id,company_id,category,version,amount_ex_vat,note,created_by) VALUES(p_id,lp.company_id,p_category,v,p_amount,p_note,p_actor);
+ UPDATE public.purchase_product_crm SET status='quoted',revision=revision+1,updated_by=p_actor,updated_at=now() WHERE id=r.id;
+ PERFORM public.log_audit_event('QUOTE_ADDED','lead_purchase',p_id,lp.company_id,p_actor,'partner',jsonb_build_object('category',p_category,'version',v,'amount_ex_vat',p_amount,'correlation_id',gen_random_uuid()));
+ PERFORM public.sync_product_summary(p_id);
+ RETURN v;
+END $$;
+REVOKE ALL ON FUNCTION public.commit_product_quote(uuid,uuid,text,integer,numeric,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.commit_product_quote(uuid,uuid,text,integer,numeric,text) TO service_role;
+REVOKE EXECUTE ON FUNCTION public.set_purchase_status(uuid,uuid,public.lead_status,text,uuid,public.audit_source) FROM PUBLIC,anon,authenticated;
+COMMENT ON COLUMN public.lead_purchases.crm_summary IS 'Canonical product summary; partial_won is distinct from the legacy compatibility status. Historical unmapped rows are not inferred.';
+COMMENT ON COLUMN public.purchase_product_crm.won_amount_ex_vat IS 'Explicit current won amount; never inferred from quotes. NULL historical amounts remain unknown.';

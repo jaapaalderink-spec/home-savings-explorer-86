@@ -92,6 +92,13 @@
       "when": 1792504529897,
       "tag": "0012_lock_month_sources_before_totals",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792940995265,
+      "tag": "0013_canonical_product_outcomes",
+      "breakpoints": true
     }
   ]
 }
