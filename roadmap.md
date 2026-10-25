@@ -21,7 +21,7 @@
 - [ ] Ingelogde eindcontrole — previewsessie is ongeldig; opnieuw inloggen nodig. Maandafsluiting/concurrency alleen in afgesproken geïsoleerde testomgeving.
 
 ## Aanvulling 22 oktober 2026 — Partnerportaal en testomgeving
-- [ ] Bestaande ketens onderzoeken en aanvullend uitvoeringsplan vaststellen
+- [x] Bestaande ketens onderzoeken; aanvullend uitvoeringsplan ter beoordeling aangeboden
 - [ ] Leadinstellingen: primaire productbudgetten, combinatievoorkeur en serverberekende kosten
 - [ ] Herstelbare productstatussen, afzonderlijke gewonnen bedragen, dossiersamenvatting en concurrencycontrole
 - [ ] Accountmanagerresultaten met gedeelde filters, cohorten en verantwoordelijke perspectieven
