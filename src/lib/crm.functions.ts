@@ -3,47 +3,26 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { adminDb } from "@/lib/partner-util";
-import { LEAD_STATUSES, checkStatusTransition, type LeadStatus } from "@/lib/lead-status-policy";
-import { LOST_REASONS, overallStatus } from "@/lib/crm-policy";
+import { LEAD_STATUSES } from "@/lib/lead-status-policy";
+import { LOST_REASONS } from "@/lib/crm-policy";
 
 async function companyOf(userId: string) {
-  const db = await adminDb();
-  const { data } = await db.from("profiles").select("company_id").eq("id", userId).maybeSingle();
-  if (!data?.company_id) throw new Error("Geen bedrijf gekoppeld.");
-  return { db, companyId: data.company_id as string };
+  const { partnerAccess } = await import("@/lib/partner-access.server");
+  return partnerAccess(userId);
 }
 
 async function ownPurchase(userId: string, purchaseId: string) {
-  const { db, companyId } = await companyOf(userId);
-  const { data } = await db
-    .from("lead_purchases")
-    .select("id, status, products, lead:leads(categories)")
-    .eq("id", purchaseId)
-    .eq("company_id", companyId)
-    .maybeSingle();
-  if (!data) throw new Error("Lead niet gevonden.");
-  return { db, companyId, purchase: data };
+  const { accessiblePurchase } = await import("@/lib/partner-access.server");
+  return accessiblePurchase(userId, purchaseId);
 }
 
-/** Na een productwijziging de totaalstatus van de toewijzing bijwerken (als de overgang geldig is). */
-async function syncOverall(
-  db: Awaited<ReturnType<typeof adminDb>>,
-  purchase: { id: string; status: string; products: string[] | null; lead: unknown },
-  companyId: string,
-  actor: string,
-) {
-  const { loadProductCrm } = await import("@/lib/crm.server");
-  const list = (await loadProductCrm(db, [purchase])).get(purchase.id) ?? [];
-  const next = overallStatus(list.map((l) => l.status));
-  if (next !== purchase.status && checkStatusTransition(purchase.status as LeadStatus, next).ok) {
-    await db.rpc("set_purchase_status", {
-      p_purchase_id: purchase.id,
-      p_company_id: companyId,
-      p_status: next,
-      p_actor: actor,
-      p_source: "partner",
-    });
-  }
+function mutationError(message: string): never {
+  if (message.includes("REVISION_CONFLICT")) throw new Error("Dit product is intussen gewijzigd. Herlaad en probeer opnieuw.");
+  if (message.includes("REOPEN_REASON_REQUIRED")) throw new Error("Geef een reden voor het herstellen van het afgesloten resultaat.");
+  if (message.includes("WON_AMOUNT_REQUIRED")) throw new Error("Vul een geldig gewonnen bedrag excl. btw in.");
+  if (message.includes("QUOTE_REQUIRED")) throw new Error("Leg eerst een geldige offertewaarde vast.");
+  if (message.includes("REOPEN_FIRST")) throw new Error("Heropen het product voordat je een nieuwe offerte vastlegt.");
+  throw new Error("Opslaan is mislukt of je hebt geen toegang.");
 }
 
 export const getPurchaseCrm = createServerFn({ method: "GET" })
@@ -63,50 +42,29 @@ export const saveProductCrm = createServerFn({ method: "POST" })
         purchaseId: z.string().uuid(),
         category: z.string().min(1).max(40),
         status: z.enum(LEAD_STATUSES),
+        revision: z.number().int().min(0),
+        wonAmount: z.number().min(0).max(1_000_000).nullable().optional(),
+        reopenReason: z.string().trim().max(500).optional(),
         followUpDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
         lostReason: z.enum(Object.keys(LOST_REASONS) as [keyof typeof LOST_REASONS]).nullable().optional(),
       })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { db, companyId, purchase } = await ownPurchase(context.userId, data.purchaseId);
-    const { loadProductCrm, purchaseProducts } = await import("@/lib/crm.server");
+    const { db, purchase } = await ownPurchase(context.userId, data.purchaseId);
+    const { purchaseProducts } = await import("@/lib/crm.server");
     if (!purchaseProducts(purchase).includes(data.category)) throw new Error("Product hoort niet bij deze aanvraag.");
     if (data.status === "lost" && !data.lostReason) throw new Error("Kies een reden van verlies.");
 
-    const current = (await loadProductCrm(db, [purchase])).get(purchase.id)?.find((r) => r.category === data.category);
-    const from = current?.status ?? (purchase.status as LeadStatus);
-    if (from !== data.status) {
-      const check = checkStatusTransition(from, data.status);
-      if (!check.ok) throw new Error(check.reason);
-    }
-
-    const { error } = await db.from("purchase_product_crm").upsert(
-      {
-        purchase_id: purchase.id,
-        company_id: companyId,
-        category: data.category,
-        status: data.status,
-        follow_up_date: data.status === "won" || data.status === "lost" ? null : (data.followUpDate ?? null),
-        lost_reason: data.status === "lost" ? (data.lostReason ?? null) : null,
-        updated_by: context.userId,
-      },
-      { onConflict: "purchase_id,category" },
-    );
-    if (error) throw new Error("Opslaan is mislukt.");
-
-    if (from !== data.status) {
-      await db.rpc("log_audit_event_api", {
-        p_event: "PRODUCT_STATUS_CHANGED",
-        p_entity: "lead_purchase",
-        p_entity_id: purchase.id,
-        p_company: companyId,
-        p_actor: context.userId,
-        p_source: "partner",
-        p_metadata: { category: data.category, from, to: data.status, lost_reason: data.lostReason ?? null },
-      });
-    }
-    await syncOverall(db, purchase, companyId, context.userId);
+    const { error } = await db.rpc("commit_product_outcome", {
+      p_id: purchase.id, p_actor: context.userId, p_category: data.category,
+      p_revision: data.revision, p_status: data.status,
+      ...(data.wonAmount != null ? { p_won: data.wonAmount } : {}),
+      ...(data.reopenReason ? { p_reason: data.reopenReason } : {}),
+      ...(data.lostReason ? { p_lost: data.lostReason } : {}),
+      ...(data.followUpDate ? { p_follow: data.followUpDate } : {}),
+    });
+    if (error) mutationError(error.message);
     return { ok: true };
   });
 
@@ -117,46 +75,22 @@ export const addQuote = createServerFn({ method: "POST" })
       .object({
         purchaseId: z.string().uuid(),
         category: z.string().min(1).max(40),
+        revision: z.number().int().min(0),
         amount: z.number().min(0).max(1_000_000),
         note: z.string().trim().max(500).optional(),
       })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { db, companyId, purchase } = await ownPurchase(context.userId, data.purchaseId);
-    const { loadProductCrm, purchaseProducts } = await import("@/lib/crm.server");
+    const { db, purchase } = await ownPurchase(context.userId, data.purchaseId);
+    const { purchaseProducts } = await import("@/lib/crm.server");
     if (!purchaseProducts(purchase).includes(data.category)) throw new Error("Product hoort niet bij deze aanvraag.");
-    const row = (await loadProductCrm(db, [purchase])).get(purchase.id)?.find((r) => r.category === data.category);
-    if (row && (row.status === "won" || row.status === "lost")) throw new Error("Dit product is al afgerond.");
-    const version = (row?.quotes[0]?.version ?? 0) + 1;
-
-    const { error } = await db.from("purchase_quotes").insert({
-      purchase_id: purchase.id,
-      company_id: companyId,
-      category: data.category,
-      version,
-      amount_ex_vat: Math.round(data.amount * 100) / 100,
-      note: data.note || null,
-      created_by: context.userId,
+    const { data: version, error } = await db.rpc("commit_product_quote", {
+      p_id: purchase.id, p_actor: context.userId, p_category: data.category,
+      p_revision: data.revision, p_amount: data.amount,
+      ...(data.note ? { p_note: data.note } : {}),
     });
-    if (error) throw new Error("Offerte opslaan is mislukt.");
-
-    if (row && row.status !== "quoted") {
-      await db.from("purchase_product_crm").upsert(
-        { purchase_id: purchase.id, company_id: companyId, category: data.category, status: "quoted", updated_by: context.userId },
-        { onConflict: "purchase_id,category" },
-      );
-    }
-    await db.rpc("log_audit_event_api", {
-      p_event: "QUOTE_ADDED",
-      p_entity: "lead_purchase",
-      p_entity_id: purchase.id,
-      p_company: companyId,
-      p_actor: context.userId,
-      p_source: "partner",
-      p_metadata: { category: data.category, version, amount_ex_vat: data.amount },
-    });
-    await syncOverall(db, purchase, companyId, context.userId);
+    if (error) mutationError(error.message);
     return { ok: true, version };
   });
 
@@ -166,9 +100,9 @@ export const getCrmStats = createServerFn({ method: "GET" })
     z.object({ days: z.number().int().min(7).max(365), category: z.string().max(40).optional() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { db, companyId } = await companyOf(context.userId);
+    const { db, companyId, teamRead } = await companyOf(context.userId);
     const { companyCrmStats } = await import("@/lib/crm.server");
-    return companyCrmStats(db, companyId, data.days, data.category);
+    return companyCrmStats(db, companyId, data.days, data.category, teamRead ? undefined : context.userId);
   });
 
 /** Alleen-lezen voorbeeldweergave van een bedrijf voor platformbeheer; elke opening wordt gelogd. */

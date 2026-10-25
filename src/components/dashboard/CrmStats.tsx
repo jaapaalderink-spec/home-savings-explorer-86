@@ -44,7 +44,7 @@ export function StatsTable({ products }: { products: ProductStats[] }) {
 }
 
 export const CONVERSION_NOTE =
-  "Conversie = gewonnen ÷ ontvangen producten in de periode. Slagingskans = gewonnen ÷ (gewonnen + verloren). Gewonnen waarde = laatste offerteversie, excl. btw.";
+  "Productconversie = gewonnen ÷ ontvangen productonderdelen in het instroomcohort. Sluitingspercentage = gewonnen ÷ (gewonnen + verloren). Gewonnen waarde = geregistreerde actuele winst, excl. btw; historische onbekende bedragen tellen niet mee.";
 
 export function CrmStats() {
   const [days, setDays] = useState<number>(90);

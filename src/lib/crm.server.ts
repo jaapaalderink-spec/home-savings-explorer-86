@@ -19,14 +19,15 @@ export async function loadProductCrm(
 ) {
   const ids = purchases.map((p) => p.id);
   if (ids.length === 0) return new Map<string, ProductCrm[]>();
-  const [{ data: crm }, { data: quotes }] = await Promise.all([
-    db.from("purchase_product_crm").select("purchase_id, category, status, follow_up_date, lost_reason").in("purchase_id", ids),
+  const [{ data: crm, error: crmError }, { data: quotes, error: quoteError }] = await Promise.all([
+    db.from("purchase_product_crm").select("purchase_id, category, status, follow_up_date, lost_reason, revision, won_amount_ex_vat, won_at, result_owner_id").in("purchase_id", ids),
     db
       .from("purchase_quotes")
       .select("purchase_id, category, version, amount_ex_vat, note, created_at")
       .in("purchase_id", ids)
       .order("version", { ascending: false }),
   ]);
+  if (crmError || quoteError) throw new Error("Productgegevens laden is mislukt.");
   const result = new Map<string, ProductCrm[]>();
   for (const p of purchases) {
     result.set(
@@ -36,7 +37,11 @@ export async function loadProductCrm(
         const q = (quotes ?? []).filter((x) => x.purchase_id === p.id && x.category === category);
         return {
           category,
-          status: (row?.status ?? p.status) as LeadStatus,
+          status: (row?.status ?? "new") as LeadStatus,
+          revision: row?.revision ?? 0,
+          wonAmount: row?.won_amount_ex_vat == null ? null : Number(row.won_amount_ex_vat),
+          wonAt: row?.won_at ?? null,
+          resultOwnerId: row?.result_owner_id ?? null,
           followUpDate: row?.follow_up_date ?? null,
           lostReason: row?.lost_reason ?? null,
           quotes: q.map((x) => ({
@@ -55,25 +60,32 @@ export async function loadProductCrm(
 export type ProductCrm = {
   category: string;
   status: LeadStatus;
+  revision: number;
+  wonAmount: number | null;
+  wonAt: string | null;
+  resultOwnerId: string | null;
   followUpDate: string | null;
   lostReason: string | null;
   quotes: Array<{ version: number; amount: number; note: string | null; createdAt: string }>;
 };
 
 /** Statistiek per product voor een bedrijf over de laatste `days` dagen. */
-export async function companyCrmStats(db: Db, companyId: string, days: number, category?: string) {
+export async function companyCrmStats(db: Db, companyId: string, days: number, category?: string, assignedTo?: string) {
   const since = new Date(Date.now() - days * 86400000).toISOString();
-  const { data: purchases } = await db
+  let query = db
     .from("lead_purchases")
     .select("id, status, products, lead:leads(categories)")
     .eq("company_id", companyId)
     .gte("created_at", since);
+  if (assignedTo) query = query.eq("assigned_to", assignedTo);
+  const { data: purchases, error } = await query;
+  if (error) throw new Error("Resultaten laden is mislukt.");
   const crm = await loadProductCrm(db, purchases ?? []);
   const rows: CrmRow[] = [];
   crm.forEach((list) =>
     list.forEach((r) => {
       if (category && r.category !== category) return;
-      rows.push({ category: r.category, status: r.status, quoteAmount: r.quotes[0]?.amount ?? null });
+      rows.push({ category: r.category, status: r.status, quoteAmount: r.quotes[0]?.amount ?? null, wonAmount: r.wonAmount });
     }),
   );
   return { days, products: productStats(rows) };

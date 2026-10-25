@@ -22,7 +22,7 @@ export function overallStatus(statuses: LeadStatus[]): LeadStatus {
   return open.reduce((best, s) => (RANK[s] > RANK[best] ? s : best), "new" as LeadStatus);
 }
 
-export type CrmRow = { category: string; status: LeadStatus; quoteAmount: number | null };
+export type CrmRow = { category: string; status: LeadStatus; quoteAmount: number | null; wonAmount?: number | null };
 
 export type ProductStats = {
   category: string;
@@ -64,7 +64,7 @@ export function productStats(rows: CrmRow[]): ProductStats[] {
         winRate: pct(won, won + lost),
         wonValue: list
           .filter((r) => r.status === "won")
-          .reduce((s, r) => s + (r.quoteAmount ?? 0), 0),
+          .reduce((s, r) => s + (r.wonAmount ?? 0), 0),
       };
     })
     .sort((a, b) => b.received - a.received);
