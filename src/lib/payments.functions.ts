@@ -14,8 +14,10 @@ async function authorizeInvoice(userId: string, invoiceId: string, claims: { aal
     db.from("invoices").select("id, company_id").eq("id", invoiceId).maybeSingle(),
   ]);
   if (!invoice) throw new Error("Factuur niet gevonden.");
-  if (!isAdmin && (!profile?.company_id || profile.company_id !== invoice.company_id)) {
-    throw new Error("Geen toegang tot deze factuur.");
+  if (!isAdmin) {
+    const { partnerAccess } = await import("@/lib/partner-access.server");
+    const access = await partnerAccess(userId);
+    if (!access.teamRead || access.companyId !== invoice.company_id) throw new Error("Geen toegang tot deze factuur.");
   }
   return invoice;
 }
