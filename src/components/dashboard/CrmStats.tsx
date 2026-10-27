@@ -46,19 +46,31 @@ export function StatsTable({ products }: { products: ProductStats[] }) {
 export const CONVERSION_NOTE =
   "Productconversie = gewonnen ÷ ontvangen productonderdelen in het instroomcohort. Sluitingspercentage = gewonnen ÷ (gewonnen + verloren). Gewonnen waarde = geregistreerde actuele winst, excl. btw; historische onbekende bedragen tellen niet mee.";
 
-export function CrmStats() {
+export function CrmStats({ members, fixedMember }: { members?: { id: string; name: string }[] | undefined; fixedMember?: string | null | undefined } = {}) {
   const [days, setDays] = useState<number>(90);
   const [category, setCategory] = useState("");
+  const [picked, setPicked] = useState("");
+  const memberId = fixedMember ?? picked;
   const { data, isLoading } = useQuery({
-    queryKey: ["crm-stats", days, category],
-    queryFn: () => getCrmStats({ data: { days, ...(category ? { category } : {}) } }),
+    queryKey: ["crm-stats", days, category, memberId],
+    queryFn: () => getCrmStats({ data: { days, ...(category ? { category } : {}), ...(memberId ? { memberId } : {}) } }),
   });
 
   return (
     <section className="rounded-2xl bg-background p-5" style={{ boxShadow: "var(--shadow-panel)" }}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-lg font-bold text-ink">Resultaten per product</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {members && members.length > 1 && !fixedMember && (
+            <select aria-label="Medewerker" value={picked} onChange={(e) => setPicked(e.target.value)} className="min-h-9 rounded-full border border-moss/20 bg-background px-3 text-xs font-semibold text-moss">
+              <option value="">Heel het bedrijf</option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          )}
           <select value={days} onChange={(e) => setDays(Number(e.target.value))} className="min-h-9 rounded-full border border-moss/20 bg-background px-3 text-xs font-semibold text-moss">
             {PERIODS.map((d) => (
               <option key={d} value={d}>
