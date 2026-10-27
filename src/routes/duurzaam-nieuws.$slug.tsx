@@ -1,3 +1,4 @@
+import { BlogBody } from "@/components/blog/BlogBody";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { getPublishedPost } from "@/lib/blog.functions";
@@ -50,11 +51,7 @@ function Article() {
         {post.media_url && (
           <BlogMedia type={post.media_type} url={post.media_url} alt={post.title} controls className="mt-6 aspect-video w-full rounded-2xl" />
         )}
-        <div className="mt-8 space-y-4 leading-relaxed text-ink">
-          {post.body.split(/\n{2,}/).map((para, i) => (
-            <p key={i} className="whitespace-pre-line">{para}</p>
-          ))}
-        </div>
+        <div className="mt-8"><BlogBody body={post.body} /></div>
       </article>
     </main>
   );
