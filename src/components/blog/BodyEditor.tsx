@@ -3,6 +3,7 @@ import { Bold, Heading2, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { BlogBody } from "./BlogBody";
+import { htmlToBody } from "./html-to-body";
 
 export function BodyEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -35,7 +36,23 @@ export function BodyEditor({ value, onChange }: { value: string; onChange: (v: s
       {preview ? (
         <div className="min-h-64 p-3 text-sm font-normal"><BlogBody body={value} /></div>
       ) : (
-        <Textarea ref={ref} rows={14} value={value} onChange={(e) => onChange(e.target.value)} className="rounded-none border-0 font-normal focus-visible:ring-0" />
+        <Textarea
+          ref={ref}
+          rows={14}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onPaste={(e) => {
+            const html = e.clipboardData.getData("text/html");
+            if (!html) return;
+            const text = htmlToBody(html);
+            if (!text) return;
+            e.preventDefault();
+            const el = e.currentTarget;
+            const s = el.selectionStart, end = el.selectionEnd;
+            onChange(value.slice(0, s) + text + value.slice(end));
+          }}
+          className="rounded-none border-0 font-normal focus-visible:ring-0"
+        />
       )}
     </div>
   );
