@@ -24,9 +24,10 @@ export function BlogBody({ body }: { body: string }) {
             </ul>
           );
         }
-        if (lines.length === 1 && /^#{2,3} /.test(lines[0])) {
-          const h3 = lines[0].startsWith("### ");
-          const text = inline(lines[0].replace(/^#{2,3} /, ""));
+        const first = lines[0] ?? "";
+        if (lines.length === 1 && /^#{2,3} /.test(first)) {
+          const h3 = first.startsWith("### ");
+          const text = inline(first.replace(/^#{2,3} /, ""));
           return h3 ? (
             <h3 key={i} className="pt-2 font-display text-xl font-bold text-ink">{text}</h3>
           ) : (
