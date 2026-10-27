@@ -97,12 +97,16 @@ export const addQuote = createServerFn({ method: "POST" })
 export const getCrmStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ days: z.number().int().min(7).max(365), category: z.string().max(40).optional() }).parse(d),
+    z
+      .object({ days: z.number().int().min(7).max(365), category: z.string().max(40).optional(), memberId: z.string().uuid().optional() })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { db, companyId, teamRead } = await companyOf(context.userId);
     const { companyCrmStats } = await import("@/lib/crm.server");
-    return companyCrmStats(db, companyId, data.days, data.category, teamRead ? undefined : context.userId);
+    // Eigenaar mag filteren op een teamlid; accountmanagers zien altijd alleen zichzelf.
+    const assignedTo = teamRead ? data.memberId : context.userId;
+    return companyCrmStats(db, companyId, data.days, data.category, assignedTo);
   });
 
 /** Alleen-lezen voorbeeldweergave van een bedrijf voor platformbeheer; elke opening wordt gelogd. */

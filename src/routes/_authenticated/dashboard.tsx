@@ -208,7 +208,7 @@ function DashboardPage() {
               {tab === "leads" && <MyLeads key={viewAs ?? "all"} viewAs={previewing ? viewAs : null} />}
               {tab === "performance" && (
                 <div className="space-y-4">
-                  <CrmStats />
+                  <CrmStats members={realOwner ? members.data?.members : undefined} fixedMember={previewing ? viewAs : null} />
                   <MyPerformance />
                 </div>
               )}
