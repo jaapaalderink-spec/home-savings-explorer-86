@@ -19,6 +19,8 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedFacturenRouteImport } from './routes/_authenticated/facturen'
 import { Route as AuthenticatedUitnodigingRouteImport } from './routes/_authenticated/uitnodiging'
+import { Route as DuurzaamNieuwsIndexRouteImport } from './routes/duurzaam-nieuws.index'
+import { Route as DuurzaamNieuwsSlugRouteImport } from './routes/duurzaam-nieuws.$slug'
 import { Route as ApiPublicAllocationRetryRouteImport } from './routes/api/public/allocation-retry'
 import { Route as ApiPublicMollieWebhookRouteImport } from './routes/api/public/mollie-webhook'
 
@@ -72,6 +74,16 @@ const AuthenticatedUitnodigingRoute =
     path: '/uitnodiging',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const DuurzaamNieuwsIndexRoute = DuurzaamNieuwsIndexRouteImport.update({
+  id: '/duurzaam-nieuws/',
+  path: '/duurzaam-nieuws/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DuurzaamNieuwsSlugRoute = DuurzaamNieuwsSlugRouteImport.update({
+  id: '/duurzaam-nieuws/$slug',
+  path: '/duurzaam-nieuws/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAllocationRetryRoute =
   ApiPublicAllocationRetryRouteImport.update({
     id: '/api/public/allocation-retry',
@@ -94,6 +106,8 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/facturen': typeof AuthenticatedFacturenRoute
   '/uitnodiging': typeof AuthenticatedUitnodigingRoute
+  '/duurzaam-nieuws/$slug': typeof DuurzaamNieuwsSlugRoute
+  '/duurzaam-nieuws/': typeof DuurzaamNieuwsIndexRoute
   '/api/public/allocation-retry': typeof ApiPublicAllocationRetryRoute
   '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
 }
@@ -107,6 +121,8 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/facturen': typeof AuthenticatedFacturenRoute
   '/uitnodiging': typeof AuthenticatedUitnodigingRoute
+  '/duurzaam-nieuws/$slug': typeof DuurzaamNieuwsSlugRoute
+  '/duurzaam-nieuws': typeof DuurzaamNieuwsIndexRoute
   '/api/public/allocation-retry': typeof ApiPublicAllocationRetryRoute
   '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
 }
@@ -122,6 +138,8 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/facturen': typeof AuthenticatedFacturenRoute
   '/_authenticated/uitnodiging': typeof AuthenticatedUitnodigingRoute
+  '/duurzaam-nieuws/$slug': typeof DuurzaamNieuwsSlugRoute
+  '/duurzaam-nieuws/': typeof DuurzaamNieuwsIndexRoute
   '/api/public/allocation-retry': typeof ApiPublicAllocationRetryRoute
   '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
 }
@@ -137,6 +155,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/facturen'
     | '/uitnodiging'
+    | '/duurzaam-nieuws/$slug'
+    | '/duurzaam-nieuws/'
     | '/api/public/allocation-retry'
     | '/api/public/mollie-webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -150,6 +170,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/facturen'
     | '/uitnodiging'
+    | '/duurzaam-nieuws/$slug'
+    | '/duurzaam-nieuws'
     | '/api/public/allocation-retry'
     | '/api/public/mollie-webhook'
   id:
@@ -164,6 +186,8 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/facturen'
     | '/_authenticated/uitnodiging'
+    | '/duurzaam-nieuws/$slug'
+    | '/duurzaam-nieuws/'
     | '/api/public/allocation-retry'
     | '/api/public/mollie-webhook'
   fileRoutesById: FileRoutesById
@@ -175,6 +199,8 @@ export interface RootRouteChildren {
   BedanktRoute: typeof BedanktRoute
   OfferteRoute: typeof OfferteRoute
   ResultaatRoute: typeof ResultaatRoute
+  DuurzaamNieuwsSlugRoute: typeof DuurzaamNieuwsSlugRoute
+  DuurzaamNieuwsIndexRoute: typeof DuurzaamNieuwsIndexRoute
   ApiPublicAllocationRetryRoute: typeof ApiPublicAllocationRetryRoute
   ApiPublicMollieWebhookRoute: typeof ApiPublicMollieWebhookRoute
 }
@@ -251,6 +277,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUitnodigingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/duurzaam-nieuws/': {
+      id: '/duurzaam-nieuws/'
+      path: '/duurzaam-nieuws'
+      fullPath: '/duurzaam-nieuws/'
+      preLoaderRoute: typeof DuurzaamNieuwsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/duurzaam-nieuws/$slug': {
+      id: '/duurzaam-nieuws/$slug'
+      path: '/duurzaam-nieuws/$slug'
+      fullPath: '/duurzaam-nieuws/$slug'
+      preLoaderRoute: typeof DuurzaamNieuwsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/allocation-retry': {
       id: '/api/public/allocation-retry'
       path: '/api/public/allocation-retry'
@@ -292,6 +332,8 @@ const rootRouteChildren: RootRouteChildren = {
   BedanktRoute: BedanktRoute,
   OfferteRoute: OfferteRoute,
   ResultaatRoute: ResultaatRoute,
+  DuurzaamNieuwsSlugRoute: DuurzaamNieuwsSlugRoute,
+  DuurzaamNieuwsIndexRoute: DuurzaamNieuwsIndexRoute,
   ApiPublicAllocationRetryRoute: ApiPublicAllocationRetryRoute,
   ApiPublicMollieWebhookRoute: ApiPublicMollieWebhookRoute,
 }
