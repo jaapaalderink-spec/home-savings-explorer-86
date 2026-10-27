@@ -129,10 +129,10 @@ export function BlogAdmin() {
             <BlogMedia type={draft.media_type} url={draft.media_url} alt="" controls className="mt-3 aspect-video w-full max-w-md rounded-xl" />
           )}
         </div>
-        <label className="block text-sm font-semibold text-moss">
-          Artikeltekst (witregel = nieuwe alinea)
-          <Textarea rows={12} value={draft.body} onChange={(e) => setDraft({ ...draft, body: e.target.value })} className="mt-1" />
-        </label>
+        <div className="block text-sm font-semibold text-moss">
+          Artikeltekst (witregel = nieuwe alinea; selecteer tekst en kies een opmaakknop)
+          <BodyEditor value={draft.body} onChange={(body) => setDraft({ ...draft, body })} />
+        </div>
         <label className="flex items-center gap-2 text-sm font-semibold text-moss">
           <input type="checkbox" checked={draft.published} onChange={(e) => setDraft({ ...draft, published: e.target.checked })} />
           Gepubliceerd op Duurzaam nieuws
