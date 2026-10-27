@@ -12,6 +12,7 @@ import {
   Table,
   UserCog,
   Eye,
+  Newspaper,
 } from "lucide-react";
 import { CalculatorSettings } from "@/components/admin/CalculatorSettings";
 import { CalculationDebug } from "@/components/admin/CalculationDebug";
@@ -26,6 +27,7 @@ import { ContractsAdmin } from "@/components/admin/ContractsAdmin";
 import { AllocationQueue } from "@/components/admin/AllocationQueue";
 import { PlatformTeam } from "@/components/admin/PlatformTeam";
 import { BackgroundJobs } from "@/components/admin/BackgroundJobs";
+import { BlogAdmin } from "@/components/admin/BlogAdmin";
 import { AdminMfaGate } from "@/components/admin/AdminMfaGate";
 import { CompanyPreview } from "@/components/admin/CompanyPreview";
 import { AdminOverview } from "@/components/dashboard/AdminOverview";
@@ -59,6 +61,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 type TabId =
+  | "blog"
   | "overview"
   | "leads"
   | "map"
@@ -91,6 +94,7 @@ function AdminPage() {
     { id: "staff", label: "Platformteam", icon: UserCog },
     { id: "preview", label: "Voorbeeldweergave", icon: Eye },
     { id: "jobs", label: "Achtergrondtaken", icon: ListOrdered },
+    { id: "blog", label: "Duurzaam nieuws", icon: Newspaper },
   ];
 
   return (
@@ -146,6 +150,7 @@ function AdminPage() {
         {tab === "settings" && <CalculatorSettings />}
         {tab === "preview" && <CompanyPreview />}
         {tab === "jobs" && <BackgroundJobs />}
+        {tab === "blog" && <BlogAdmin />}
       </div>
     </main>
   );

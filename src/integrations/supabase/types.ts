@@ -132,6 +132,51 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_posts: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          excerpt: string
+          id: string
+          media_type: string | null
+          media_url: string | null
+          published: boolean
+          published_at: string | null
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          excerpt?: string
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          published?: boolean
+          published_at?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          excerpt?: string
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          published?: boolean
+          published_at?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       calculator_config_changes: {
         Row: {
           action: string

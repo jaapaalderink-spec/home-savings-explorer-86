@@ -130,6 +130,12 @@ function HomePage() {
             gecontroleerde installateurs
           </span>
           <Link
+            to="/duurzaam-nieuws"
+            className="shrink-0 text-xs font-semibold text-moss/80 underline-offset-2 hover:text-moss hover:underline"
+          >
+            Duurzaam nieuws
+          </Link>
+          <Link
             to="/auth"
             className="shrink-0 text-xs font-semibold text-moss/80 underline-offset-2 hover:text-moss hover:underline"
           >
