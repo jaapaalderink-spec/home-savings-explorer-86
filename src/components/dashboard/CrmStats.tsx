@@ -46,7 +46,7 @@ export function StatsTable({ products }: { products: ProductStats[] }) {
 export const CONVERSION_NOTE =
   "Productconversie = gewonnen ÷ ontvangen productonderdelen in het instroomcohort. Sluitingspercentage = gewonnen ÷ (gewonnen + verloren). Gewonnen waarde = geregistreerde actuele winst, excl. btw; historische onbekende bedragen tellen niet mee.";
 
-export function CrmStats({ members, fixedMember }: { members?: { id: string; name: string }[]; fixedMember?: string | null } = {}) {
+export function CrmStats({ members, fixedMember }: { members?: { id: string; name: string }[] | undefined; fixedMember?: string | null | undefined } = {}) {
   const [days, setDays] = useState<number>(90);
   const [category, setCategory] = useState("");
   const [picked, setPicked] = useState("");
