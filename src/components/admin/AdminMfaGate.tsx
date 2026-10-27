@@ -16,8 +16,25 @@ export function AdminMfaGate({ children }: { children: ReactNode }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const [email, setEmail] = useState("");
+
+  async function switchAccount() {
+    await supabase.auth.signOut();
+    window.location.href = "/auth";
+  }
+
   useEffect(() => {
     (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return void (window.location.href = "/auth");
+      setEmail(u.user.email ?? "");
+      const { data: roles, error: rErr } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", u.user.id);
+      if (!rErr && !(roles ?? []).some((r) => r.role === "admin")) {
+        return void (window.location.href = "/dashboard");
+      }
       const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (aal?.currentLevel === "aal2") return setStage("ok");
       const { data: f } = await supabase.auth.mfa.listFactors();
@@ -52,6 +69,15 @@ export function AdminMfaGate({ children }: { children: ReactNode }) {
     <main className="grid min-h-dvh place-items-center px-5" style={{ backgroundColor: "var(--color-cloud)" }}>
       <section className="w-full max-w-sm space-y-4 rounded-2xl bg-background p-6" style={{ boxShadow: "var(--shadow-panel)" }}>
         <h1 className="font-display text-xl font-bold text-ink">Tweestapsverificatie</h1>
+        {email && (
+          <div className="rounded-lg border border-border p-3 text-sm">
+            <p className="text-moss/70">Ingelogd als</p>
+            <p className="break-all font-semibold text-ink">{email}</p>
+            <button type="button" onClick={switchAccount} className="mt-1 text-xs underline text-moss/70">
+              Ander account gebruiken
+            </button>
+          </div>
+        )}
         {stage === "loading" && <p className="text-sm text-moss/70">Controleren…</p>}
         {stage === "enroll" && (
           <>
