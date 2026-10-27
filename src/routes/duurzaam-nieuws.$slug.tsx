@@ -1,3 +1,4 @@
+import { BlogBody } from "@/components/blog/BlogBody";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { getPublishedPost } from "@/lib/blog.functions";
