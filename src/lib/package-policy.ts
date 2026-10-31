@@ -10,13 +10,14 @@ export const MIN_TERM_MONTHS = 6;
 export const NOTICE_MONTHS = 1;
 
 export const PACKAGES: Record<PackageCode, { label: string; leads: number; includedSeats: number }> = {
-  start: { label: "Start", leads: 10, includedSeats: 0 },
+  // Start heeft geen inbegrepen leads: elke geleverde lead wordt apart gefactureerd.
+  start: { label: "Start", leads: 0, includedSeats: 0 },
   groei: { label: "Groei", leads: 25, includedSeats: 1 },
   team: { label: "Team", leads: 50, includedSeats: 3 },
 };
 
-/** Pakketten die nog nieuw gekozen kunnen worden; Start blijft alleen voor bestaande contracten. */
-export const SELECTABLE_PACKAGES: PackageCode[] = ["groei", "team"];
+/** Pakketten die nieuw gekozen kunnen worden. */
+export const SELECTABLE_PACKAGES: PackageCode[] = ["start", "groei", "team"];
 
 /** Volledig maandelijks pakketbedrag: platform + alle leadplaatsen tegen basisprijs. */
 export function packageFee(code: PackageCode) {
