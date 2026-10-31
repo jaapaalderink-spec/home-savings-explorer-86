@@ -64,3 +64,13 @@ export function terminationSettlement(input: {
   const monthly = fixedMonthlyCost(input.mode, input.code, input.paidSeats);
   return { remainingMonths, monthly, total: remainingMonths * monthly };
 }
+
+/** Eenmalige bundels: lopen één kalendermaand, alleen werkelijk geleverde leads worden gefactureerd. */
+export const BUNDLES = { 3: 25, 5: 24, 10: 22.5 } as const;
+export type BundleSize = keyof typeof BUNDLES;
+
+/** Vroegst mogelijke laatste contractmaand bij opzeggen vandaag (opzegtermijn in maanden). */
+export function earliestStopMonth(today: string, noticeMonths: number = NOTICE_MONTHS) {
+  const idx = monthIndex(today) + noticeMonths;
+  return `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2, "0")}-01`;
+}
