@@ -116,6 +116,11 @@ function Editor({ data }: { data: Data }) {
         {!data.settingsEnabled && " Je hebt nog niets opgeslagen; tot die tijd geldt je huidige contractverdeling."}
       </p>
 
+      {canEdit && data.terms.packageQuota != null && total > data.terms.packageQuota && (
+        <BuyExtra over={total - data.terms.packageQuota} quota={data.terms.packageQuota} />
+      )}
+
+
       <div className="overflow-x-auto rounded-2xl bg-background" style={panel}>
         <table className="w-full min-w-[760px] text-sm">
           <thead>
