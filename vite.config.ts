@@ -24,15 +24,15 @@ export default defineConfig({
   },
   vite: {
     // Pre-bundle on startup so a late dependency discovery can't load a second React copy.
-    optimizeDeps: { include: ["@radix-ui/react-alert-dialog"] },
+    optimizeDeps: { include: ["@radix-ui/react-alert-dialog", "@tanstack/react-router"] },
     resolve: {
-      alias: {
-        // Pin entities deep imports to the hoisted v4.5.0 copy; a nested v7
-        // copy breaks SSR because it removed ./lib/decode.js.
-        "entities/lib/decode.js": `${rootDir}node_modules/entities/lib/decode.js`,
-        "entities/lib/encode.js": `${rootDir}node_modules/entities/lib/encode.js`,
-        entities: `${rootDir}node_modules/entities`,
-      },
+      alias: [
+        // Pin only the legacy v4 deep imports to the hoisted entities@4.5.0 copy.
+        // Exact-match regexes so newer imports like "entities/decode" (htmlparser2)
+        // still resolve to their own nested entities version.
+        { find: /^entities\/lib\/decode\.js$/, replacement: `${rootDir}node_modules/entities/lib/esm/decode.js` },
+        { find: /^entities\/lib\/encode\.js$/, replacement: `${rootDir}node_modules/entities/lib/esm/encode.js` },
+      ],
     },
   },
 });
