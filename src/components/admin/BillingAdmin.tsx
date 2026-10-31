@@ -11,6 +11,7 @@ import {
   reviewComplaint,
 } from "@/lib/partner.functions";
 import { formatEuro } from "@/lib/home-savings";
+import { printInvoice } from "@/lib/invoice-print";
 import { lastClosedBillingMonth, isBillingMonthClosed } from "@/lib/billing-period";
 import { PAYMENT_STATUS_LABEL, type PaymentStatus } from "@/lib/payments-policy";
 import {
@@ -64,6 +65,8 @@ export function BillingAdmin() {
   const previous = lastClosedBillingMonth();
   const [year, setYear] = useState(previous.year);
   const [month, setMonth] = useState(previous.month);
+  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "paid">("all");
+  const [search, setSearch] = useState("");
 
   const complaints = useQuery({ queryKey: ["complaints"], queryFn: () => listComplaints() });
   const invoices = useQuery({ queryKey: ["invoices"], queryFn: () => listInvoices() });
@@ -190,7 +193,41 @@ export function BillingAdmin() {
         ) : !invoices.data || invoices.data.items.length === 0 ? (
           <p className="mt-2 text-sm text-moss/70">Nog geen facturen.</p>
         ) : (
+          (() => {
+            const all = invoices.data.items;
+            const isPaid = (i: (typeof all)[number]) => (i.payment_status ?? "open") === "paid";
+            const openItems = all.filter((i) => !isPaid(i));
+            const openTotal = openItems.reduce((t, i) => t + Number(i.amount_due_inc_vat ?? i.total_inc_vat ?? 0), 0);
+            const q = search.trim().toLowerCase();
+            const shown = all.filter((i) => {
+              if (statusFilter === "open" && isPaid(i)) return false;
+              if (statusFilter === "paid" && !isPaid(i)) return false;
+              if (!q) return true;
+              const name = ((i.company as { name?: string } | null)?.name ?? "").toLowerCase();
+              return name.includes(q) || String(i.invoice_number).toLowerCase().includes(q);
+            });
+            return (
           <div className="mt-3 overflow-x-auto">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              {([
+                ["all", `Alles (${all.length})`],
+                ["open", `Openstaand (${openItems.length})`],
+                ["paid", `Betaald (${all.length - openItems.length})`],
+              ] as const).map(([key, label]) => (
+                <Button key={key} size="sm" variant={statusFilter === key ? "default" : "outline"} onClick={() => setStatusFilter(key)}>
+                  {label}
+                </Button>
+              ))}
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Zoek bedrijf of factuurnummer"
+                className="rounded-lg border border-moss/20 px-2 py-1 text-sm text-ink"
+              />
+              <span className="ml-auto text-sm text-moss/80">
+                Nog te innen: <strong className="text-ink">{formatEuro(openTotal)}</strong> ({openItems.length} facturen)
+              </span>
+            </div>
             <table className="w-full text-sm">
               <thead className="text-left text-xs uppercase tracking-wide text-moss/60">
                 <tr>
@@ -201,10 +238,11 @@ export function BillingAdmin() {
                   <th className="p-2">Incl. btw</th>
                   <th className="p-2">Status</th>
                   <th className="p-2">Betaling</th>
+                  <th className="p-2"></th>
                 </tr>
               </thead>
               <tbody>
-                {invoices.data.items.map((i) => (
+                {shown.map((i) => (
                   <tr key={i.id} className="border-t border-moss/10">
                     <td className="p-2 font-semibold text-ink">{i.invoice_number as string}</td>
                     <td className="p-2 text-moss/80">
@@ -256,11 +294,19 @@ export function BillingAdmin() {
                         );
                       })()}
                     </td>
+                    <td className="p-2">
+                      <Button size="sm" variant="outline" onClick={() => printInvoice(i as Record<string, unknown>)}>
+                        Download
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            {shown.length === 0 && <p className="mt-2 text-sm text-moss/70">Geen facturen voor dit filter.</p>}
           </div>
+            );
+          })()
         )}
       </section>
       <section

@@ -106,3 +106,32 @@ export async function sendLeadMatchedEmails(
     console.error("sendLeadMatchedEmails failed", error);
   }
 }
+
+/** Factuurmelding aan de installateur; mag de maandafsluiting nooit blokkeren. */
+export async function sendInvoiceReadyEmail(invoiceId: string): Promise<void> {
+  try {
+    const db = await adminDb();
+    const { data: inv } = await db
+      .from("invoices")
+      .select("id, invoice_number, period_start, due_date, total_inc_vat, amount_due_inc_vat, company:companies(name, billing_email, contact_email)")
+      .eq("id", invoiceId)
+      .maybeSingle();
+    const company = inv?.company as { name?: string; billing_email?: string | null; contact_email?: string | null } | null;
+    const to = company?.billing_email || company?.contact_email;
+    if (!inv || !to) return;
+    const eur = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
+    await sendTemplateEmail("factuur-klaar", to, {
+      templateData: {
+        companyName: company?.name,
+        invoiceNumber: inv.invoice_number,
+        period: new Date(inv.period_start).toLocaleDateString("nl-NL", { month: "long", year: "numeric" }),
+        amount: eur.format(Number(inv.amount_due_inc_vat ?? inv.total_inc_vat ?? 0)),
+        dueDate: inv.due_date ? new Date(inv.due_date).toLocaleDateString("nl-NL") : undefined,
+        invoicesUrl: dashboardUrl().replace(/\/dashboard$/, "/facturen"),
+      },
+      idempotencyKey: `factuur-klaar-${invoiceId}`,
+    });
+  } catch (error) {
+    console.error("sendInvoiceReadyEmail failed", error);
+  }
+}

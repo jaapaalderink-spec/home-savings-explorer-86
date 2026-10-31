@@ -9,6 +9,7 @@ import { createInvoicePayment, refreshInvoicePayment } from "@/lib/payments.func
 import { PAYMENT_STATUS_LABEL, type PaymentStatus } from "@/lib/payments-policy";
 import { CREDIT_STATUS_LABEL, type CreditNoteStatus } from "@/lib/credit-policy";
 import { formatEuro } from "@/lib/home-savings";
+import { printInvoice } from "@/lib/invoice-print";
 
 export const Route = createFileRoute("/_authenticated/facturen")({
   head: () => ({
@@ -103,6 +104,9 @@ function InvoicesPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
+                    <Button size="sm" variant="outline" onClick={() => printInvoice(i as Record<string, unknown>)}>
+                      Download
+                    </Button>
                     <span className="text-right text-lg font-bold text-leaf">
                       {formatEuro(Number(i.amount_due_inc_vat ?? i.total_inc_vat ?? 0))}
                       {Number(i.credit_applied_inc_vat ?? 0) > 0 && (
