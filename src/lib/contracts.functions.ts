@@ -222,7 +222,7 @@ export const assignLeadManually = createServerFn({ method: "POST" })
     });
     if (error) {
       console.error("allocate_lead_manual failed", error.message);
-      if (error.message?.includes("LEAD_FULL")) throw new Error(MANUAL_MESSAGES.lead_full);
+      if (error.message?.includes("LEAD_FULL")) throw new Error(MANUAL_MESSAGES["lead_full"]);
       throw new Error("Toewijzen is mislukt.");
     }
     const r = (Array.isArray(rows) ? rows[0] : rows) as
