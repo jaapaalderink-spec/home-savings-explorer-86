@@ -11,6 +11,7 @@ import {
 } from "@/lib/contracts.functions";
 import { CONTRACT_DEFAULTS, contractMonthlyEstimate } from "@/lib/contract-policy";
 import { formatEuro } from "@/lib/home-savings";
+import { PACKAGES, fixedMonthlyCost, packageFee, type BillingMode, type PackageCode } from "@/lib/package-policy";
 
 const panel = { boxShadow: "var(--shadow-panel)" };
 const fmt = (d: string) =>
@@ -63,6 +64,8 @@ function CompanyContract({ companyId }: { companyId: string }) {
   const [seats, setSeats] = useState(0);
   const [validFrom, setValidFrom] = useState<string>("");
   const [note, setNote] = useState("");
+  const [pkg, setPkg] = useState<PackageCode | "">("");
+  const [mode, setMode] = useState<BillingMode>("actual_delivered");
   const save = useMutation({
     mutationFn: () =>
       createContractVersion({
@@ -72,6 +75,7 @@ function CompanyContract({ companyId }: { companyId: string }) {
           leadQuotaPerMonth: quota,
           paidSeats: seats,
           ...(note ? { note } : {}),
+          ...(pkg ? { packageCode: pkg, billingMode: mode } : {}),
         },
       }),
     onSuccess: () => {
@@ -112,6 +116,15 @@ function CompanyContract({ companyId }: { companyId: string }) {
                 {v.valid_from > new Date().toISOString().slice(0, 10) && (
                   <span className="ml-2 rounded-full bg-muted px-2 text-xs">gepland</span>
                 )}
+                {v.package_code && (
+                  <span className="block text-moss/70">
+                    Pakket {PACKAGES[v.package_code as PackageCode]?.label} ·{" "}
+                    {v.billing_mode === "fixed_package"
+                      ? `vast pakketbedrag ${formatEuro(Number(v.package_fee_ex_vat))} p/m`
+                      : "werkelijke levering (vaste fee + geleverde leads)"}{" "}
+                    · minimaal {v.min_term_months} maanden
+                  </span>
+                )}
                 <span className="block text-moss/70">
                   {v.lead_quota_per_month} leadplaatsen p/m · {v.paid_seats} extra plekken · lead{" "}
                   {formatEuro(Number(v.base_lead_price_ex_vat))} +{" "}
@@ -129,14 +142,46 @@ function CompanyContract({ companyId }: { companyId: string }) {
           Gaat in op de eerste van een maand, op zijn vroegst {fmt(data.earliestStart)}. Bestaande
           versies worden nooit aangepast.
         </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="c-pkg">Pakket</Label>
+            <select
+              id="c-pkg"
+              value={pkg}
+              onChange={(e) => setPkg(e.target.value as PackageCode | "")}
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="">Geen pakket (maatwerk aantal)</option>
+              {(Object.keys(PACKAGES) as PackageCode[]).map((k) => (
+                <option key={k} value={k}>
+                  {PACKAGES[k].label} — {PACKAGES[k].leads} leads, {PACKAGES[k].includedSeats} extra plek(ken) inbegrepen
+                </option>
+              ))}
+            </select>
+          </div>
+          {pkg && (
+            <fieldset className="space-y-1.5 text-sm">
+              <legend className="mb-1.5 text-sm font-medium">Facturatie</legend>
+              <label className="flex items-start gap-2">
+                <input type="radio" name="c-mode" checked={mode === "actual_delivered"} onChange={() => setMode("actual_delivered")} />
+                <span>Werkelijke levering — €99 vast + alleen geleverde leads. Vroeg stoppen: resterende maanden × €99.</span>
+              </label>
+              <label className="flex items-start gap-2">
+                <input type="radio" name="c-mode" checked={mode === "fixed_package"} onChange={() => setMode("fixed_package")} />
+                <span>Vast pakketbedrag — {formatEuro(packageFee(pkg))} per maand, ook bij minder levering. Vroeg stoppen: resterende maanden × {formatEuro(packageFee(pkg))}.</span>
+              </label>
+            </fieldset>
+          )}
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <div className="space-y-1.5">
             <Label htmlFor="c-quota">Leadplaatsen per maand</Label>
             <Input
               id="c-quota"
               type="number"
               min={0}
-              value={quota}
+              value={pkg ? PACKAGES[pkg].leads : quota}
+              disabled={!!pkg}
               onChange={(e) => setQuota(Number(e.target.value))}
             />
           </div>
@@ -173,6 +218,15 @@ function CompanyContract({ companyId }: { companyId: string }) {
           <Label htmlFor="c-note">Notitie (optioneel)</Label>
           <Input id="c-note" value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
+        {pkg ? (
+          <div className="mt-4 rounded-xl bg-muted p-4 text-sm text-moss/80">
+            Vaste maandkosten: <strong>{formatEuro(fixedMonthlyCost(mode, pkg, seats))}</strong> excl. btw
+            {mode === "actual_delivered"
+              ? `, plus ${formatEuro(15)} per werkelijk geleverde lead.`
+              : `, ${PACKAGES[pkg].leads} leads inbegrepen; meerlevering ${formatEuro(15)} per lead.`}{" "}
+            Extra product in dezelfde aanvraag: + {formatEuro(10)}. Minimaal 6 maanden, daarna 1 maand opzegtermijn.
+          </div>
+        ) : (
         <div className="mt-4 rounded-xl bg-muted p-4 text-sm text-moss/80">
           Platform {formatEuro(CONTRACT_DEFAULTS.platformFee)} + {seats} ×{" "}
           {formatEuro(CONTRACT_DEFAULTS.seatFee)} + {quota} ×{" "}
@@ -181,6 +235,7 @@ function CompanyContract({ companyId }: { companyId: string }) {
           Extra producten in dezelfde toewijzing: +{" "}
           {formatEuro(CONTRACT_DEFAULTS.extraProductPrice)} per product.
         </div>
+        )}
         <Button className="mt-4" onClick={() => save.mutate()} disabled={save.isPending}>
           Contractversie opslaan
         </Button>
