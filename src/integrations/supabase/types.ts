@@ -1120,6 +1120,63 @@ export type Database = {
           },
         ]
       }
+      lead_appointments: {
+        Row: {
+          category: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          note: string | null
+          purchase_id: string
+          scheduled_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          note?: string | null
+          purchase_id: string
+          scheduled_at: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          note?: string | null
+          purchase_id?: string
+          scheduled_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_appointments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_appointments_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "lead_purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_bundles: {
         Row: {
           company_id: string
@@ -1234,6 +1291,7 @@ export type Database = {
           opened_at: string | null
           price_ex_vat: number
           primary_product: string | null
+          priority: string
           products: string[]
           purchased_by: string | null
           response_score: number
@@ -1264,6 +1322,7 @@ export type Database = {
           opened_at?: string | null
           price_ex_vat?: number
           primary_product?: string | null
+          priority?: string
           products?: string[]
           purchased_by?: string | null
           response_score?: number
@@ -1294,6 +1353,7 @@ export type Database = {
           opened_at?: string | null
           price_ex_vat?: number
           primary_product?: string | null
+          priority?: string
           products?: string[]
           purchased_by?: string | null
           response_score?: number
