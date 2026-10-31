@@ -30,10 +30,10 @@ export const getAgenda = createServerFn({ method: "GET" })
       const l = (p.lead ?? {}) as Record<string, unknown>;
       return {
         purchaseId: p.id,
-        name: `${l.first_name ?? ""} ${l.last_name ?? ""}`.trim(),
-        phone: (l.phone as string) ?? "",
-        email: (l.email as string) ?? "",
-        address: `${l.postcode ?? ""} ${l.house_number ?? ""} ${l.city ?? ""}`.trim(),
+        name: `${l["first_name"] ?? ""} ${l["last_name"] ?? ""}`.trim(),
+        phone: (l["phone"] as string) ?? "",
+        email: (l["email"] as string) ?? "",
+        address: `${l["postcode"] ?? ""} ${l["house_number"] ?? ""} ${l["city"] ?? ""}`.trim(),
         priority: (p.priority ?? "normal") as (typeof PRIORITIES)[number],
         createdAt: p.created_at,
       };
