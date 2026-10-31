@@ -21,6 +21,7 @@ import {
 import { CountUp } from "./CountUp";
 import { buildOfferteHref, buildResultHref } from "./offerte-params";
 import { EnergyProfileForm } from "./EnergyProfileForm";
+import { EnergyBillUpload, applyBillToProfile } from "./EnergyBillUpload";
 import {
   DEFAULT_PROFILE,
   calculateScenario,
@@ -128,6 +129,9 @@ export function CategoryPanel({
                   onChange={(v) => onChange({ contract: { ...inputs.contract, ...v } })}
                 />
               )}
+              <EnergyBillUpload
+                onRead={(d) => onChange({ profile: applyBillToProfile(inputs.profile, d) })}
+              />
               <EnergyProfileForm
                 category={openId ?? undefined}
                 value={inputs.profile}

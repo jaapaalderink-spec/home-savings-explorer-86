@@ -13,6 +13,7 @@ import { CATEGORY_LABEL } from "@/lib/lead-pricing";
 import { formatEuro } from "@/lib/home-savings";
 import { calculateScenario, profileFromSearch } from "@/lib/home-savings/scenario";
 import { FullEnergyProfileForm } from "@/components/home-savings/EnergyProfileForm";
+import { EnergyBillUpload, applyBillToProfile } from "@/components/home-savings/EnergyBillUpload";
 
 export const Route = createFileRoute("/offerte")({
   head: () => ({
@@ -257,6 +258,22 @@ function OffertePage() {
             {step === 1 && (
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
+                  <EnergyBillUpload
+                    onRead={(d) => {
+                      setProfile((p) => applyBillToProfile(p, d));
+                      setForm((f) => ({
+                        ...f,
+                        annualConsumptionKwh: d.consumptionKwh ?? f.annualConsumptionKwh,
+                        annualFeedInKwh: d.feedInKwh ?? f.annualFeedInKwh,
+                        contractType: d.contractType ?? f.contractType,
+                        postcode: d.postcode?.slice(0, 7) || f.postcode,
+                        houseNumber: d.houseNumber?.slice(0, 10) || f.houseNumber,
+                        city: d.city?.slice(0, 80) || f.city,
+                        firstName: d.firstName?.slice(0, 80) || f.firstName,
+                        lastName: d.lastName?.slice(0, 80) || f.lastName,
+                      }));
+                    }}
+                  />
                   <FullEnergyProfileForm value={profile} onChange={setProfile} />
                   <div className="mt-4 space-y-2 text-sm">
                     <p>
