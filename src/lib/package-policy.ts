@@ -15,6 +15,9 @@ export const PACKAGES: Record<PackageCode, { label: string; leads: number; inclu
   team: { label: "Team", leads: 50, includedSeats: 3 },
 };
 
+/** Pakketten die nog nieuw gekozen kunnen worden; Start blijft alleen voor bestaande contracten. */
+export const SELECTABLE_PACKAGES: PackageCode[] = ["groei", "team"];
+
 /** Volledig maandelijks pakketbedrag: platform + alle leadplaatsen tegen basisprijs. */
 export function packageFee(code: PackageCode) {
   return PACKAGE_PLATFORM_FEE + PACKAGES[code].leads * PACKAGE_LEAD_PRICE;

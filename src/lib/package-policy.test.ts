@@ -34,7 +34,7 @@ describe("vervroegd stoppen", () => {
   });
 });
 
-import { BUNDLES, earliestStopMonth } from "./package-policy";
+import { BUNDLES, SELECTABLE_PACKAGES, earliestStopMonth } from "./package-policy";
 describe("bundels en opzegtermijn", () => {
   it("bundelprijzen 3×€25, 5×€24, 10×€22,50", () => {
     expect([3 * BUNDLES[3], 5 * BUNDLES[5], 10 * BUNDLES[10]]).toEqual([75, 120, 225]);
@@ -44,5 +44,11 @@ describe("bundels en opzegtermijn", () => {
   });
   it("opzeggen in december: laatste maand januari volgend jaar", () => {
     expect(earliestStopMonth("2026-12-15")).toBe("2027-01-01");
+  });
+});
+
+describe("pakketkeuze", () => {
+  it("Start is niet meer te kiezen voor nieuwe contracten", () => {
+    expect(SELECTABLE_PACKAGES).toEqual(["groei", "team"]);
   });
 });

@@ -81,18 +81,18 @@ function companyAreaOf(a: {
   };
 }
 
-async function loadTerms(db: Db, companyId: string): Promise<CostTerms & { contract: boolean }> {
+async function loadTerms(db: Db, companyId: string): Promise<CostTerms & { contract: boolean; packageQuota: number | null }> {
   const today = new Date().toISOString().slice(0, 10);
   const { data } = await db
     .from("subscription_versions")
-    .select("platform_fee_ex_vat, seat_fee_ex_vat, paid_seats, base_lead_price_ex_vat, extra_product_price_ex_vat")
+    .select("platform_fee_ex_vat, seat_fee_ex_vat, paid_seats, base_lead_price_ex_vat, extra_product_price_ex_vat, package_code, lead_quota_per_month")
     .eq("company_id", companyId)
     .lte("valid_from", today)
     .order("valid_from", { ascending: false })
     .order("version", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (!data) return { ...DEFAULT_TERMS, paidSeats: 0, contract: false };
+  if (!data) return { ...DEFAULT_TERMS, paidSeats: 0, contract: false, packageQuota: null };
   return {
     platformFee: Number(data.platform_fee_ex_vat),
     seatFee: Number(data.seat_fee_ex_vat),
@@ -100,6 +100,7 @@ async function loadTerms(db: Db, companyId: string): Promise<CostTerms & { contr
     baseLeadPrice: Number(data.base_lead_price_ex_vat),
     extraProductPrice: Number(data.extra_product_price_ex_vat),
     contract: true,
+    packageQuota: data.package_code ? data.lead_quota_per_month : null,
   };
 }
 

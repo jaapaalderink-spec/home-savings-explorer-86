@@ -11,7 +11,7 @@ import {
 } from "@/lib/contracts.functions";
 import { CONTRACT_DEFAULTS, contractMonthlyEstimate } from "@/lib/contract-policy";
 import { formatEuro } from "@/lib/home-savings";
-import { PACKAGES, fixedMonthlyCost, packageFee, type BillingMode, type PackageCode } from "@/lib/package-policy";
+import { PACKAGES, SELECTABLE_PACKAGES, fixedMonthlyCost, packageFee, type BillingMode, type PackageCode } from "@/lib/package-policy";
 
 const panel = { boxShadow: "var(--shadow-panel)" };
 const fmt = (d: string) =>
@@ -152,7 +152,7 @@ function CompanyContract({ companyId }: { companyId: string }) {
               className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
             >
               <option value="">Geen pakket (maatwerk aantal)</option>
-              {(Object.keys(PACKAGES) as PackageCode[]).map((k) => (
+              {SELECTABLE_PACKAGES.map((k) => (
                 <option key={k} value={k}>
                   {PACKAGES[k].label} — {PACKAGES[k].leads} leads, {PACKAGES[k].includedSeats} extra plek(ken) inbegrepen
                 </option>
