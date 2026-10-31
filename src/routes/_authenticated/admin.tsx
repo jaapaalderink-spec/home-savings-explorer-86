@@ -154,6 +154,7 @@ function AdminPage() {
         {tab === "staff" && <PlatformTeam />}
         {tab === "coverage" && <ProductCoverage />}
         {tab === "contracts" && <ContractsAdmin />}
+        {tab === "partners" && <PartnerAccounts />}
         {tab === "queue" && <AllocationQueue />}
         {tab === "settings" && <CalculatorSettings />}
         {tab === "preview" && <CompanyPreview />}
