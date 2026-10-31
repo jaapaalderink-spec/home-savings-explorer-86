@@ -48,7 +48,7 @@ describe("bundels en opzegtermijn", () => {
 });
 
 describe("pakketkeuze", () => {
-  it("Start is niet meer te kiezen voor nieuwe contracten", () => {
-    expect(SELECTABLE_PACKAGES).toEqual(["groei", "team"]);
+  it("Start, Groei en Team zijn allemaal te kiezen voor nieuwe contracten", () => {
+    expect(SELECTABLE_PACKAGES).toEqual(["start", "groei", "team"]);
   });
 });
