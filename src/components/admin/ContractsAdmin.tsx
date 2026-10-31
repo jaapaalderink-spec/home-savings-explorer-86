@@ -12,6 +12,7 @@ import {
 import { CONTRACT_DEFAULTS, contractMonthlyEstimate } from "@/lib/contract-policy";
 import { formatEuro } from "@/lib/home-savings";
 import { PACKAGES, SELECTABLE_PACKAGES, fixedMonthlyCost, packageFee, type BillingMode, type PackageCode } from "@/lib/package-policy";
+import { CustomPricingFields, defaultPricing, pricingPayload, type PricingState } from "@/components/admin/CustomPricingFields";
 
 const panel = { boxShadow: "var(--shadow-panel)" };
 const fmt = (d: string) =>
@@ -66,6 +67,7 @@ function CompanyContract({ companyId }: { companyId: string }) {
   const [note, setNote] = useState("");
   const [pkg, setPkg] = useState<PackageCode | "">("");
   const [mode, setMode] = useState<BillingMode>("actual_delivered");
+  const [pricing, setPricing] = useState<PricingState>(defaultPricing);
   const save = useMutation({
     mutationFn: () =>
       createContractVersion({
@@ -76,6 +78,7 @@ function CompanyContract({ companyId }: { companyId: string }) {
           paidSeats: seats,
           ...(note ? { note } : {}),
           ...(pkg ? { packageCode: pkg, billingMode: mode } : {}),
+          ...pricingPayload(pricing),
         },
       }),
     onSuccess: () => {
@@ -214,8 +217,9 @@ function CompanyContract({ companyId }: { companyId: string }) {
             </select>
           </div>
         </div>
+        <CustomPricingFields value={pricing} onChange={setPricing} />
         <div className="mt-3 space-y-1.5">
-          <Label htmlFor="c-note">Notitie (optioneel)</Label>
+          <Label htmlFor="c-note">Notitie {pricing.enabled ? "(verplicht bij maatwerk)" : "(optioneel)"}</Label>
           <Input id="c-note" value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
         {pkg ? (
