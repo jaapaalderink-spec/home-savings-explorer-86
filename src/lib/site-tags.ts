@@ -18,7 +18,7 @@ export function normalizeTag(key: keyof SiteTags, raw: string): string | null {
   if (!v) return null;
   if (key === "search_console_token") {
     const m = v.match(/content=["']([^"']+)["']/);
-    if (m) v = m[1];
+    if (m?.[1]) v = m[1];
   } else {
     v = v.toUpperCase();
   }
