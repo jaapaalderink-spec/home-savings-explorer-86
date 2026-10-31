@@ -1,6 +1,6 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDown, MapPin, Phone } from "lucide-react";
+import { Download, MapPin, Phone } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { getAgenda } from "@/lib/agenda.functions";
@@ -82,7 +82,7 @@ export function Agenda({ onOpenLeads }: { onOpenLeads: () => void }) {
                   {a.priority !== "normal" && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${PRIORITY_CLASS[a.priority]}`}>{PRIORITY_LABEL[a.priority]}</span>}
                   <span className="ml-auto flex gap-2">
                     <a href={`tel:${a.phone}`} className="inline-flex items-center gap-1 text-xs font-semibold text-leaf"><Phone size={12} />Bellen</a>
-                    <Button size="sm" variant="ghost" onClick={() => downloadIcs(a)}><CalendarDown size={14} className="mr-1" />In mijn agenda</Button>
+                    <Button size="sm" variant="ghost" onClick={() => downloadIcs(a)}><Download size={14} className="mr-1" />In mijn agenda</Button>
                   </span>
                 </li>
               ))}
