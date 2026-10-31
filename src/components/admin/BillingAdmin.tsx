@@ -12,6 +12,8 @@ import {
 } from "@/lib/partner.functions";
 import { formatEuro } from "@/lib/home-savings";
 import { printInvoice } from "@/lib/invoice-print";
+import { markInvoicePaid, sendInvoiceReminder } from "@/lib/dunning.functions";
+import { invoiceAge } from "@/lib/dunning-policy";
 import { lastClosedBillingMonth, isBillingMonthClosed } from "@/lib/billing-period";
 import { PAYMENT_STATUS_LABEL, type PaymentStatus } from "@/lib/payments-policy";
 import {
@@ -71,6 +73,18 @@ export function BillingAdmin() {
   const complaints = useQuery({ queryKey: ["complaints"], queryFn: () => listComplaints() });
   const invoices = useQuery({ queryKey: ["invoices"], queryFn: () => listInvoices() });
   const creditNotes = useQuery({ queryKey: ["credit-notes"], queryFn: () => listCreditNotes() });
+
+  const todayIso = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Amsterdam" }).format(new Date());
+  const remind = useMutation({
+    mutationFn: (invoiceId: string) => sendInvoiceReminder({ data: { invoiceId } }),
+    onSuccess: (r) => { toast.success(`Herinnering verstuurd naar ${r.to}`); queryClient.invalidateQueries({ queryKey: ["invoices"] }); },
+    onError: (e) => toast.error((e as Error).message),
+  });
+  const markPaid = useMutation({
+    mutationFn: (invoiceId: string) => markInvoicePaid({ data: { invoiceId } }),
+    onSuccess: () => { toast.success("Factuur afgeboekt als voldaan"); queryClient.invalidateQueries({ queryKey: ["invoices"] }); },
+    onError: (e) => toast.error((e as Error).message),
+  });
 
   const review = useMutation({
     mutationFn: (input: { complaintId: string; approve: boolean }) =>
@@ -238,6 +252,7 @@ export function BillingAdmin() {
                   <th className="p-2">Incl. btw</th>
                   <th className="p-2">Status</th>
                   <th className="p-2">Betaling</th>
+                  <th className="p-2">Onbetaald</th>
                   <th className="p-2"></th>
                 </tr>
               </thead>
@@ -247,6 +262,11 @@ export function BillingAdmin() {
                     <td className="p-2 font-semibold text-ink">{i.invoice_number as string}</td>
                     <td className="p-2 text-moss/80">
                       {(i.company as { name?: string } | null)?.name ?? "—"}
+                      {(i.company as { payment_suspended_at?: string | null } | null)?.payment_suspended_at && (
+                        <span className="mt-1 block w-fit rounded bg-destructive/15 px-1.5 py-0.5 text-[11px] font-semibold text-destructive">
+                          Gepauzeerd (openstaande facturen)
+                        </span>
+                      )}
                     </td>
                     <td className="p-2 text-xs text-moss/70">
                       {new Date(i.period_start as string).toLocaleDateString("nl-NL")} –{" "}
@@ -294,11 +314,54 @@ export function BillingAdmin() {
                         );
                       })()}
                     </td>
-                    <td className="p-2">
-                      <Button size="sm" variant="outline" onClick={() => printInvoice(i as Record<string, unknown>)}>
-                        Download
-                      </Button>
-                    </td>
+                    {(() => {
+                      const paid = isPaid(i);
+                      const age = invoiceAge(i.created_at as string, i.due_date as string, todayIso, paid);
+                      const tone = paid ? "text-leaf" : age.daysOverdue >= 14 ? "text-destructive font-semibold" : age.daysOverdue > 0 ? "text-accent-foreground font-semibold" : "text-moss/80";
+                      return (
+                        <>
+                          <td className={`p-2 text-xs ${tone}`}>
+                            {paid
+                              ? `Betaald${i.paid_at ? ` op ${new Date(i.paid_at as string).toLocaleDateString("nl-NL")}` : ""}`
+                              : `${age.daysOpen} dagen open${age.daysOverdue > 0 ? ` · ${age.daysOverdue} dagen vervallen` : ""}`}
+                            {i.reminder_sent_at && (
+                              <span className="block text-[11px] font-normal text-moss/60">
+                                Herinnering{Number(i.reminder_count ?? 0) > 1 ? ` (${i.reminder_count}×)` : ""} verstuurd op {new Date(i.reminder_sent_at as string).toLocaleDateString("nl-NL")}
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-2">
+                            <div className="flex flex-col gap-1">
+                              <Button size="sm" variant="outline" onClick={() => printInvoice(i as Record<string, unknown>)}>
+                                Download
+                              </Button>
+                              {!paid && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={!age.reminderAllowed || remind.isPending}
+                                  title={age.reminderAllowed ? undefined : "Kan pas na 14 dagen onbetaald"}
+                                  onClick={() => remind.mutate(i.id as string)}
+                                >
+                                  Herinnering versturen
+                                </Button>
+                              )}
+                              {!paid && (
+                                <Button
+                                  size="sm"
+                                  disabled={markPaid.isPending}
+                                  onClick={() => {
+                                    if (confirm(`Factuur ${i.invoice_number} afboeken als voldaan (bankoverschrijving)?`)) markPaid.mutate(i.id as string);
+                                  }}
+                                >
+                                  Markeer als voldaan
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </>
+                      );
+                    })()}
                   </tr>
                 ))}
               </tbody>

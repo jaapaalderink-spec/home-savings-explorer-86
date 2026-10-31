@@ -3,6 +3,7 @@ import { template as leadOntvangen } from './lead-ontvangen'
 import { template as leadGekoppeld } from './lead-gekoppeld'
 import { template as nieuweLead } from './nieuwe-lead'
 import { template as factuurKlaar } from './factuur-klaar'
+import { template as factuurHerinnering } from './factuur-herinnering'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -22,4 +23,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'lead-gekoppeld': leadGekoppeld,
   'nieuwe-lead': nieuweLead,
   'factuur-klaar': factuurKlaar,
+  'factuur-herinnering': factuurHerinnering,
 }

@@ -169,6 +169,13 @@
       "when": 1793475057392,
       "tag": "0023_partner_approval_custom_pricing_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793477721313,
+      "tag": "0024_invoice_dunning_suspension",
+      "breakpoints": true
     }
   ]
 }

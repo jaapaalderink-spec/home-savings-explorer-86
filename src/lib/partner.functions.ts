@@ -683,7 +683,7 @@ export const listInvoices = createServerFn({ method: "GET" })
     let query = db
       .from("invoices")
       .select(
-        "id, invoice_number, period_start, period_end, subtotal_ex_vat, vat_amount, total_inc_vat, credit_applied_inc_vat, amount_due_inc_vat, status, due_date, paid_at, payment_status, last_payment_attempt_at, payment_review_required, credit_notes:credit_notes!credit_notes_original_invoice_id_fkey(credit_number, total_inc_vat, status), company:companies(name, address, vat_number), lines:invoice_lines(description, quantity, unit_price_ex_vat, amount_ex_vat), payments:payments!payments_invoice_id_fkey(provider_payment_id, status, amount, paid_at, created_at)",
+        "id, invoice_number, created_at, reminder_sent_at, reminder_count, period_start, period_end, subtotal_ex_vat, vat_amount, total_inc_vat, credit_applied_inc_vat, amount_due_inc_vat, status, due_date, paid_at, payment_status, last_payment_attempt_at, payment_review_required, credit_notes:credit_notes!credit_notes_original_invoice_id_fkey(credit_number, total_inc_vat, status), company:companies(name, address, vat_number, payment_suspended_at), lines:invoice_lines(description, quantity, unit_price_ex_vat, amount_ex_vat), payments:payments!payments_invoice_id_fkey(provider_payment_id, status, amount, paid_at, created_at)",
       )
       .order("period_start", { ascending: false });
 
@@ -692,6 +692,9 @@ export const listInvoices = createServerFn({ method: "GET" })
       const { partnerAccess } = await import("@/lib/partner-access.server");
       if (!(await partnerAccess(context.userId)).teamRead) throw new Error("Alleen de eigenaar ziet bedrijfsfacturen.");
       query = query.eq("company_id", profile.company_id);
+      await db.rpc("sync_company_payment_suspension", { p_company_id: profile.company_id });
+    } else {
+      await db.rpc("sync_all_payment_suspensions");
     }
 
     const { data, error } = await query;
