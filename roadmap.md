@@ -35,3 +35,9 @@
 - [ ] Admin-testbeheer, dry-run en hervatbare cleanup bouwen; nu geen cleanup uitvoeren
 - [ ] Gerichte regressietests, ingelogde controles en korte handleiding; echte providercontrole alleen met testcredentials
   - [x] 194 lokale unit tests geslaagd, integratietests uitgesloten; geen provider- of opruimacties uitgevoerd
+
+## Pakketten, bundels en contractduur (31 oktober 2026)
+- [x] Pakketten Start/Groei/Team + facturatiemodus per bedrijf (werkelijke levering / vast pakketbedrag) in contractversie en maandfactuur
+- [x] Afkoopberekening vroeg stoppen volgens modus (€99 of volledig pakketbedrag × resterende maanden), met tests
+- [ ] Eenmalige leadbundels (3/5/10) kopen en verdelen
+- [ ] Opzegwizard in partnerportaal (preview, bevestigen, intrekken) en afkoopfactuur
