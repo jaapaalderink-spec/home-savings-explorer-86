@@ -9,9 +9,9 @@ export const LEAD_TYPE_PRICE: Record<"shared_2" | "shared_4", number> = {
 };
 
 /**
- * Proefperiode: de eerste N leads die een bedrijf ooit toegewezen krijgt zijn
- * gratis. Levenslang, niet per maand. De database is hierin gezaghebbend
- * (`public.trial_lead_allowance()`); deze constante is alleen voor weergave.
+ * DEPRECATED: het gratis startaanbod (eerste 10 leads gratis) is stopgezet;
+ * `public.trial_lead_allowance()` geeft 0 terug. Alleen behouden voor
+ * bestaande proeflead-historie (is_trial-regels).
  */
 export const TRIAL_LEAD_ALLOWANCE = 10;
 

@@ -17,7 +17,7 @@ import { AdminOverview } from "@/components/dashboard/AdminOverview";
 import { MyPerformance } from "@/components/dashboard/MyPerformance";
 import { CrmStats } from "@/components/dashboard/CrmStats";
 import { SubscriptionPanel } from "@/components/dashboard/SubscriptionPanel";
-import { TRIAL_LEAD_ALLOWANCE, planByName } from "@/lib/lead-pricing";
+import { planByName } from "@/lib/lead-pricing";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -71,9 +71,6 @@ function DashboardPage() {
   const limit = data?.limit ?? 0;
   const used = data?.usedThisMonth ?? 0;
   const remaining = Math.max(limit - used, 0);
-  const trialUsed = data?.trialUsed ?? 0;
-  const trialRemaining = data?.trialRemaining ?? 0;
-  const trialActive = data?.trialActive ?? false;
 
   const tabs: Array<{ id: TabId; label: string; icon: typeof Inbox; show: boolean }> = [
     { id: "leads", label: "Mijn leads", icon: Inbox, show: true },
@@ -151,15 +148,6 @@ function DashboardPage() {
                   className="mt-2 h-2"
                 />
                 <p className="mt-1.5 text-xs text-moss/70">Nog {remaining} leads beschikbaar</p>
-                {trialActive ? (
-                  <p className="mt-2 border-t border-moss/10 pt-2 text-xs font-semibold text-leaf">
-                    Startaanbod: nog {trialRemaining} van {TRIAL_LEAD_ALLOWANCE} gratis leads
-                  </p>
-                ) : (
-                  <p className="mt-2 border-t border-moss/10 pt-2 text-xs text-moss/60">
-                    Startaanbod gebruikt ({trialUsed} gratis leads)
-                  </p>
-                )}
               </div>
             </div>
 
