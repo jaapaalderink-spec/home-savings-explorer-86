@@ -134,6 +134,13 @@ function DashboardPage() {
           </div>
         ) : (
           <>
+            {data.company.payment_suspended_at && (
+              <div className="mb-4 rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-ink">
+                Je account is tijdelijk gepauzeerd wegens 2 of meer openstaande facturen. Je ontvangt geen nieuwe aanvragen.
+                Voldoe de openstaande facturen om direct weer aanvragen te ontvangen.{" "}
+                <a href="/facturen" className="font-semibold underline">Naar facturen</a>
+              </div>
+            )}
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">
