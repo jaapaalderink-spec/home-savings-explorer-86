@@ -23,12 +23,12 @@ export type ContractInput = {
   validFrom: string;
   leadQuotaPerMonth: number;
   paidSeats: number;
-  note?: string;
-  packageCode?: PackageCode;
+  note?: string | undefined;
+  packageCode?: PackageCode | undefined;
   billingMode: BillingMode;
-  customPrices?: CustomPrices;
-  reviewDate?: string;
-  reviewNote?: string;
+  customPrices?: CustomPrices | undefined;
+  reviewDate?: string | undefined;
+  reviewNote?: string | undefined;
 };
 
 type Db = Awaited<ReturnType<typeof import("@/lib/partner-util").adminDb>>;
