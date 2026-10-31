@@ -269,6 +269,8 @@ export type Database = {
           address: string | null
           billing_email: string | null
           categories: string[]
+          contact_email: string | null
+          contact_phone: string | null
           created_at: string
           id: string
           join_code: string
@@ -278,12 +280,15 @@ export type Database = {
           plan_name: string
           updated_at: string
           vat_number: string | null
+          website: string | null
         }
         Insert: {
           active?: boolean
           address?: string | null
           billing_email?: string | null
           categories?: string[]
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
           id?: string
           join_code?: string
@@ -293,12 +298,15 @@ export type Database = {
           plan_name?: string
           updated_at?: string
           vat_number?: string | null
+          website?: string | null
         }
         Update: {
           active?: boolean
           address?: string | null
           billing_email?: string | null
           categories?: string[]
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
           id?: string
           join_code?: string
@@ -308,6 +316,7 @@ export type Database = {
           plan_name?: string
           updated_at?: string
           vat_number?: string | null
+          website?: string | null
         }
         Relationships: []
       }
