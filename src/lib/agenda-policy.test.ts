@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { followUpReason, byPriorityThenAge, type FollowUpInput } from "./agenda-policy";
+import { followUpReason, byPriorityThenAge, effectivePriority, workingHoursBetween, type FollowUpInput } from "./agenda-policy";
 
 const now = new Date("2026-11-10T12:00:00Z");
 const base: FollowUpInput = {
@@ -23,4 +23,18 @@ describe("followUpReason", () => {
 it("high priority sorts first", () => {
   const list = [{ priority: "low" as const, createdAt: "1" }, { priority: "high" as const, createdAt: "2" }];
   expect(list.sort(byPriorityThenAge)[0]!.priority).toBe("high");
+});
+
+describe("48 werkuren escalatie", () => {
+  const lead = { priority: "low" as const, status: "new", closed: false, hasPlannedAppointment: false };
+  it("weekend telt niet mee: do 11:00 → ma 11:00 is precies 48u", () =>
+    expect(workingHoursBetween(new Date("2026-11-05T10:00:00Z"), new Date("2026-11-09T10:00:00Z"))).toBe(48));
+  it("vrijdag 15:00 is maandag 15:00 nog niet verhoogd", () =>
+    expect(effectivePriority({ ...lead, createdAt: "2026-11-06T14:00:00Z" }, new Date("2026-11-09T14:00:00Z")).escalated).toBe(false));
+  it("na 48 werkuren zonder contact wordt ook Laag naar Hoog gezet", () =>
+    expect(effectivePriority({ ...lead, createdAt: "2026-11-06T14:00:00Z" }, new Date("2026-11-10T14:00:00Z"))).toEqual({ priority: "high", escalated: true }));
+  it("gebeld lead wordt niet verhoogd", () =>
+    expect(effectivePriority({ ...lead, status: "contacted", createdAt: "2026-11-02T08:00:00Z" }, new Date("2026-11-10T14:00:00Z")).escalated).toBe(false));
+  it("geplande afspraak voorkomt verhoging", () =>
+    expect(effectivePriority({ ...lead, hasPlannedAppointment: true, createdAt: "2026-11-02T08:00:00Z" }, new Date("2026-11-10T14:00:00Z")).escalated).toBe(false));
 });

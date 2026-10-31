@@ -25,8 +25,9 @@ export type FollowUpInput = {
   appointments: Array<{ scheduledAt: string; status: "planned" | "done" | "cancelled" }>;
 };
 
-export type FollowUpReason = "appointment_overdue" | "follow_up_due" | "not_contacted" | "stale";
+export type FollowUpReason = "escalated" | "appointment_overdue" | "follow_up_due" | "not_contacted" | "stale";
 export const REASON_LABEL: Record<FollowUpReason, string> = {
+  escalated: "Urgent: na 48 werkuren nog niet gebeld",
   appointment_overdue: "Afspraak geweest — uitkomst vastleggen",
   follow_up_due: "Vervolgdatum bereikt",
   not_contacted: "Nog niet gebeld",
@@ -49,4 +50,28 @@ export function followUpReason(i: FollowUpInput, now: Date): FollowUpReason | nu
 
 export function byPriorityThenAge<T extends { priority: Priority; createdAt: string }>(a: T, b: T) {
   return PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] || a.createdAt.localeCompare(b.createdAt);
+}
+
+/** Na zoveel werkuren (ma–vr, Europe/Amsterdam) zonder contact wordt een lead automatisch Hoog. */
+export const ESCALATE_WORK_HOURS = 48;
+const weekdayFmt = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Amsterdam", weekday: "short" });
+const isWeekend = (d: Date) => { const w = weekdayFmt.format(d); return w === "Sat" || w === "Sun"; };
+
+/** Verstreken uren tussen from en to, waarbij zaterdag en zondag (Amsterdamse tijd) niet meetellen. */
+export function workingHoursBetween(from: Date, to: Date): number {
+  const step = 15 * 60000; // kwartierresolutie
+  let ms = 0;
+  for (let t = from.getTime(); t < to.getTime(); t += step) {
+    const slice = Math.min(step, to.getTime() - t);
+    if (!isWeekend(new Date(t))) ms += slice;
+    if (ms >= 1000 * 3600 * 24 * 30) break;
+  }
+  return ms / 3600000;
+}
+
+/** Nog geen contact (status Nieuw, niets gepland) en ≥ 48 werkuren oud → Hoog, ook als handmatig lager gezet. */
+export function effectivePriority(i: { priority: Priority; status: string; closed: boolean; createdAt: string; hasPlannedAppointment: boolean }, now: Date): { priority: Priority; escalated: boolean } {
+  if (!i.closed && i.status === "new" && !i.hasPlannedAppointment && i.priority !== "high"
+    && workingHoursBetween(new Date(i.createdAt), now) >= ESCALATE_WORK_HOURS) return { priority: "high", escalated: true };
+  return { priority: i.priority, escalated: false };
 }
