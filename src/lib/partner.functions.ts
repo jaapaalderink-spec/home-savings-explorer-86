@@ -683,7 +683,7 @@ export const listInvoices = createServerFn({ method: "GET" })
     let query = db
       .from("invoices")
       .select(
-        "id, invoice_number, period_start, period_end, subtotal_ex_vat, vat_amount, total_inc_vat, credit_applied_inc_vat, amount_due_inc_vat, status, due_date, paid_at, payment_status, last_payment_attempt_at, payment_review_required, credit_notes:credit_notes!credit_notes_original_invoice_id_fkey(credit_number, total_inc_vat, status), company:companies(name), lines:invoice_lines(description, quantity, unit_price_ex_vat, amount_ex_vat), payments:payments!payments_invoice_id_fkey(provider_payment_id, status, amount, paid_at, created_at)",
+        "id, invoice_number, period_start, period_end, subtotal_ex_vat, vat_amount, total_inc_vat, credit_applied_inc_vat, amount_due_inc_vat, status, due_date, paid_at, payment_status, last_payment_attempt_at, payment_review_required, credit_notes:credit_notes!credit_notes_original_invoice_id_fkey(credit_number, total_inc_vat, status), company:companies(name, address, vat_number), lines:invoice_lines(description, quantity, unit_price_ex_vat, amount_ex_vat), payments:payments!payments_invoice_id_fkey(provider_payment_id, status, amount, paid_at, created_at)",
       )
       .order("period_start", { ascending: false });
 
@@ -721,7 +721,13 @@ export const generateInvoices = createServerFn({ method: "POST" })
         p_company: company.id, p_year: data.year, p_month: data.month,
       });
       if (invoiceError) throw new Error(`Maandafsluiting onderbroken na ${created} nieuwe facturen. Probeer opnieuw; bestaande facturen worden niet dubbel gemaakt.`);
-      if (result?.[0]?.created) created += 1;
+      if (result?.[0]?.created) {
+        created += 1;
+        if (result[0].invoice_id) {
+          const { sendInvoiceReadyEmail } = await import("@/lib/lead-emails.server");
+          await sendInvoiceReadyEmail(result[0].invoice_id);
+        }
+      }
     }
     return { ok: true, created };
   });
