@@ -39,5 +39,6 @@
 ## Pakketten, bundels en contractduur (31 oktober 2026)
 - [x] Pakketten Start/Groei/Team + facturatiemodus per bedrijf (werkelijke levering / vast pakketbedrag) in contractversie en maandfactuur
 - [x] Afkoopberekening vroeg stoppen volgens modus (€99 of volledig pakketbedrag × resterende maanden), met tests
-- [ ] Eenmalige leadbundels (3/5/10) kopen en verdelen
-- [ ] Opzegwizard in partnerportaal (preview, bevestigen, intrekken) en afkoopfactuur
+- [x] Eenmalige leadbundels (3/5/10) kopen en verdelen (pas na pakketquotum, één quotabron per aanvraag)
+- [x] Opzegwizard in partnerportaal (preview, bevestigen, intrekken) en afkoopregel op laatste maandfactuur
+- [ ] Ingelogde controle van tab Abonnement en een testmaandfactuur in pakketmodus
