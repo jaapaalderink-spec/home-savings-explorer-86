@@ -4,8 +4,6 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { adminDb } from "@/lib/partner-util";
 import { nextMonthStart } from "@/lib/team-policy";
-import { CONTRACT_DEFAULTS } from "@/lib/contract-policy";
-import { MIN_TERM_MONTHS, NOTICE_MONTHS, PACKAGES, PACKAGE_EXTRA_PRODUCT_PRICE, PACKAGE_LEAD_PRICE, PACKAGE_PLATFORM_FEE, SEAT_FEE, packageFee } from "@/lib/package-policy";
 
 async function assertAdmin(userId: string, claims: { aal?: unknown }) {
   const db = await adminDb();
