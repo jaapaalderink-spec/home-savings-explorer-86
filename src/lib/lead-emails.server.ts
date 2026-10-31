@@ -11,7 +11,7 @@ const categoryLabels = (cats: string[]) =>
   cats.map((c) => CATEGORY_LABEL[c] ?? c).join(", ");
 
 const dashboardUrl = () =>
-  `${process.env.VITE_APP_URL ?? "https://onafhankelijke-offerte.nl"}/dashboard`;
+  `${process.env["VITE_APP_URL"] ?? "https://onafhankelijke-offerte.nl"}/dashboard`;
 
 /** Bevestiging aan de particulier zodra de aanvraag (na telefoonverificatie) binnen is. */
 export async function sendLeadReceivedEmail(leadId: string): Promise<void> {

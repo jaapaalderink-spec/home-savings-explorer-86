@@ -41,7 +41,7 @@ const Email = ({ companyName, categories, city, postcode, dashboardUrl }: Props)
 export const template = {
   component: Email,
   subject: (data: Record<string, any>) =>
-    `Nieuwe aanvraag${data.categories ? `: ${data.categories}` : ''}${data.city ? ` in ${data.city}` : ''}`,
+    `Nieuwe aanvraag${data['categories'] ? `: ${data['categories']}` : ''}${data['city'] ? ` in ${data['city']}` : ''}`,
   displayName: 'Nieuwe lead (installateur)',
   previewData: {
     companyName: 'Zon & Duurzaam BV',

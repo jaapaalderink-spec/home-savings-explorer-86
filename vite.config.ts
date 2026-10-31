@@ -11,7 +11,7 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 // Load all env vars into process.env for server routes only (client code keeps
 // using the VITE_-prefixed injection from the shared config). Never expose
 // these keys through `define` — that would leak secrets into the client bundle.
-const serverEnv = loadEnv(process.env.NODE_ENV ?? "development", process.cwd(), "");
+const serverEnv = loadEnv(process.env["NODE_ENV"] ?? "development", process.cwd(), "");
 Object.assign(process.env, serverEnv);
 
 const rootDir = fileURLToPath(new URL(".", import.meta.url));
