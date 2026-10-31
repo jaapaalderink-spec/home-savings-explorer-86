@@ -12,6 +12,20 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { getSiteTags } from "@/lib/site-tags.functions";
+import { gtagBootstrap, gtmBootstrap, type SiteTags } from "@/lib/site-tags";
+
+function siteTagScripts(t: SiteTags | undefined) {
+  if (!t) return [];
+  const out: Array<{ src?: string; async?: boolean; children?: string }> = [];
+  if (t.gtm_container_id) out.push({ children: gtmBootstrap(t.gtm_container_id) });
+  const gtagIds = [t.ga_measurement_id, t.ads_conversion_id].filter((x): x is string => !!x);
+  if (gtagIds.length) {
+    out.push({ src: `https://www.googletagmanager.com/gtag/js?id=${gtagIds[0]}`, async: true });
+    out.push({ children: gtagBootstrap(gtagIds) });
+  }
+  return out;
+}
 
 function NotFoundComponent() {
   return (
@@ -74,7 +88,9 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
+  loader: () => getSiteTags(),
+  staleTime: 5 * 60_000,
+  head: ({ loaderData }) => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
@@ -86,7 +102,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
+      ...(loaderData?.search_console_token
+        ? [{ name: "google-site-verification", content: loaderData.search_console_token }]
+        : []),
     ],
+    scripts: siteTagScripts(loaderData),
     links: [
       {
         rel: "stylesheet",
