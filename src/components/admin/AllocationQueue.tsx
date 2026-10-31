@@ -105,16 +105,43 @@ export function AllocationQueue() {
   );
 }
 
+type PriceMode = "standard" | "free" | "percent" | "fixed";
+const MODE_LABEL: Record<PriceMode, string> = {
+  standard: "Standaardtarief",
+  free: "Gratis",
+  percent: "Korting (%)",
+  fixed: "Vaste prijs (€)",
+};
+
 function ManualAssign({ leadId }: { leadId: string }) {
   const qc = useQueryClient();
+  const [mode, setMode] = useState<PriceMode>("standard");
+  const [value, setValue] = useState("");
+  const [note, setNote] = useState("");
   const { data, isLoading } = useQuery({
     queryKey: ["eligible", leadId],
     queryFn: () => getEligibleForLead({ data: { leadId } }),
   });
+  const num = Number(value.replace(",", "."));
+  const valueOk =
+    mode === "standard" ||
+    mode === "free" ||
+    (value !== "" && !Number.isNaN(num) && (mode === "percent" ? num > 0 && num <= 100 : num >= 0));
   const assign = useMutation({
-    mutationFn: (companyId: string) => assignLeadManually({ data: { leadId, companyId } }),
-    onSuccess: () => {
-      toast.success("Toegewezen.");
+    mutationFn: (companyId: string) =>
+      assignLeadManually({
+        data: {
+          leadId,
+          companyId,
+          mode,
+          ...(mode === "percent" || mode === "fixed" ? { value: num } : {}),
+          ...(note.trim() ? { note: note.trim() } : {}),
+        },
+      }),
+    onSuccess: (r) => {
+      toast.success(
+        `Toegewezen voor €${r.price.toFixed(2).replace(".", ",")} excl. btw.`,
+      );
       qc.invalidateQueries({ queryKey: ["allocation-queue"] });
       qc.invalidateQueries({ queryKey: ["eligible", leadId] });
     },
@@ -124,18 +151,65 @@ function ManualAssign({ leadId }: { leadId: string }) {
   if (!data?.length)
     return <p className="text-sm text-moss/70">Geen bedrijf levert deze producten op deze plek.</p>;
   return (
-    <ul className="space-y-1 text-sm">
-      {data.map((c) => (
-        <li key={c.companyId} className="flex flex-wrap items-center justify-between gap-2">
-          <span>
-            <strong>{c.name}</strong> · {c.categories.map((x) => CATEGORY_LABEL[x] ?? x).join(", ")}
-            {c.distanceKm !== null && ` · ${c.distanceKm} km`}
-          </span>
-          <Button size="sm" onClick={() => assign.mutate(c.companyId)} disabled={assign.isPending}>
-            Toewijzen
-          </Button>
-        </li>
-      ))}
-    </ul>
+    <div className="space-y-3 text-sm">
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="space-y-1">
+          <span className="block text-xs text-moss/70">Prijs</span>
+          <select
+            className="h-9 rounded-md border border-input bg-background px-2"
+            value={mode}
+            onChange={(e) => setMode(e.target.value as PriceMode)}
+          >
+            {(Object.keys(MODE_LABEL) as PriceMode[]).map((m) => (
+              <option key={m} value={m}>
+                {MODE_LABEL[m]}
+              </option>
+            ))}
+          </select>
+        </label>
+        {(mode === "percent" || mode === "fixed") && (
+          <label className="space-y-1">
+            <span className="block text-xs text-moss/70">
+              {mode === "percent" ? "Kortingspercentage" : "Prijs excl. btw"}
+            </span>
+            <input
+              className="h-9 w-28 rounded-md border border-input bg-background px-2"
+              inputMode="decimal"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder={mode === "percent" ? "bijv. 50" : "bijv. 7,50"}
+            />
+          </label>
+        )}
+        <label className="flex-1 space-y-1">
+          <span className="block text-xs text-moss/70">Reden (optioneel)</span>
+          <input
+            className="h-9 w-full rounded-md border border-input bg-background px-2"
+            value={note}
+            maxLength={200}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="bijv. coulance"
+          />
+        </label>
+      </div>
+      <ul className="space-y-1">
+        {data.map((c) => (
+          <li key={c.companyId} className="flex flex-wrap items-center justify-between gap-2">
+            <span>
+              <strong>{c.name}</strong> ·{" "}
+              {c.categories.map((x) => CATEGORY_LABEL[x] ?? x).join(", ")}
+              {c.distanceKm !== null && ` · ${c.distanceKm} km`}
+            </span>
+            <Button
+              size="sm"
+              onClick={() => assign.mutate(c.companyId)}
+              disabled={assign.isPending || !valueOk}
+            >
+              Toewijzen
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
