@@ -44,4 +44,4 @@
 - [ ] Ingelogde controle van tab Abonnement en een testmaandfactuur in pakketmodus
 
 ## Google-koppelingen (31 oktober 2026)
-- [ ] Admin-tab voor Google Analytics, Tag Manager, Ads en Search Console (ID's + verificatietag), automatisch op de website geladen
+- [x] Admin-tab voor Google Analytics, Tag Manager, Ads en Search Console (ID's + verificatietag), automatisch op de website geladen
