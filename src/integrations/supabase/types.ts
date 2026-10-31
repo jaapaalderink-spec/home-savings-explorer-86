@@ -592,6 +592,79 @@ export type Database = {
           },
         ]
       }
+      contract_terminations: {
+        Row: {
+          billing_mode: string
+          company_id: string
+          effective_month: string
+          id: string
+          invoice_id: string | null
+          monthly_ex_vat: number
+          remaining_months: number
+          requested_at: string
+          requested_by: string | null
+          settlement_ex_vat: number
+          status: string
+          subscription_version_id: string | null
+          withdrawn_at: string | null
+          withdrawn_by: string | null
+        }
+        Insert: {
+          billing_mode: string
+          company_id: string
+          effective_month: string
+          id?: string
+          invoice_id?: string | null
+          monthly_ex_vat: number
+          remaining_months: number
+          requested_at?: string
+          requested_by?: string | null
+          settlement_ex_vat: number
+          status?: string
+          subscription_version_id?: string | null
+          withdrawn_at?: string | null
+          withdrawn_by?: string | null
+        }
+        Update: {
+          billing_mode?: string
+          company_id?: string
+          effective_month?: string
+          id?: string
+          invoice_id?: string | null
+          monthly_ex_vat?: number
+          remaining_months?: number
+          requested_at?: string
+          requested_by?: string | null
+          settlement_ex_vat?: number
+          status?: string
+          subscription_version_id?: string | null
+          withdrawn_at?: string | null
+          withdrawn_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_terminations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_terminations_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_terminations_subscription_version_id_fkey"
+            columns: ["subscription_version_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credit_note_lines: {
         Row: {
           complaint_id: string | null
@@ -1038,6 +1111,44 @@ export type Database = {
           },
         ]
       }
+      lead_bundles: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          period_start: string
+          size: number
+          unit_price_ex_vat: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          period_start: string
+          size: number
+          unit_price_ex_vat: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          period_start?: string
+          size?: number
+          unit_price_ex_vat?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_bundles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_purchase_status_history: {
         Row: {
           changed_by: string | null
@@ -1097,6 +1208,7 @@ export type Database = {
           assigned_at: string
           assigned_to: string | null
           billable: boolean
+          bundle_id: string | null
           company_id: string
           contacted_within_24h: boolean | null
           contacted_within_48h: boolean | null
@@ -1126,6 +1238,7 @@ export type Database = {
           assigned_at?: string
           assigned_to?: string | null
           billable?: boolean
+          bundle_id?: string | null
           company_id: string
           contacted_within_24h?: boolean | null
           contacted_within_48h?: boolean | null
@@ -1155,6 +1268,7 @@ export type Database = {
           assigned_at?: string
           assigned_to?: string | null
           billable?: boolean
+          bundle_id?: string | null
           company_id?: string
           contacted_within_24h?: boolean | null
           contacted_within_48h?: boolean | null
@@ -1186,6 +1300,13 @@ export type Database = {
             columns: ["assigned_to"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_purchases_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "lead_bundles"
             referencedColumns: ["id"]
           },
           {
