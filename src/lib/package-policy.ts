@@ -40,7 +40,8 @@ export function deliveryCost(mode: BillingMode, code: PackageCode, deliveredProd
 }
 
 const monthIndex = (iso: string) => {
-  const [y, m] = iso.split("-").map(Number);
+  const y = Number(iso.slice(0, 4));
+  const m = Number(iso.slice(5, 7));
   return y * 12 + (m - 1);
 };
 
