@@ -2,10 +2,7 @@ import { adminRole } from "@/lib/admin-guard";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  TRIAL_LEAD_ALLOWANCE,
-  planByName,
-} from "@/lib/lead-pricing";
+import { planByName } from "@/lib/lead-pricing";
 import { adminDb, average, monthStart, percentage } from "@/lib/partner-util";
 import { LEAD_STATUSES } from "@/lib/lead-status-policy";
 import { PARTNER_VISIBLE_EVENTS } from "@/lib/audit-policy";
@@ -29,27 +26,17 @@ export const getPartnerContext = createServerFn({ method: "GET" })
         roles,
         usedThisMonth: 0,
         limit: 0,
-        trialUsed: 0,
-        trialRemaining: TRIAL_LEAD_ALLOWANCE,
-        trialActive: true,
       };
     }
 
-    const [{ data: company }, { count }, { count: lifetimeCount }] = await Promise.all([
+    const [{ data: company }, { count }] = await Promise.all([
       db.from("companies").select("*").eq("id", profile.company_id).maybeSingle(),
       db
         .from("lead_purchases")
         .select("id", { count: "exact", head: true })
         .eq("company_id", profile.company_id)
         .gte("created_at", monthStart()),
-      db
-        .from("lead_purchases")
-        .select("id", { count: "exact", head: true })
-        .eq("company_id", profile.company_id),
     ]);
-
-    // Proefperiode: levenslange telling, dus geen maandfilter.
-    const trialUsed = Math.min(lifetimeCount ?? 0, TRIAL_LEAD_ALLOWANCE);
 
     return {
       profile,
@@ -57,9 +44,6 @@ export const getPartnerContext = createServerFn({ method: "GET" })
       roles,
       usedThisMonth: count ?? 0,
       limit: company?.monthly_lead_limit ?? 0,
-      trialUsed,
-      trialRemaining: TRIAL_LEAD_ALLOWANCE - trialUsed,
-      trialActive: trialUsed < TRIAL_LEAD_ALLOWANCE,
     };
   });
 
