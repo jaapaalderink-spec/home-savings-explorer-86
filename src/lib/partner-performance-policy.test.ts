@@ -27,6 +27,6 @@ describe("aggregatePerformance", () => {
   it("dienstfilter sluit andere diensten uit", () => {
     const rows = aggregatePerformance(purchases, crm, quotes, [], "battery");
     expect(rows.map((r) => r.company_id)).toEqual(["A"]);
-    expect(rows[0].revenue).toBe(0);
+    expect(rows[0]!.revenue).toBe(0);
   });
 });

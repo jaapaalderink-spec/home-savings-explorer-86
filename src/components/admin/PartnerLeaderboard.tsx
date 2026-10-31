@@ -42,7 +42,7 @@ export function PartnerLeaderboard() {
       .sort((a, b) => (Number(b[sort] ?? -1) - Number(a[sort] ?? -1)) || b.leads - a.leads);
   }, [data, minLeads, search, sort]);
 
-  const top = (k: SortKey) => [...rows].sort((a, b) => Number(b[k] ?? 0) - Number(a[k] ?? 0))[0];
+  const top = (k: SortKey) => [...rows].sort((a, b) => Number(b[k] ?? 0) - Number(a[k] ?? 0))[0]!;
   const highlights = rows.length
     ? [
         { label: "Beste conversie", r: top("conversion"), v: (r: (typeof rows)[0]) => `${r.conversion}%` },
