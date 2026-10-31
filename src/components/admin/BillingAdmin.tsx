@@ -319,41 +319,7 @@ export function BillingAdmin() {
         ) : !creditNotes.data || creditNotes.data.items.length === 0 ? (
           <p className="mt-2 text-sm text-moss/70">Nog geen creditnota's.</p>
         ) : (
-          (() => {
-            const all = invoices.data.items;
-            const isPaid = (i: (typeof all)[number]) => (i.payment_status ?? "open") === "paid";
-            const openItems = all.filter((i) => !isPaid(i));
-            const openTotal = openItems.reduce((t, i) => t + Number(i.amount_due_inc_vat ?? i.total_inc_vat ?? 0), 0);
-            const q = search.trim().toLowerCase();
-            const shown = all.filter((i) => {
-              if (statusFilter === "open" && isPaid(i)) return false;
-              if (statusFilter === "paid" && !isPaid(i)) return false;
-              if (!q) return true;
-              const name = ((i.company as { name?: string } | null)?.name ?? "").toLowerCase();
-              return name.includes(q) || String(i.invoice_number).toLowerCase().includes(q);
-            });
-            return (
           <div className="mt-3 overflow-x-auto">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              {([
-                ["all", `Alles (${all.length})`],
-                ["open", `Openstaand (${openItems.length})`],
-                ["paid", `Betaald (${all.length - openItems.length})`],
-              ] as const).map(([key, label]) => (
-                <Button key={key} size="sm" variant={statusFilter === key ? "default" : "outline"} onClick={() => setStatusFilter(key)}>
-                  {label}
-                </Button>
-              ))}
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Zoek bedrijf of factuurnummer"
-                className="rounded-lg border border-moss/20 px-2 py-1 text-sm text-ink"
-              />
-              <span className="ml-auto text-sm text-moss/80">
-                Nog te innen: <strong className="text-ink">{formatEuro(openTotal)}</strong> ({openItems.length} facturen)
-              </span>
-            </div>
             <table className="w-full text-sm">
               <thead className="text-left text-xs uppercase tracking-wide text-moss/60">
                 <tr>
