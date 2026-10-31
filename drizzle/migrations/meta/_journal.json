@@ -162,6 +162,13 @@
       "when": 1793472609643,
       "tag": "0022_appointments_and_priority",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793475057392,
+      "tag": "0023_partner_approval_custom_pricing_reviews",
+      "breakpoints": true
     }
   ]
 }

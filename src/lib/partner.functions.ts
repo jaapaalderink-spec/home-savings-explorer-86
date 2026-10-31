@@ -76,6 +76,9 @@ export const createCompany = createServerFn({ method: "POST" })
         plan_name: plan.id,
         monthly_lead_limit: plan.leads,
         monthly_fee_ex_vat: plan.price,
+        // Nieuwe aanmeldingen ontvangen pas leads na goedkeuring door een beheerder.
+        active: false,
+        approval_status: "pending",
       })
       .select("*")
       .single();

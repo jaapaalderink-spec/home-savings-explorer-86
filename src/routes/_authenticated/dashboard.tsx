@@ -123,6 +123,15 @@ function DashboardPage() {
           </div>
         ) : !data?.company ? (
           <Onboarding />
+        ) : data.company.approval_status !== "approved" && !data.roles.includes("admin") ? (
+          <div className="mx-auto max-w-xl rounded-3xl bg-background p-7 text-sm text-moss" style={{ boxShadow: "var(--shadow-panel-lg)" }}>
+            <h2 className="font-display text-xl font-bold text-ink">{data.company.name}</h2>
+            {data.company.approval_status === "pending" ? (
+              <p className="mt-2">Je aanmelding wordt beoordeeld door Onafhankelijke Offerte. Zodra je account is goedgekeurd en je abonnement is ingesteld, kun je aanvragen ontvangen.</p>
+            ) : (
+              <p className="mt-2">Dit partneraccount is gesloten. Neem contact op met Onafhankelijke Offerte als je vragen hebt.</p>
+            )}
+          </div>
         ) : (
           <>
             <div className="flex flex-wrap items-end justify-between gap-4">

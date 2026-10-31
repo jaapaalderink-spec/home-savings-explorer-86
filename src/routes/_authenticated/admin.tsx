@@ -14,7 +14,9 @@ import {
   Eye,
   Newspaper,
   Plug,
+  Building2,
 } from "lucide-react";
+import { PartnerAccounts } from "@/components/admin/PartnerAccounts";
 import { CalculatorSettings } from "@/components/admin/CalculatorSettings";
 import { CalculationDebug } from "@/components/admin/CalculationDebug";
 import { PlatformStats } from "@/components/admin/PlatformStats";
@@ -63,6 +65,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 type TabId =
+  | "partners"
   | "blog"
   | "google"
   | "overview"
@@ -87,6 +90,7 @@ function AdminPage() {
     { id: "overview", label: "Overzicht", icon: BarChart3 },
     { id: "leads", label: "Aanvragen", icon: Table },
     { id: "map", label: "Kaart & regio's", icon: Map },
+    { id: "partners", label: "Partners & aanmeldingen", icon: Building2 },
     { id: "queue", label: "Wachtrij", icon: ListOrdered },
     { id: "contracts", label: "Contracten", icon: FileSignature },
     { id: "coverage", label: "Dekking per product", icon: Map },
@@ -150,6 +154,7 @@ function AdminPage() {
         {tab === "staff" && <PlatformTeam />}
         {tab === "coverage" && <ProductCoverage />}
         {tab === "contracts" && <ContractsAdmin />}
+        {tab === "partners" && <PartnerAccounts />}
         {tab === "queue" && <AllocationQueue />}
         {tab === "settings" && <CalculatorSettings />}
         {tab === "preview" && <CompanyPreview />}

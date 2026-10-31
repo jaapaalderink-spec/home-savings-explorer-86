@@ -267,8 +267,14 @@ export type Database = {
         Row: {
           active: boolean
           address: string | null
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
           billing_email: string | null
           categories: string[]
+          closed_at: string | null
+          closed_by: string | null
+          closed_reason: string | null
           contact_email: string | null
           contact_phone: string | null
           created_at: string
@@ -285,8 +291,14 @@ export type Database = {
         Insert: {
           active?: boolean
           address?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           billing_email?: string | null
           categories?: string[]
+          closed_at?: string | null
+          closed_by?: string | null
+          closed_reason?: string | null
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
@@ -303,8 +315,14 @@ export type Database = {
         Update: {
           active?: boolean
           address?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           billing_email?: string | null
           categories?: string[]
+          closed_at?: string | null
+          closed_by?: string | null
+          closed_reason?: string | null
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
@@ -1826,6 +1844,63 @@ export type Database = {
         }
         Relationships: []
       }
+      price_reviews: {
+        Row: {
+          company_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          outcome: string | null
+          review_date: string
+          status: string
+          subscription_version_id: string | null
+        }
+        Insert: {
+          company_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          outcome?: string | null
+          review_date: string
+          status?: string
+          subscription_version_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          outcome?: string | null
+          review_date?: string
+          status?: string
+          subscription_version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_reviews_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_reviews_subscription_version_id_fkey"
+            columns: ["subscription_version_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           company_id: string | null
@@ -2113,6 +2188,7 @@ export type Database = {
           company_id: string
           created_at: string
           created_by: string | null
+          custom_pricing: boolean
           extra_product_price_ex_vat: number
           id: string
           included_seats: number
@@ -2134,6 +2210,7 @@ export type Database = {
           company_id: string
           created_at?: string
           created_by?: string | null
+          custom_pricing?: boolean
           extra_product_price_ex_vat?: number
           id?: string
           included_seats?: number
@@ -2155,6 +2232,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           created_by?: string | null
+          custom_pricing?: boolean
           extra_product_price_ex_vat?: number
           id?: string
           included_seats?: number
@@ -2222,6 +2300,7 @@ export type Database = {
           company_id: string
           created_at: string
           created_by: string | null
+          custom_pricing: boolean
           extra_product_price_ex_vat: number
           id: string
           included_seats: number
