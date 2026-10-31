@@ -236,6 +236,7 @@ export async function distributeLead(leadId: string) {
   let pending = candidates;
   let assigned = 0;
   let stopped: string | null = null;
+  const newlyAssigned: string[] = [];
   const covered = [...alreadyCovered];
 
   // Plan, wijs toe; mislukt er een (bv. net vol), dan plannen we opnieuw zonder dat bedrijf.
@@ -262,6 +263,7 @@ export async function distributeLead(leadId: string) {
       });
       if (allocation.result === "allocated") {
         assigned += 1;
+        newlyAssigned.push(item.companyId);
         covered.push(...item.products);
       } else if (isLeadTerminal(allocation.result)) {
         stopped = allocation.result;
@@ -287,6 +289,14 @@ export async function distributeLead(leadId: string) {
       .is("distributed_at", null);
   }
   const { data: fulfillment } = await db.rpc("update_lead_fulfillment", { p_lead: leadId });
+
+  // E-mails: ontvangstbevestiging (idempotent) en koppelingsmail + leadmelding
+  // voor nieuw gekoppelde bedrijven. Fouten breken de verdeling nooit.
+  const { sendLeadReceivedEmail, sendLeadMatchedEmails } = await import(
+    "@/lib/lead-emails.server"
+  );
+  await sendLeadReceivedEmail(leadId);
+  await sendLeadMatchedEmails(leadId, newlyAssigned);
 
   return {
     assigned,
