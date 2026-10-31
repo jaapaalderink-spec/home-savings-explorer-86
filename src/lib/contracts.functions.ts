@@ -193,21 +193,45 @@ const MANUAL_MESSAGES: Record<string, string> = {
 export const assignLeadManually = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ leadId: z.string().uuid(), companyId: z.string().uuid() }).parse(d),
+    z
+      .object({
+        leadId: z.string().uuid(),
+        companyId: z.string().uuid(),
+        mode: z.enum(["standard", "free", "percent", "fixed"]).default("standard"),
+        value: z.number().min(0).max(1000).optional(),
+        note: z.string().max(200).optional(),
+      })
+      .refine((v) => v.mode !== "percent" || (v.value !== undefined && v.value > 0 && v.value <= 100), {
+        message: "Vul een kortingspercentage tussen 1 en 100 in.",
+      })
+      .refine((v) => v.mode !== "fixed" || v.value !== undefined, {
+        message: "Vul een vaste prijs in.",
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const db = await assertAdmin(context.userId, context.claims);
-    const { allocateLeadToCompany } = await import("@/lib/lead-allocation.server");
-    const r = await allocateLeadToCompany({
-      leadId: data.leadId,
-      companyId: data.companyId,
-      source: "assigned",
-      purchasedBy: context.userId,
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin.rpc("allocate_lead_manual", {
+      p_lead_id: data.leadId,
+      p_company_id: data.companyId,
+      p_actor: context.userId,
+      p_mode: data.mode,
+      p_value: (data.value ?? null) as unknown as number,
+      p_note: (data.note ?? null) as unknown as string,
     });
+    if (error) {
+      console.error("allocate_lead_manual failed", error.message);
+      if (error.message?.includes("LEAD_FULL")) throw new Error(MANUAL_MESSAGES.lead_full);
+      throw new Error("Toewijzen is mislukt.");
+    }
+    const r = (Array.isArray(rows) ? rows[0] : rows) as
+      | { result: string; price_ex_vat: number | null }
+      | undefined;
     await db.rpc("update_lead_fulfillment", { p_lead: data.leadId });
-    if (r.result !== "allocated")
-      throw new Error(MANUAL_MESSAGES[r.result] ?? "Toewijzen is mislukt.");
-    return { ok: true, price: r.priceExVat };
+    if (!r || r.result !== "allocated")
+      throw new Error(MANUAL_MESSAGES[r?.result ?? ""] ?? "Toewijzen is mislukt.");
+    return { ok: true, price: Number(r.price_ex_vat ?? 0) };
   });
 
 export const runAllocationRetry = createServerFn({ method: "POST" })
