@@ -270,6 +270,9 @@ export const assignLeadManually = createServerFn({ method: "POST" })
     await db.rpc("update_lead_fulfillment", { p_lead: data.leadId });
     if (!r || r.result !== "allocated")
       throw new Error(MANUAL_MESSAGES[r?.result ?? ""] ?? "Toewijzen is mislukt.");
+    // Koppelingsmail aan de particulier en leadmelding aan de installateur.
+    const { sendLeadMatchedEmails } = await import("@/lib/lead-emails.server");
+    await sendLeadMatchedEmails(data.leadId, [data.companyId]);
     return { ok: true, price: Number(r.price_ex_vat ?? 0) };
   });
 

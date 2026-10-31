@@ -23,6 +23,7 @@ import { Route as DuurzaamNieuwsIndexRouteImport } from './routes/duurzaam-nieuw
 import { Route as DuurzaamNieuwsSlugRouteImport } from './routes/duurzaam-nieuws.$slug'
 import { Route as ApiPublicAllocationRetryRouteImport } from './routes/api/public/allocation-retry'
 import { Route as ApiPublicMollieWebhookRouteImport } from './routes/api/public/mollie-webhook'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -95,6 +96,12 @@ const ApiPublicMollieWebhookRoute = ApiPublicMollieWebhookRouteImport.update({
   path: '/api/public/mollie-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/duurzaam-nieuws/': typeof DuurzaamNieuwsIndexRoute
   '/api/public/allocation-retry': typeof ApiPublicAllocationRetryRoute
   '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -125,6 +133,7 @@ export interface FileRoutesByTo {
   '/duurzaam-nieuws': typeof DuurzaamNieuwsIndexRoute
   '/api/public/allocation-retry': typeof ApiPublicAllocationRetryRoute
   '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -142,6 +151,7 @@ export interface FileRoutesById {
   '/duurzaam-nieuws/': typeof DuurzaamNieuwsIndexRoute
   '/api/public/allocation-retry': typeof ApiPublicAllocationRetryRoute
   '/api/public/mollie-webhook': typeof ApiPublicMollieWebhookRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/duurzaam-nieuws/'
     | '/api/public/allocation-retry'
     | '/api/public/mollie-webhook'
+    | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/duurzaam-nieuws'
     | '/api/public/allocation-retry'
     | '/api/public/mollie-webhook'
+    | '/lovable/email/transactional/preview'
   id:
     | '__root__'
     | '/'
@@ -190,6 +202,7 @@ export interface FileRouteTypes {
     | '/duurzaam-nieuws/'
     | '/api/public/allocation-retry'
     | '/api/public/mollie-webhook'
+    | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -203,6 +216,7 @@ export interface RootRouteChildren {
   DuurzaamNieuwsIndexRoute: typeof DuurzaamNieuwsIndexRoute
   ApiPublicAllocationRetryRoute: typeof ApiPublicAllocationRetryRoute
   ApiPublicMollieWebhookRoute: typeof ApiPublicMollieWebhookRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -305,6 +319,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMollieWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -336,6 +357,7 @@ const rootRouteChildren: RootRouteChildren = {
   DuurzaamNieuwsIndexRoute: DuurzaamNieuwsIndexRoute,
   ApiPublicAllocationRetryRoute: ApiPublicAllocationRetryRoute,
   ApiPublicMollieWebhookRoute: ApiPublicMollieWebhookRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
