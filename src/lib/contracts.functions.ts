@@ -224,7 +224,7 @@ const MANUAL_MESSAGES: Record<string, string> = {
   lead_blocked: "Deze aanvraag is geblokkeerd.",
   lead_duplicate: "Dit is een dubbele aanvraag.",
   lead_not_eligible: "Deze aanvraag is geannuleerd.",
-  company_not_eligible: "Dit bedrijf levert deze producten niet op deze plek.",
+  company_not_eligible: "Dit bedrijf voert geen van de gevraagde producten (of is niet actief).",
   company_capacity_full: "Het quotum of de capaciteit van dit bedrijf is bereikt.",
 };
 
