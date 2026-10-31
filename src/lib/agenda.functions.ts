@@ -10,7 +10,7 @@ export const getAgenda = createServerFn({ method: "GET" })
     const { partnerAccess } = await import("@/lib/partner-access.server");
     const { loadProductCrm } = await import("@/lib/crm.server");
     const { dossierSummary } = await import("@/lib/crm-policy");
-    const { followUpReason, byPriorityThenAge } = await import("@/lib/agenda-policy");
+    const { followUpReason, byPriorityThenAge, effectivePriority } = await import("@/lib/agenda-policy");
     const access = await partnerAccess(context.userId);
     const db = access.db;
     let q = db.from("lead_purchases")
@@ -28,13 +28,19 @@ export const getAgenda = createServerFn({ method: "GET" })
     const now = new Date();
     const leadInfo = (p: NonNullable<typeof purchases>[number]) => {
       const l = (p.lead ?? {}) as Record<string, unknown>;
+      const sum = dossierSummary((crm.get(p.id) ?? []).map((r) => r.status));
+      const eff = effectivePriority({
+        priority: (p.priority ?? "normal") as (typeof PRIORITIES)[number], status: sum.status, closed: sum.closed,
+        createdAt: p.created_at, hasPlannedAppointment: (appts ?? []).some((a) => a.purchase_id === p.id && a.status === "planned"),
+      }, now);
       return {
         purchaseId: p.id,
         name: `${l["first_name"] ?? ""} ${l["last_name"] ?? ""}`.trim(),
         phone: (l["phone"] as string) ?? "",
         email: (l["email"] as string) ?? "",
         address: `${l["postcode"] ?? ""} ${l["house_number"] ?? ""} ${l["city"] ?? ""}`.trim(),
-        priority: (p.priority ?? "normal") as (typeof PRIORITIES)[number],
+        priority: eff.priority,
+        escalated: eff.escalated,
         createdAt: p.created_at,
       };
     };
@@ -53,7 +59,8 @@ export const getAgenda = createServerFn({ method: "GET" })
         followUpDates: rows.map((r) => r.followUpDate),
         appointments: (appts ?? []).filter((a) => a.purchase_id === p.id).map((a) => ({ scheduledAt: a.scheduled_at, status: a.status as "planned" })),
       }, now);
-      return reason ? [{ ...leadInfo(p), reason }] : [];
+      const info = leadInfo(p);
+      return reason ? [{ ...info, reason: info.escalated && reason === "not_contacted" ? "escalated" as const : reason }] : [];
     }).sort(byPriorityThenAge);
     return { appointments, followUps };
   });
@@ -64,12 +71,25 @@ export const listAppointments = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { accessiblePurchase } = await import("@/lib/partner-access.server");
     const { db, purchase } = await accessiblePurchase(context.userId, data.purchaseId);
+    const { loadProductCrm } = await import("@/lib/crm.server");
+    const { dossierSummary } = await import("@/lib/crm-policy");
+    const { effectivePriority } = await import("@/lib/agenda-policy");
     const [{ data: rows }, { data: p }] = await Promise.all([
       db.from("lead_appointments").select("id, category, scheduled_at, kind, note, status").eq("purchase_id", purchase.id).neq("status", "cancelled").order("scheduled_at"),
-      db.from("lead_purchases").select("priority").eq("id", purchase.id).single(),
+      db.from("lead_purchases").select("id, status, products, priority, created_at, lead:leads(categories)").eq("id", purchase.id).single(),
     ]);
+    const stored = (p?.priority ?? "normal") as (typeof PRIORITIES)[number];
+    let eff = { priority: stored, escalated: false };
+    if (p) {
+      const crm = await loadProductCrm(db, [p]);
+      const sum = dossierSummary((crm.get(p.id) ?? []).map((r) => r.status));
+      eff = effectivePriority({ priority: stored, status: sum.status, closed: sum.closed, createdAt: p.created_at,
+        hasPlannedAppointment: (rows ?? []).some((r) => r.status === "planned") }, new Date());
+    }
     return {
-      priority: (p?.priority ?? "normal") as (typeof PRIORITIES)[number],
+      priority: stored,
+      effectivePriority: eff.priority,
+      escalated: eff.escalated,
       appointments: (rows ?? []).map((r) => ({ id: r.id, category: r.category, scheduledAt: r.scheduled_at, kind: r.kind as (typeof APPOINTMENT_KINDS)[number], note: r.note, status: r.status })),
     };
   });

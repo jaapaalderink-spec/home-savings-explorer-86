@@ -72,6 +72,9 @@ export function LeadPlanner({ purchaseId }: { purchaseId: string }) {
             {PRIORITIES.map((p) => <option key={p} value={p}>{PRIORITY_LABEL[p]}</option>)}
           </select>
         </label>
+        {data?.escalated && (
+          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${PRIORITY_CLASS.high}`}>Hoog (automatisch verhoogd: 48 werkuren geen contact)</span>
+        )}
         <Button size="sm" variant="outline" className="ml-auto" onClick={() => setOpen((o) => !o)}>
           <CalendarPlus size={14} className="mr-1.5" /> Afspraak plannen
         </Button>

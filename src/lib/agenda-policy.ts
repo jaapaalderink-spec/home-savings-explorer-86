@@ -25,8 +25,9 @@ export type FollowUpInput = {
   appointments: Array<{ scheduledAt: string; status: "planned" | "done" | "cancelled" }>;
 };
 
-export type FollowUpReason = "appointment_overdue" | "follow_up_due" | "not_contacted" | "stale";
+export type FollowUpReason = "escalated" | "appointment_overdue" | "follow_up_due" | "not_contacted" | "stale";
 export const REASON_LABEL: Record<FollowUpReason, string> = {
+  escalated: "Urgent: na 48 werkuren nog niet gebeld",
   appointment_overdue: "Afspraak geweest — uitkomst vastleggen",
   follow_up_due: "Vervolgdatum bereikt",
   not_contacted: "Nog niet gebeld",
