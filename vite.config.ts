@@ -24,7 +24,7 @@ export default defineConfig({
   },
   vite: {
     // Pre-bundle on startup so a late dependency discovery can't load a second React copy.
-    optimizeDeps: { include: ["@radix-ui/react-alert-dialog"] },
+    optimizeDeps: { include: ["@radix-ui/react-alert-dialog", "@tanstack/react-router"] },
     resolve: {
       alias: [
         // Pin only the legacy v4 deep imports to the hoisted entities@4.5.0 copy.
