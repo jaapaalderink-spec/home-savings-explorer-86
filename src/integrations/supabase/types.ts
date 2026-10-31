@@ -2163,6 +2163,22 @@ export type Database = {
           trial_sequence_number: number
         }[]
       }
+      allocate_lead_manual: {
+        Args: {
+          p_actor: string
+          p_company_id: string
+          p_lead_id: string
+          p_mode: string
+          p_note: string
+          p_value: number
+        }
+        Returns: {
+          billable: boolean
+          price_ex_vat: number
+          purchase_id: string
+          result: string
+        }[]
+      }
       allocate_lead_to_company: {
         Args: {
           p_company_id: string

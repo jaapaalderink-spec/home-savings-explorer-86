@@ -134,6 +134,13 @@
       "when": 1793467842368,
       "tag": "0018_remove_free_trial_leads",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793468732206,
+      "tag": "0019_manual_assign_price_override",
+      "breakpoints": true
     }
   ]
 }
