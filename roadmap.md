@@ -45,3 +45,4 @@
 
 ## Google-koppelingen (31 oktober 2026)
 - [x] Admin-tab voor Google Analytics, Tag Manager, Ads en Search Console (ID's + verificatietag), automatisch op de website geladen
+- [x] Factuurouderdom, herinnering na 14 dagen, pauze bij 2 vervallen facturen, heractivatie bij betaling, handmatig afboeken
