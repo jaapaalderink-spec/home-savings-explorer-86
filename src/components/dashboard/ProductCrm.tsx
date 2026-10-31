@@ -8,6 +8,8 @@ import { LOST_REASONS, type LostReason } from "@/lib/crm-policy";
 import { CATEGORY_LABEL } from "@/lib/lead-pricing";
 import { STATUS_LABEL, LEAD_STATUSES, type LeadStatus } from "@/lib/lead-status-policy";
 import { formatEuro } from "@/lib/home-savings";
+import { CalendarPlus } from "lucide-react";
+import { requestAppointment } from "@/components/dashboard/LeadPlanner";
 
 const input =
   "min-h-9 rounded-lg border border-moss/20 bg-background px-2 text-xs text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf";
@@ -57,6 +59,7 @@ export function ProductCrm({ purchaseId }: { purchaseId: string }) {
           key={`${p.category}:${p.revision}`}
           row={p}
           busy={save.isPending || quote.isPending}
+          onPlan={() => requestAppointment(purchaseId)}
           onSave={(v) => save.mutate({ category: p.category, revision: p.revision, ...v })}
           onQuote={(amount, note) => quote.mutate({ category: p.category, revision: p.revision, amount, ...(note ? { note } : {}) })}
         />
@@ -72,7 +75,9 @@ function ProductRow({
   busy,
   onSave,
   onQuote,
+  onPlan,
 }: {
+  onPlan: () => void;
   row: Row;
   busy: boolean;
   onSave: (v: { status: LeadStatus; wonAmount?: number | null; reopenReason?: string; followUpDate?: string | null; lostReason?: LostReason | null }) => void;
@@ -146,6 +151,11 @@ function ProductRow({
         >
           Opslaan
         </Button>
+        {!closed && (
+          <Button type="button" size="sm" variant="outline" onClick={onPlan}>
+            <CalendarPlus size={14} className="mr-1.5" /> Afspraak inplannen
+          </Button>
+        )}
       </div>
       {reopening && (
         <div className="mt-3 space-y-2 bg-muted p-3 text-xs text-moss">

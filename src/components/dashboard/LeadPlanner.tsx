@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -35,6 +35,16 @@ export function LeadPlanner({ purchaseId }: { purchaseId: string }) {
   const [kind, setKind] = useState<AppointmentKind>("onsite");
   const [note, setNote] = useState("");
   const done = () => invalidateAgenda(qc, purchaseId);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const h = (e: Event) => {
+      if ((e as CustomEvent<string>).detail !== purchaseId) return;
+      setOpen(true);
+      box.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    };
+    window.addEventListener("plan-appointment", h);
+    return () => window.removeEventListener("plan-appointment", h);
+  }, [purchaseId]);
 
   const setPrio = useMutation({
     mutationFn: (priority: Priority) => prio({ data: { purchaseId, priority } }),
@@ -54,7 +64,7 @@ export function LeadPlanner({ purchaseId }: { purchaseId: string }) {
 
   const planned = (data?.appointments ?? []).filter((a) => a.status === "planned");
   return (
-    <div className="space-y-2 rounded-xl bg-muted/50 p-3">
+    <div ref={box} className="space-y-2 rounded-xl bg-muted/50 p-3">
       <div className="flex flex-wrap items-center gap-2">
         <label className="flex items-center gap-2 text-xs text-moss/70">
           Prioriteit
@@ -95,4 +105,9 @@ export function LeadPlanner({ purchaseId }: { purchaseId: string }) {
       )}
     </div>
   );
+}
+
+/** Opent vanuit elke plek bij deze lead het afspraakformulier. */
+export function requestAppointment(purchaseId: string) {
+  window.dispatchEvent(new CustomEvent("plan-appointment", { detail: purchaseId }));
 }
