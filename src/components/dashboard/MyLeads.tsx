@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Mail, Phone, MapPin, UserCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductCrm } from "@/components/dashboard/ProductCrm";
+import { LeadPlanner } from "@/components/dashboard/LeadPlanner";
 import {
   assignPurchases,
   listAssignableMembers,
@@ -184,7 +185,7 @@ export function MyLeads({ viewAs }: { viewAs?: string | null } = {}) {
                     </label>
                   )}
                 </div>
-                <div className="mt-3"><ProductCrm purchaseId={p.id} /></div>
+                <div className="mt-3 space-y-2"><LeadPlanner purchaseId={p.id} /><ProductCrm purchaseId={p.id} /></div>
               </article>
             );
           })}
