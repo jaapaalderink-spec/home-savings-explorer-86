@@ -13,6 +13,7 @@ import {
   UserCog,
   Eye,
   Newspaper,
+  Plug,
 } from "lucide-react";
 import { CalculatorSettings } from "@/components/admin/CalculatorSettings";
 import { CalculationDebug } from "@/components/admin/CalculationDebug";
@@ -29,6 +30,7 @@ import { PlatformTeam } from "@/components/admin/PlatformTeam";
 import { BackgroundJobs } from "@/components/admin/BackgroundJobs";
 import { BlogAdmin } from "@/components/admin/BlogAdmin";
 import { AdminMfaGate } from "@/components/admin/AdminMfaGate";
+import { GoogleServicesAdmin } from "@/components/admin/GoogleServicesAdmin";
 import { CompanyPreview } from "@/components/admin/CompanyPreview";
 import { AdminOverview } from "@/components/dashboard/AdminOverview";
 import { FilterBar } from "@/components/admin/FilterBar";
@@ -62,6 +64,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 type TabId =
   | "blog"
+  | "google"
   | "overview"
   | "leads"
   | "map"
@@ -95,6 +98,7 @@ function AdminPage() {
     { id: "preview", label: "Voorbeeldweergave", icon: Eye },
     { id: "jobs", label: "Achtergrondtaken", icon: ListOrdered },
     { id: "blog", label: "Duurzaam nieuws", icon: Newspaper },
+    { id: "google", label: "Google-koppelingen", icon: Plug },
   ];
 
   return (
@@ -151,6 +155,7 @@ function AdminPage() {
         {tab === "preview" && <CompanyPreview />}
         {tab === "jobs" && <BackgroundJobs />}
         {tab === "blog" && <BlogAdmin />}
+        {tab === "google" && <GoogleServicesAdmin />}
       </div>
     </main>
   );

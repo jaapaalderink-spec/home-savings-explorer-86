@@ -42,3 +42,6 @@
 - [x] Eenmalige leadbundels (3/5/10) kopen en verdelen (pas na pakketquotum, één quotabron per aanvraag)
 - [x] Opzegwizard in partnerportaal (preview, bevestigen, intrekken) en afkoopregel op laatste maandfactuur
 - [ ] Ingelogde controle van tab Abonnement en een testmaandfactuur in pakketmodus
+
+## Google-koppelingen (31 oktober 2026)
+- [x] Admin-tab voor Google Analytics, Tag Manager, Ads en Search Console (ID's + verificatietag), automatisch op de website geladen
