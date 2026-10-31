@@ -1889,13 +1889,19 @@ export type Database = {
       subscription_versions: {
         Row: {
           base_lead_price_ex_vat: number
+          billing_mode: string
           company_id: string
           created_at: string
           created_by: string | null
           extra_product_price_ex_vat: number
           id: string
+          included_seats: number
           lead_quota_per_month: number
+          min_term_months: number
           note: string | null
+          notice_months: number
+          package_code: string | null
+          package_fee_ex_vat: number | null
           paid_seats: number
           platform_fee_ex_vat: number
           seat_fee_ex_vat: number
@@ -1904,13 +1910,19 @@ export type Database = {
         }
         Insert: {
           base_lead_price_ex_vat?: number
+          billing_mode?: string
           company_id: string
           created_at?: string
           created_by?: string | null
           extra_product_price_ex_vat?: number
           id?: string
+          included_seats?: number
           lead_quota_per_month: number
+          min_term_months?: number
           note?: string | null
+          notice_months?: number
+          package_code?: string | null
+          package_fee_ex_vat?: number | null
           paid_seats?: number
           platform_fee_ex_vat?: number
           seat_fee_ex_vat?: number
@@ -1919,13 +1931,19 @@ export type Database = {
         }
         Update: {
           base_lead_price_ex_vat?: number
+          billing_mode?: string
           company_id?: string
           created_at?: string
           created_by?: string | null
           extra_product_price_ex_vat?: number
           id?: string
+          included_seats?: number
           lead_quota_per_month?: number
+          min_term_months?: number
           note?: string | null
+          notice_months?: number
+          package_code?: string | null
+          package_fee_ex_vat?: number | null
           paid_seats?: number
           platform_fee_ex_vat?: number
           seat_fee_ex_vat?: number
@@ -1980,13 +1998,19 @@ export type Database = {
         Args: { p_company: string; p_on?: string }
         Returns: {
           base_lead_price_ex_vat: number
+          billing_mode: string
           company_id: string
           created_at: string
           created_by: string | null
           extra_product_price_ex_vat: number
           id: string
+          included_seats: number
           lead_quota_per_month: number
+          min_term_months: number
           note: string | null
+          notice_months: number
+          package_code: string | null
+          package_fee_ex_vat: number | null
           paid_seats: number
           platform_fee_ex_vat: number
           seat_fee_ex_vat: number
