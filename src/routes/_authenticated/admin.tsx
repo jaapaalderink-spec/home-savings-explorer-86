@@ -25,6 +25,7 @@ import { RegionMapPanel } from "@/components/admin/RegionMapPanel";
 import { CoverageGaps } from "@/components/admin/CoverageGaps";
 import { BillingAdmin } from "@/components/admin/BillingAdmin";
 import { QualityScores } from "@/components/admin/QualityScores";
+import { PartnerLeaderboard } from "@/components/admin/PartnerLeaderboard";
 import { ProductCoverage } from "@/components/admin/ProductCoverage";
 import { ContractsAdmin } from "@/components/admin/ContractsAdmin";
 import { AllocationQueue } from "@/components/admin/AllocationQueue";
@@ -148,7 +149,7 @@ function AdminPage() {
         )}
         {tab === "leads" && <AdminLeadsTable filters={filters} />}
         {tab === "map" && <RegionMapPanel filters={filters} />}
-        {tab === "quality" && <QualityScores />}
+        {tab === "quality" && (<div className="space-y-6"><PartnerLeaderboard /><QualityScores /></div>)}
         {tab === "billing" && <BillingAdmin />}
         {tab === "calc" && <CalculationDebug />}
         {tab === "staff" && <PlatformTeam />}

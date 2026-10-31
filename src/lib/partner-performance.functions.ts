@@ -43,10 +43,10 @@ export const getPartnerPerformanceLeaderboard = createServerFn({ method: "POST" 
       inChunks(ids, async (c) => (await db.from("purchase_quotes").select("purchase_id, category, amount_ex_vat, version").in("purchase_id", c)).data ?? []),
       inChunks(ids, async (c) => (await db.from("lead_appointments").select("purchase_id, category, status").in("purchase_id", c)).data ?? []),
       db.from("companies").select("id, name"),
-      db.from("partner_quality_scores").select("company_id, overall_score"),
+      db.from("company_quality_scores").select("company_id, overall_score"),
     ]);
     const names = new Map((companies.data ?? []).map((c) => [c.id, c.name]));
-    const score = new Map(((scores.data ?? []) as { company_id: string; overall_score: number }[]).map((s) => [s.company_id, s.overall_score]));
+    const score = new Map(((scores.data ?? [])).map((s) => [s.company_id, s.overall_score]));
     return aggregatePerformance(purchases ?? [], crm, quotes, appts, data.product).map((r) => ({
       ...r,
       name: names.get(r.company_id) ?? "Onbekend",
