@@ -283,6 +283,7 @@ export type Database = {
           monthly_fee_ex_vat: number
           monthly_lead_limit: number
           name: string
+          payment_suspended_at: string | null
           plan_name: string
           updated_at: string
           vat_number: string | null
@@ -307,6 +308,7 @@ export type Database = {
           monthly_fee_ex_vat?: number
           monthly_lead_limit?: number
           name: string
+          payment_suspended_at?: string | null
           plan_name?: string
           updated_at?: string
           vat_number?: string | null
@@ -331,6 +333,7 @@ export type Database = {
           monthly_fee_ex_vat?: number
           monthly_lead_limit?: number
           name?: string
+          payment_suspended_at?: string | null
           plan_name?: string
           updated_at?: string
           vat_number?: string | null
@@ -1069,10 +1072,13 @@ export type Database = {
           invoice_number: string
           last_payment_attempt_at: string | null
           paid_at: string | null
+          paid_manually_by: string | null
           payment_review_required: boolean
           payment_status: Database["public"]["Enums"]["payment_status"]
           period_end: string
           period_start: string
+          reminder_count: number
+          reminder_sent_at: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal_ex_vat: number
           total_inc_vat: number
@@ -1090,10 +1096,13 @@ export type Database = {
           invoice_number: string
           last_payment_attempt_at?: string | null
           paid_at?: string | null
+          paid_manually_by?: string | null
           payment_review_required?: boolean
           payment_status?: Database["public"]["Enums"]["payment_status"]
           period_end: string
           period_start: string
+          reminder_count?: number
+          reminder_sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal_ex_vat?: number
           total_inc_vat?: number
@@ -1111,10 +1120,13 @@ export type Database = {
           invoice_number?: string
           last_payment_attempt_at?: string | null
           paid_at?: string | null
+          paid_manually_by?: string | null
           payment_review_required?: boolean
           payment_status?: Database["public"]["Enums"]["payment_status"]
           period_end?: string
           period_start?: string
+          reminder_count?: number
+          reminder_sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal_ex_vat?: number
           total_inc_vat?: number
@@ -2533,6 +2545,10 @@ export type Database = {
         }
         Returns: string
       }
+      mark_invoice_paid_manually: {
+        Args: { p_admin: string; p_invoice_id: string }
+        Returns: string
+      }
       mark_purchase_opened: {
         Args: { p_actor?: string; p_company_id: string; p_purchase_id: string }
         Returns: boolean
@@ -2589,6 +2605,11 @@ export type Database = {
           changed: boolean
           result: string
         }[]
+      }
+      sync_all_payment_suspensions: { Args: never; Returns: undefined }
+      sync_company_payment_suspension: {
+        Args: { p_company_id: string }
+        Returns: boolean
       }
       sync_company_regions_from_areas: {
         Args: { p_company: string }
