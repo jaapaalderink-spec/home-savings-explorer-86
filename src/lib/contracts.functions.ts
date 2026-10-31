@@ -178,6 +178,45 @@ export const getEligibleForLead = createServerFn({ method: "POST" })
       .sort((a, b) => a.name.localeCompare(b.name));
   });
 
+/** Zoek actieve bedrijven op naam voor handmatige toewijzing, met werkgebied-indicatie. */
+export const searchCompaniesForLead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ leadId: z.string().uuid(), q: z.string().max(80) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const db = await assertAdmin(context.userId, context.claims);
+    const term = data.q.trim().replace(/[%_,()]/g, "");
+    let q = db.from("companies").select("id, name").eq("active", true).order("name").limit(10);
+    if (term) q = q.ilike("name", `%${term}%`);
+    const [{ data: companies }, { data: eligible }, { data: existing }, { data: lead }] =
+      await Promise.all([
+        q,
+        db.rpc("eligible_companies_for_lead", { p_lead: data.leadId }),
+        db.from("lead_purchases").select("company_id").eq("lead_id", data.leadId),
+        db.from("leads").select("categories").eq("id", data.leadId).maybeSingle(),
+      ]);
+    const ids = (companies ?? []).map((c) => c.id);
+    const { data: products } = ids.length
+      ? await db.from("company_products").select("company_id, category").eq("active", true).in("company_id", ids)
+      : { data: [] as Array<{ company_id: string; category: string }> };
+    const leadCats = lead?.categories ?? [];
+    const taken = new Set((existing ?? []).map((e) => e.company_id));
+    const elig = (eligible ?? []) as Array<{ company_id: string; distance_km: number | null }>;
+    return (companies ?? []).map((c) => {
+      const e = elig.find((x) => x.company_id === c.id);
+      const cats = (products ?? []).filter((p) => p.company_id === c.id).map((p) => p.category);
+      return {
+        companyId: c.id,
+        name: c.name,
+        categories: cats.filter((x) => leadCats.includes(x)),
+        inArea: !!e,
+        distanceKm: e?.distance_km == null ? null : Number(e.distance_km),
+        alreadyAssigned: taken.has(c.id),
+      };
+    });
+  });
+
 const MANUAL_MESSAGES: Record<string, string> = {
   already_assigned: "Dit bedrijf heeft deze aanvraag al.",
   lead_full: "Deze aanvraag heeft al het maximum van 4 bedrijven (of het aantal gevraagde).",
@@ -185,7 +224,7 @@ const MANUAL_MESSAGES: Record<string, string> = {
   lead_blocked: "Deze aanvraag is geblokkeerd.",
   lead_duplicate: "Dit is een dubbele aanvraag.",
   lead_not_eligible: "Deze aanvraag is geannuleerd.",
-  company_not_eligible: "Dit bedrijf levert deze producten niet op deze plek.",
+  company_not_eligible: "Dit bedrijf voert geen van de gevraagde producten (of is niet actief).",
   company_capacity_full: "Het quotum of de capaciteit van dit bedrijf is bereikt.",
 };
 

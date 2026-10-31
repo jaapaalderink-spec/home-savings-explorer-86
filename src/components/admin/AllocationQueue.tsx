@@ -1,12 +1,12 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   assignLeadManually,
   getAllocationQueue,
-  getEligibleForLead,
   runAllocationRetry,
+  searchCompaniesForLead,
 } from "@/lib/contracts.functions";
 import { FULFILLMENT_LABEL, type FulfillmentStatus } from "@/lib/lead-planner";
 import { CATEGORY_LABEL } from "@/lib/lead-pricing";
@@ -118,9 +118,17 @@ function ManualAssign({ leadId }: { leadId: string }) {
   const [mode, setMode] = useState<PriceMode>("standard");
   const [value, setValue] = useState("");
   const [note, setNote] = useState("");
-  const { data, isLoading } = useQuery({
-    queryKey: ["eligible", leadId],
-    queryFn: () => getEligibleForLead({ data: { leadId } }),
+  const [search, setSearch] = useState("");
+  const [term, setTerm] = useState("");
+  const [picked, setPicked] = useState<{ companyId: string; name: string; inArea: boolean } | null>(null);
+  useEffect(() => {
+    const t = setTimeout(() => setTerm(search), 250);
+    return () => clearTimeout(t);
+  }, [search]);
+  const { data, isFetching } = useQuery({
+    queryKey: ["company-search", leadId, term],
+    queryFn: () => searchCompaniesForLead({ data: { leadId, q: term } }),
+    enabled: !picked,
   });
   const num = Number(value.replace(",", "."));
   const valueOk =
@@ -139,77 +147,117 @@ function ManualAssign({ leadId }: { leadId: string }) {
         },
       }),
     onSuccess: (r) => {
-      toast.success(
-        `Toegewezen voor €${r.price.toFixed(2).replace(".", ",")} excl. btw.`,
-      );
+      toast.success(`Toegewezen voor €${r.price.toFixed(2).replace(".", ",")} excl. btw.`);
+      setPicked(null);
+      setSearch("");
       qc.invalidateQueries({ queryKey: ["allocation-queue"] });
-      qc.invalidateQueries({ queryKey: ["eligible", leadId] });
+      qc.invalidateQueries({ queryKey: ["company-search", leadId] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
-  if (isLoading) return <p className="text-sm">Laden…</p>;
-  if (!data?.length)
-    return <p className="text-sm text-moss/70">Geen bedrijf levert deze producten op deze plek.</p>;
   return (
     <div className="space-y-3 text-sm">
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="space-y-1">
-          <span className="block text-xs text-moss/70">Prijs</span>
-          <select
-            className="h-9 rounded-md border border-input bg-background px-2"
-            value={mode}
-            onChange={(e) => setMode(e.target.value as PriceMode)}
-          >
-            {(Object.keys(MODE_LABEL) as PriceMode[]).map((m) => (
-              <option key={m} value={m}>
-                {MODE_LABEL[m]}
-              </option>
-            ))}
-          </select>
-        </label>
-        {(mode === "percent" || mode === "fixed") && (
-          <label className="space-y-1">
-            <span className="block text-xs text-moss/70">
-              {mode === "percent" ? "Kortingspercentage" : "Prijs excl. btw"}
-            </span>
+      <div className="space-y-1">
+        <span className="block text-xs text-moss/70">Installateur</span>
+        {picked ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <strong>{picked.name}</strong>
+            {!picked.inArea && (
+              <span className="rounded-full bg-accent px-2 py-0.5 text-xs">Buiten werkgebied</span>
+            )}
+            <Button size="sm" variant="ghost" onClick={() => setPicked(null)}>
+              Wijzigen
+            </Button>
+          </div>
+        ) : (
+          <div className="relative max-w-md">
             <input
-              className="h-9 w-28 rounded-md border border-input bg-background px-2"
-              inputMode="decimal"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder={mode === "percent" ? "bijv. 50" : "bijv. 7,50"}
+              autoFocus
+              className="h-9 w-full rounded-md border border-input bg-background px-2"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Zoek een bedrijf op naam…"
+            />
+            <ul className="mt-1 max-h-64 overflow-y-auto rounded-md border border-input bg-background">
+              {isFetching && !data && <li className="p-2 text-moss/70">Zoeken…</li>}
+              {data?.length === 0 && <li className="p-2 text-moss/70">Geen bedrijven gevonden.</li>}
+              {data?.map((c) => (
+                <li key={c.companyId}>
+                  <button
+                    type="button"
+                    disabled={c.alreadyAssigned}
+                    onClick={() => setPicked(c)}
+                    className="w-full px-2 py-1.5 text-left hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <strong>{c.name}</strong>
+                    <span className="text-moss/70">
+                      {" · "}
+                      {c.categories.length
+                        ? c.categories.map((x) => CATEGORY_LABEL[x] ?? x).join(", ")
+                        : "voert deze producten niet"}
+                      {" · "}
+                      {c.alreadyAssigned
+                        ? "heeft deze aanvraag al"
+                        : c.inArea
+                          ? `binnen werkgebied${c.distanceKm !== null ? ` (${c.distanceKm} km)` : ""}`
+                          : "buiten werkgebied"}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+      {picked && (
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="space-y-1">
+            <span className="block text-xs text-moss/70">Prijs</span>
+            <select
+              className="h-9 rounded-md border border-input bg-background px-2"
+              value={mode}
+              onChange={(e) => setMode(e.target.value as PriceMode)}
+            >
+              {(Object.keys(MODE_LABEL) as PriceMode[]).map((m) => (
+                <option key={m} value={m}>
+                  {MODE_LABEL[m]}
+                </option>
+              ))}
+            </select>
+          </label>
+          {(mode === "percent" || mode === "fixed") && (
+            <label className="space-y-1">
+              <span className="block text-xs text-moss/70">
+                {mode === "percent" ? "Kortingspercentage" : "Prijs excl. btw"}
+              </span>
+              <input
+                className="h-9 w-28 rounded-md border border-input bg-background px-2"
+                inputMode="decimal"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                placeholder={mode === "percent" ? "bijv. 50" : "bijv. 7,50"}
+              />
+            </label>
+          )}
+          <label className="flex-1 space-y-1">
+            <span className="block text-xs text-moss/70">Reden (optioneel)</span>
+            <input
+              className="h-9 w-full rounded-md border border-input bg-background px-2"
+              value={note}
+              maxLength={200}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={picked.inArea ? "bijv. coulance" : "bijv. buiten regio, telefonisch akkoord"}
             />
           </label>
-        )}
-        <label className="flex-1 space-y-1">
-          <span className="block text-xs text-moss/70">Reden (optioneel)</span>
-          <input
-            className="h-9 w-full rounded-md border border-input bg-background px-2"
-            value={note}
-            maxLength={200}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="bijv. coulance"
-          />
-        </label>
-      </div>
-      <ul className="space-y-1">
-        {data.map((c) => (
-          <li key={c.companyId} className="flex flex-wrap items-center justify-between gap-2">
-            <span>
-              <strong>{c.name}</strong> ·{" "}
-              {c.categories.map((x) => CATEGORY_LABEL[x] ?? x).join(", ")}
-              {c.distanceKm !== null && ` · ${c.distanceKm} km`}
-            </span>
-            <Button
-              size="sm"
-              onClick={() => assign.mutate(c.companyId)}
-              disabled={assign.isPending || !valueOk}
-            >
-              Toewijzen
-            </Button>
-          </li>
-        ))}
-      </ul>
+          <Button
+            size="sm"
+            onClick={() => assign.mutate(picked.companyId)}
+            disabled={assign.isPending || !valueOk}
+          >
+            Toewijzen aan {picked.name}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

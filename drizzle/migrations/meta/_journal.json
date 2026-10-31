@@ -141,6 +141,13 @@
       "when": 1793468732206,
       "tag": "0019_manual_assign_price_override",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793469350451,
+      "tag": "0020_manual_assign_outside_area",
+      "breakpoints": true
     }
   ]
 }
