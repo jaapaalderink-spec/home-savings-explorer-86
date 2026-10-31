@@ -66,6 +66,9 @@ export const createContractVersion = createServerFn({ method: "POST" })
         note: z.string().trim().max(300).optional(),
         packageCode: z.enum(["start", "groei", "team"]).optional(),
         billingMode: z.enum(["actual_delivered", "fixed_package"]).default("actual_delivered"),
+        customPrices: customPricesSchema.optional(),
+        reviewDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        reviewNote: z.string().trim().max(300).optional(),
       })
       .parse(d),
   )
@@ -73,51 +76,17 @@ export const createContractVersion = createServerFn({ method: "POST" })
     const db = await assertAdmin(context.userId, context.claims);
     if (data.validFrom < nextMonthStart())
       throw new Error("Een wijziging gaat op zijn vroegst in op de eerste van volgende maand.");
-    const { data: last } = await db
-      .from("subscription_versions")
-      .select("version")
-      .eq("company_id", data.companyId)
-      .order("version", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (data.billingMode === "fixed_package" && !data.packageCode)
-      throw new Error("Kies een pakket om op vast pakketbedrag te factureren.");
-    const pkg = data.packageCode ? PACKAGES[data.packageCode] : null;
-    const { error } = await db.from("subscription_versions").insert({
-      company_id: data.companyId,
-      version: (last?.version ?? 0) + 1,
-      valid_from: data.validFrom,
-      lead_quota_per_month: pkg ? pkg.leads : data.leadQuotaPerMonth,
-      paid_seats: data.paidSeats,
-      platform_fee_ex_vat: pkg ? PACKAGE_PLATFORM_FEE : CONTRACT_DEFAULTS.platformFee,
-      seat_fee_ex_vat: pkg ? SEAT_FEE : CONTRACT_DEFAULTS.seatFee,
-      base_lead_price_ex_vat: pkg ? PACKAGE_LEAD_PRICE : CONTRACT_DEFAULTS.baseLeadPrice,
-      extra_product_price_ex_vat: pkg ? PACKAGE_EXTRA_PRODUCT_PRICE : CONTRACT_DEFAULTS.extraProductPrice,
-      package_code: data.packageCode ?? null,
-      billing_mode: pkg ? data.billingMode : "actual_delivered",
-      package_fee_ex_vat: data.packageCode ? packageFee(data.packageCode) : null,
-      included_seats: pkg?.includedSeats ?? 0,
-      min_term_months: pkg ? MIN_TERM_MONTHS : 0,
-      notice_months: NOTICE_MONTHS,
-      note: data.note ?? null,
-      created_by: context.userId,
-    });
-    if (error) {
-      if (error.code === "23505")
-        throw new Error("Er bestaat al een contractversie met die ingangsdatum.");
-      throw new Error("Contractversie opslaan is mislukt.");
-    }
-    await db.rpc("log_audit_event_api", {
-      p_event: "COMPANY_COMMERCIAL_SETTINGS_UPDATED",
-      p_entity: "company",
-      p_entity_id: data.companyId,
-      p_company: data.companyId,
-      p_actor: context.userId,
-      p_source: "admin",
-      p_metadata: { subscription_version: data },
-    } as never);
+    const { insertContractVersion } = await import("@/lib/contract-version.server");
+    await insertContractVersion(db, data, context.userId);
     return { ok: true };
   });
+
+export const customPricesSchema = z.object({
+  platformFee: z.number().min(0).max(10000),
+  seatFee: z.number().min(0).max(1000),
+  leadPrice: z.number().min(0).max(1000),
+  extraProductPrice: z.number().min(0).max(1000),
+});
 
 /* ----------------------------- Wachtrij en handmatig ----------------------------- */
 
