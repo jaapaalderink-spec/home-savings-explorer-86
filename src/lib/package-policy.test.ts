@@ -33,3 +33,16 @@ describe("vervroegd stoppen", () => {
     expect(terminationSettlement({ ...base, mode: "fixed_package", stopMonth: "2027-04-01" }).total).toBe(0);
   });
 });
+
+import { BUNDLES, earliestStopMonth } from "./package-policy";
+describe("bundels en opzegtermijn", () => {
+  it("bundelprijzen 3×€25, 5×€24, 10×€22,50", () => {
+    expect([3 * BUNDLES[3], 5 * BUNDLES[5], 10 * BUNDLES[10]]).toEqual([75, 120, 225]);
+  });
+  it("opzeggen op 31 oktober: laatste maand november", () => {
+    expect(earliestStopMonth("2026-10-31")).toBe("2026-11-01");
+  });
+  it("opzeggen in december: laatste maand januari volgend jaar", () => {
+    expect(earliestStopMonth("2026-12-15")).toBe("2027-01-01");
+  });
+});

@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LogOut, Inbox, Users, ShieldCheck, Gauge, MapPin, SlidersHorizontal } from "lucide-react";
+import { LogOut, Inbox, Users, ShieldCheck, Gauge, MapPin, SlidersHorizontal, FileSignature } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +16,7 @@ import { TeamOverview } from "@/components/dashboard/TeamOverview";
 import { AdminOverview } from "@/components/dashboard/AdminOverview";
 import { MyPerformance } from "@/components/dashboard/MyPerformance";
 import { CrmStats } from "@/components/dashboard/CrmStats";
+import { SubscriptionPanel } from "@/components/dashboard/SubscriptionPanel";
 import { TRIAL_LEAD_ALLOWANCE, planByName } from "@/lib/lead-pricing";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -37,7 +38,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
-type TabId = "leads" | "performance" | "settings" | "areas" | "team" | "admin";
+type TabId = "leads" | "performance" | "settings" | "areas" | "team" | "subscription" | "admin";
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -80,6 +81,7 @@ function DashboardPage() {
     { id: "settings", label: "Leadinstellingen", icon: SlidersHorizontal, show: true },
     { id: "areas", label: "Werkgebied", icon: MapPin, show: true },
     { id: "team", label: "Team", icon: Users, show: isOwner || isAdmin },
+    { id: "subscription", label: "Abonnement", icon: FileSignature, show: isOwner },
     { id: "admin", label: "Platform", icon: ShieldCheck, show: isAdmin },
   ];
 
@@ -224,6 +226,7 @@ function DashboardPage() {
                   <TeamOverview />
                 </div>
               )}
+              {tab === "subscription" && isOwner && <SubscriptionPanel />}
               {tab === "admin" && <AdminOverview />}
             </section>
           </>
