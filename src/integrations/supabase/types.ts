@@ -1995,6 +1995,36 @@ export type Database = {
           },
         ]
       }
+      site_integrations: {
+        Row: {
+          ads_conversion_id: string | null
+          ga_measurement_id: string | null
+          gtm_container_id: string | null
+          id: boolean
+          search_console_token: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ads_conversion_id?: string | null
+          ga_measurement_id?: string | null
+          gtm_container_id?: string | null
+          id?: boolean
+          search_console_token?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ads_conversion_id?: string | null
+          ga_measurement_id?: string | null
+          gtm_container_id?: string | null
+          id?: boolean
+          search_console_token?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       staff_permissions: {
         Row: {
           created_at: string
