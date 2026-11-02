@@ -280,6 +280,7 @@ export type Database = {
           created_at: string
           id: string
           join_code: string
+          kvk_number: string | null
           monthly_fee_ex_vat: number
           monthly_lead_limit: number
           name: string
@@ -305,6 +306,7 @@ export type Database = {
           created_at?: string
           id?: string
           join_code?: string
+          kvk_number?: string | null
           monthly_fee_ex_vat?: number
           monthly_lead_limit?: number
           name: string
@@ -330,6 +332,7 @@ export type Database = {
           created_at?: string
           id?: string
           join_code?: string
+          kvk_number?: string | null
           monthly_fee_ex_vat?: number
           monthly_lead_limit?: number
           name?: string

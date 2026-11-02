@@ -13,6 +13,9 @@ export function Onboarding() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<"create" | "join">("create");
   const [name, setName] = useState("");
+  const [kvk, setKvk] = useState("");
+  const kvkClean = kvk.replace(/\s/g, "");
+  const kvkValid = /^\d{8}$/.test(kvkClean);
   const [categories, setCategories] = useState<string[]>([]);
   const [plan, setPlan] = useState<"starter" | "groei" | "premium">("starter");
   const [code, setCode] = useState("");
@@ -20,7 +23,7 @@ export function Onboarding() {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["partner-context"] });
 
   const create = useMutation({
-    mutationFn: () => createCompany({ data: { name, categories, plan } }),
+    mutationFn: () => createCompany({ data: { name, kvkNumber: kvkClean, categories, plan } }),
     onSuccess: () => {
       toast.success("Bedrijf aangemaakt. Je bent nu eigenaar.");
       invalidate();
@@ -70,6 +73,24 @@ export function Onboarding() {
           <div className="space-y-1.5">
             <Label htmlFor="company">Bedrijfsnaam</Label>
             <Input id="company" value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="kvk">KvK-nummer</Label>
+            <Input
+              id="kvk"
+              inputMode="numeric"
+              maxLength={10}
+              placeholder="8 cijfers"
+              value={kvk}
+              onChange={(e) => setKvk(e.target.value)}
+              aria-invalid={kvk.length > 0 && !kvkValid}
+            />
+            {kvk.length > 0 && !kvkValid ? (
+              <p className="text-xs text-destructive">Een KvK-nummer bestaat uit 8 cijfers.</p>
+            ) : (
+              <p className="text-xs text-moss/60">We controleren dit nummer in het handelsregister voordat je account wordt goedgekeurd.</p>
+            )}
           </div>
 
           <div>

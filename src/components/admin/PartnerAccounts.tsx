@@ -96,6 +96,18 @@ function PartnerRow({ c, months }: { c: Company; months: string[] }) {
         <div>
           <p className="font-semibold text-ink">{c.name}</p>
           <p className="text-moss/70">
+            KvK: {c.kvk_number ? (
+              <a
+                className="font-medium text-leaf underline-offset-4 hover:underline"
+                href={`https://www.kvk.nl/zoeken/?source=all&q=${c.kvk_number}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {c.kvk_number}
+              </a>
+            ) : "niet opgegeven"}
+          </p>
+          <p className="text-moss/70">
             {c.owner?.name ?? "…"} · {c.owner?.email ?? c.contact_email ?? "geen e-mail"}
             {(c.owner?.phone ?? c.contact_phone) ? ` · ${c.owner?.phone ?? c.contact_phone}` : ""}
           </p>

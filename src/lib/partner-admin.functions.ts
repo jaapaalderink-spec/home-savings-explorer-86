@@ -25,7 +25,7 @@ export const listPartnerAccounts = createServerFn({ method: "GET" })
     const db = await assertAdmin(context.userId, context.claims);
     const { data: companies } = await db
       .from("companies")
-      .select("id, name, categories, created_at, active, approval_status, approved_at, closed_at, closed_reason, contact_email, contact_phone, website")
+      .select("id, name, kvk_number, categories, created_at, active, approval_status, approved_at, closed_at, closed_reason, contact_email, contact_phone, website")
       .order("created_at", { ascending: false })
       .limit(300);
     const ids = (companies ?? []).map((c) => c.id);

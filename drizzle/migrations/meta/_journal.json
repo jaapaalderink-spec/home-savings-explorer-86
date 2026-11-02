@@ -176,6 +176,13 @@
       "when": 1793477721313,
       "tag": "0024_invoice_dunning_suspension",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793649893874,
+      "tag": "0025_company_kvk_number",
+      "breakpoints": true
     }
   ]
 }
