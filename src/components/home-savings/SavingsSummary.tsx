@@ -53,27 +53,43 @@ export function SavingsSummary({ results, inputs, onPick }: Props) {
         />
       </div>
 
-      <h2 className="mt-6 text-sm font-semibold text-ink">Checklist</h2>
       {counted.length > 0 && (
-        <div className="mt-3 space-y-2 text-sm text-moss">
-          <p>
-            Huidige energiekosten: {formatEuro(scenario.before.cost)}/jaar. Na maatregelen:{" "}
-            {formatEuro(scenario.after.cost)}/jaar.
-          </p>
-          <p>
-            Gevoeligheidsbereik: {formatEuro(scenario.range.min)} tot{" "}
-            {formatEuro(scenario.range.max)}/jaar.
-          </p>
-          <p>
-            Netafname: {Math.round(scenario.before.imports)} naar{" "}
-            {Math.round(scenario.after.imports)} kWh. Gas: {Math.round(scenario.before.gas)} naar{" "}
-            {Math.round(scenario.after.gas)} m3.
-          </p>
-          {scenario.notes.map((note) => (
-            <p key={note}>{note}</p>
-          ))}
+        <div className="mt-6">
+          <h2 className="text-sm font-semibold text-ink">Effect van je maatregelen</h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl bg-background p-4" style={{ boxShadow: "var(--shadow-panel)" }}>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-moss/60">Energiekosten</p>
+              <p className="mt-1 text-sm text-moss/70 line-through">{formatEuro(scenario.before.cost)}</p>
+              <p className="text-lg font-bold text-leaf">{formatEuro(scenario.after.cost)}<span className="text-xs font-normal text-moss/60">/jaar</span></p>
+            </div>
+            <div className="rounded-2xl bg-background p-4" style={{ boxShadow: "var(--shadow-panel)" }}>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-moss/60">Bandbreedte besparing</p>
+              <p className="mt-1 text-lg font-bold text-ink">{formatEuro(scenario.range.min)} tot {formatEuro(scenario.range.max)}</p>
+              <p className="text-xs text-moss/60">per jaar, afhankelijk van aannames</p>
+            </div>
+            <div className="rounded-2xl bg-background p-4" style={{ boxShadow: "var(--shadow-panel)" }}>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-moss/60">Verbruik</p>
+              <p className="mt-1 text-sm text-ink">Stroom: <span className="font-semibold">{Math.round(scenario.before.imports)} → {Math.round(scenario.after.imports)} kWh</span></p>
+              <p className="text-sm text-ink">Gas: <span className="font-semibold">{Math.round(scenario.before.gas)} → {Math.round(scenario.after.gas)} m³</span></p>
+            </div>
+          </div>
+          {scenario.notes.length > 0 && (
+            <details className="group mt-3 rounded-2xl bg-background/60 p-3 text-sm text-moss">
+              <summary className="flex cursor-pointer list-none items-center justify-between font-semibold text-ink">
+                <span>Uitgangspunten en aannames ({scenario.notes.length})</span>
+                <span className="text-xs font-normal text-moss/60 group-open:hidden">Bekijk ▾</span>
+                <span className="hidden text-xs font-normal text-moss/60 group-open:inline">Verberg ▴</span>
+              </summary>
+              <ul className="mt-2 list-disc space-y-1.5 pl-5 text-xs leading-relaxed">
+                {scenario.notes.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            </details>
+          )}
         </div>
       )}
+      <h2 className="mt-6 text-sm font-semibold text-ink">Checklist</h2>
       <ul className="mt-2 space-y-2">
         {items.map((c) => {
           const r = results[c.id];
