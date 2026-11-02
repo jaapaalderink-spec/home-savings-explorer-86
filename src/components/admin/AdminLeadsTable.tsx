@@ -186,7 +186,7 @@ export function AdminLeadsTable({ filters }: { filters: LeadFilters }) {
                               <ul className="mt-1 space-y-0.5">
                                 {l.partners.map((p, i) => (
                                   <li key={`${p.company}-${i}`}>
-                                    {p.company} — {p.status}
+                                    {p.company}, {p.status}
                                   </li>
                                 ))}
                               </ul>

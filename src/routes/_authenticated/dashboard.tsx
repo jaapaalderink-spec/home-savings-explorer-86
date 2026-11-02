@@ -23,13 +23,13 @@ import { planByName } from "@/lib/lead-pricing";
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Partnerdashboard — Onafhankelijke Offerte" },
+      { title: "Partnerdashboard, Onafhankelijke Offerte" },
       {
         name: "description",
         content:
           "Volg ontvangen aanvragen, resultaten en accountmanagers in het partnerdashboard.",
       },
-      { property: "og:title", content: "Partnerdashboard — Onafhankelijke Offerte" },
+      { property: "og:title", content: "Partnerdashboard, Onafhankelijke Offerte" },
       { property: "og:description", content: "Beheer ontvangen aanvragen, resultaten en je team." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -185,7 +185,7 @@ function DashboardPage() {
                 </select>
                 {previewing && (
                   <span role="status" className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-accent-foreground">
-                    Voorbeeldweergave van {viewMember!.name} — alleen kijken, wijzigingen gaan via je eigen account
+                    Voorbeeldweergave van {viewMember!.name}, alleen kijken, wijzigingen gaan via je eigen account
                     <button type="button" className="ml-2 underline" onClick={() => setViewAs(null)}>Terug</button>
                   </span>
                 )}

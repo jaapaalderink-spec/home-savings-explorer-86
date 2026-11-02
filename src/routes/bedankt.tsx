@@ -4,13 +4,13 @@ import { CheckCircle2 } from "lucide-react";
 export const Route = createFileRoute("/bedankt")({
   head: () => ({
     meta: [
-      { title: "Aanvraag ontvangen — Onafhankelijke Offerte" },
+      { title: "Aanvraag ontvangen, Onafhankelijke Offerte" },
       {
         name: "description",
         content:
           "Bedankt voor je aanvraag. Maximaal 3 gecontroleerde installateurs nemen binnen enkele werkdagen contact met je op.",
       },
-      { property: "og:title", content: "Aanvraag ontvangen — Onafhankelijke Offerte" },
+      { property: "og:title", content: "Aanvraag ontvangen, Onafhankelijke Offerte" },
       {
         property: "og:description",
         content: "Je aanvraag staat klaar voor maximaal 3 gecontroleerde installateurs.",

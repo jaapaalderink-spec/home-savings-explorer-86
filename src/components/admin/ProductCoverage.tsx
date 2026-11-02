@@ -88,7 +88,7 @@ export function ProductCoverage() {
                   <title>
                     {r.region_name}: {r.providers} aanbieders, capaciteit {r.capacity}, vraag{" "}
                     {r.demand}
-                    {r.gap_reason ? ` — ${GAP_REASON_LABEL[r.gap_reason]}` : ""}
+                    {r.gap_reason ? `, ${GAP_REASON_LABEL[r.gap_reason]}` : ""}
                   </title>
                 </circle>
               );

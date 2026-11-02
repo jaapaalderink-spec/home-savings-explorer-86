@@ -17,7 +17,7 @@ function downloadIcs(a: Appt) {
   const ics = [
     "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Onafhankelijke Offerte//NL", "BEGIN:VEVENT",
     `UID:${a.id}@onafhankelijke-offerte.nl`, `DTSTAMP:${fmt(new Date())}`, `DTSTART:${fmt(start)}`, `DTEND:${fmt(end)}`,
-    `SUMMARY:${esc(`${KIND_LABEL[a.kind]} – ${a.name}`)}`, `LOCATION:${esc(a.address)}`,
+    `SUMMARY:${esc(`${KIND_LABEL[a.kind]}, ${a.name}`)}`, `LOCATION:${esc(a.address)}`,
     `DESCRIPTION:${esc(`Tel: ${a.phone}${a.note ? `\n${a.note}` : ""}`)}`, "END:VEVENT", "END:VCALENDAR",
   ].join("\r\n");
   const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));

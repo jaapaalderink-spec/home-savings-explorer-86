@@ -40,13 +40,13 @@ export function calculateEHMSAdvice(input: EHMSInput): AdviceResult {
   );
   if (count >= 3) {
     reasons.push(
-      `Met ${count} slimme systemen haalt het EHMS pas écht zijn waarde — het legt verbindingen die losse apparaten missen.`,
+      `Met ${count} slimme systemen haalt het EHMS pas écht zijn waarde, het legt verbindingen die losse apparaten missen.`,
     );
   } else if (count >= 1) {
     reasons.push("Hoe meer slimme apparaten je combineert, hoe meer het EHMS kan optimaliseren.");
   } else {
     reasons.push(
-      "Zonder gekoppelde apparaten levert een EHMS weinig op — begin met minstens één systeem.",
+      "Zonder gekoppelde apparaten levert een EHMS weinig op, begin met minstens één systeem.",
     );
   }
   if (isDynamic) {

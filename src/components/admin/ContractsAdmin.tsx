@@ -157,7 +157,7 @@ function CompanyContract({ companyId }: { companyId: string }) {
               <option value="">Geen pakket (maatwerk aantal)</option>
               {SELECTABLE_PACKAGES.map((k) => (
                 <option key={k} value={k}>
-                  {PACKAGES[k].label} — {PACKAGES[k].leads} leads, {PACKAGES[k].includedSeats} extra plek(ken) inbegrepen
+                  {PACKAGES[k].label}, {PACKAGES[k].leads} leads, {PACKAGES[k].includedSeats} extra plek(ken) inbegrepen
                 </option>
               ))}
             </select>
@@ -167,11 +167,11 @@ function CompanyContract({ companyId }: { companyId: string }) {
               <legend className="mb-1.5 text-sm font-medium">Facturatie</legend>
               <label className="flex items-start gap-2">
                 <input type="radio" name="c-mode" checked={mode === "actual_delivered"} onChange={() => setMode("actual_delivered")} />
-                <span>Werkelijke levering — €99 vast + alleen geleverde leads. Vroeg stoppen: resterende maanden × €99.</span>
+                <span>Werkelijke levering, €99 vast + alleen geleverde leads. Vroeg stoppen: resterende maanden × €99.</span>
               </label>
               <label className="flex items-start gap-2">
                 <input type="radio" name="c-mode" checked={mode === "fixed_package"} onChange={() => setMode("fixed_package")} />
-                <span>Vast pakketbedrag — {formatEuro(packageFee(pkg))} per maand, ook bij minder levering. Vroeg stoppen: resterende maanden × {formatEuro(packageFee(pkg))}.</span>
+                <span>Vast pakketbedrag, {formatEuro(packageFee(pkg))} per maand, ook bij minder levering. Vroeg stoppen: resterende maanden × {formatEuro(packageFee(pkg))}.</span>
               </label>
             </fieldset>
           )}

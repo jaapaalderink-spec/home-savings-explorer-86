@@ -24,7 +24,7 @@ export function ContractCard({ done, onPick }: { done: boolean; onPick: (id: str
           Kies je energiecontract
         </span>
         <span className="block truncate text-sm text-moss/75">
-          Vast, dynamisch, variabel of nog onbekend — het bepaalt je besparing.
+          Vast, dynamisch, variabel of nog onbekend, het bepaalt je besparing.
         </span>
       </span>
       <ChevronRight size={20} className="shrink-0 text-moss/60" />

@@ -28,7 +28,7 @@ export type FollowUpInput = {
 export type FollowUpReason = "escalated" | "appointment_overdue" | "follow_up_due" | "not_contacted" | "stale";
 export const REASON_LABEL: Record<FollowUpReason, string> = {
   escalated: "Urgent: na 48 werkuren nog niet gebeld",
-  appointment_overdue: "Afspraak geweest — uitkomst vastleggen",
+  appointment_overdue: "Afspraak geweest, uitkomst vastleggen",
   follow_up_due: "Vervolgdatum bereikt",
   not_contacted: "Nog niet gebeld",
   stale: `Langer dan ${STALE_DAYS} dagen geen actie`,

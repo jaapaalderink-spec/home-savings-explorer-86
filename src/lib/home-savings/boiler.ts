@@ -107,7 +107,7 @@ export function calculateBoilerAdvice(input: BoilerInput): AdviceResult {
 
   if (annualFeedInKwh >= 1500) {
     reasons.push(
-      `Je levert ongeveer ${formatNumber(annualFeedInKwh)} kWh per jaar terug — daarvan kan de boiler zo'n ${formatNumber(chargeableFromSurplusKwh)} kWh als warmte vasthouden.`,
+      `Je levert ongeveer ${formatNumber(annualFeedInKwh)} kWh per jaar terug, daarvan kan de boiler zo'n ${formatNumber(chargeableFromSurplusKwh)} kWh als warmte vasthouden.`,
     );
     badges.push("veel eigen overschot");
   } else {

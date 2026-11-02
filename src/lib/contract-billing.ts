@@ -39,7 +39,7 @@ export function contractInvoiceLines(terms: ContractTerms, purchases: BillablePu
     if (purchase.price_ex_vat === undefined) continue;
     const price = Number(purchase.price_ex_vat);
     if (!Number.isFinite(price) || price < 0) throw new Error("Ongeldige vastgelegde leveringsprijs.");
-    lines.push({ description: "Geleverde aanvraag — vastgelegde bundelprijs", quantity: 1, unit_price_ex_vat: price, amount_ex_vat: r2(price) });
+    lines.push({ description: "Geleverde aanvraag, vastgelegde bundelprijs", quantity: 1, unit_price_ex_vat: price, amount_ex_vat: r2(price) });
   }
   return lines;
 }

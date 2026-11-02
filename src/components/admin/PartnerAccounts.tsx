@@ -152,7 +152,7 @@ function ApproveForm({ c, months, onDone }: { c: Company; months: string[]; onDo
           <Label htmlFor={`a-pkg-${c.id}`}>Pakket</Label>
           <select id={`a-pkg-${c.id}`} value={pkg} onChange={(e) => setPkg(e.target.value as PackageCode)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
             {SELECTABLE_PACKAGES.map((k) => (
-              <option key={k} value={k}>{PACKAGES[k].label} — {PACKAGES[k].leads} leads</option>
+              <option key={k} value={k}>{PACKAGES[k].label}, {PACKAGES[k].leads} leads</option>
             ))}
           </select>
         </div>

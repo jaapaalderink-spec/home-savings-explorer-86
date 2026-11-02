@@ -67,9 +67,9 @@ function Editor({ data }: { data: Data }) {
         if (!s.enabled) return;
         const cs = data.companyServices.find((c) => c.category === s.category)!;
         const label = SETTINGS_COLUMNS.find((c) => c.category === s.category)!.label;
-        if (!cs.active) out.push(`${r.name} – ${label}: deze dienst staat voor het bedrijf uit (tabblad Werkgebied).`);
+        if (!cs.active) out.push(`${r.name}, ${label}: deze dienst staat voor het bedrijf uit (tabblad Werkgebied).`);
         const p = areaProblem(cs.area, s.area as Area);
-        if (p) out.push(`${r.name} – ${label}: ${p}`);
+        if (p) out.push(`${r.name}, ${label}: ${p}`);
       }),
     );
     return out;

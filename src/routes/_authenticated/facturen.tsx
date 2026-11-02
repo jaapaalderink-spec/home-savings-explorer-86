@@ -14,14 +14,14 @@ import { printInvoice } from "@/lib/invoice-print";
 export const Route = createFileRoute("/_authenticated/facturen")({
   head: () => ({
     meta: [
-      { title: "Facturen betalen — Onafhankelijke Offerte" },
+      { title: "Facturen betalen, Onafhankelijke Offerte" },
       {
         name: "description",
         content:
           "Bekijk je maandfacturen, betaal openstaande bedragen met iDEAL en volg de betaalstatus.",
       },
       { name: "robots", content: "noindex" },
-      { property: "og:title", content: "Facturen betalen — Onafhankelijke Offerte" },
+      { property: "og:title", content: "Facturen betalen, Onafhankelijke Offerte" },
       { property: "og:description", content: "Bekijk je facturen, creditnota’s en betaalstatus." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

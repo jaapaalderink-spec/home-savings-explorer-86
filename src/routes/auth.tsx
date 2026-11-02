@@ -11,13 +11,13 @@ import { Label } from "@/components/ui/label";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Partner inloggen — Onafhankelijke Offerte" },
+      { title: "Partner inloggen, Onafhankelijke Offerte" },
       {
         name: "description",
         content:
           "Log in op het partnerdashboard van Onafhankelijke Offerte om ontvangen aanvragen en je team te beheren.",
       },
-      { property: "og:title", content: "Partner inloggen — Onafhankelijke Offerte" },
+      { property: "og:title", content: "Partner inloggen, Onafhankelijke Offerte" },
       {
         property: "og:description",
         content: "Toegang tot je ontvangen aanvragen, resultaten en het teamoverzicht.",

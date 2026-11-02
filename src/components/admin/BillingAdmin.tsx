@@ -42,7 +42,7 @@ const STATUS_LABEL: Record<string, string> = {
 function financialResult(c: Record<string, unknown>): string {
   const status = c["status"] as string;
   if (status === "pending") return "Nog te beoordelen";
-  if (status === "rejected") return "Afgewezen — geen creditering";
+  if (status === "rejected") return "Afgewezen, geen creditering";
   const note = (c["credit_note"] ?? null) as {
     credit_number?: string;
     total_inc_vat?: number;
@@ -57,8 +57,8 @@ function financialResult(c: Record<string, unknown>): string {
     is_trial?: boolean;
     invoice_id?: string | null;
   } | null;
-  if (purchase?.is_trial) return "Proeflead — geen creditering nodig";
-  if (!purchase?.invoice_id) return "Nog niet gefactureerd — van facturatie uitgesloten";
+  if (purchase?.is_trial) return "Proeflead, geen creditering nodig";
+  if (!purchase?.invoice_id) return "Nog niet gefactureerd, van facturatie uitgesloten";
   return "Goedgekeurd";
 }
 

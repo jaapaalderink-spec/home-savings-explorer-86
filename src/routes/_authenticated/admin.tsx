@@ -42,13 +42,13 @@ import type { LeadFilters } from "@/components/admin/filters";
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
     meta: [
-      { title: "Platformbeheer — Onafhankelijke Offerte" },
+      { title: "Platformbeheer, Onafhankelijke Offerte" },
       {
         name: "description",
         content:
           "Overzicht van alle aanvragen, regio's, partners, dekkingsgaten en facturatie op het platform.",
       },
-      { property: "og:title", content: "Platformbeheer — Onafhankelijke Offerte" },
+      { property: "og:title", content: "Platformbeheer, Onafhankelijke Offerte" },
       {
         property: "og:description",
         content: "Alle aanvragen, regio's, partners en facturatie in één beheerdashboard.",

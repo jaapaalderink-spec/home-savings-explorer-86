@@ -59,7 +59,7 @@ export function calculateBatteryAdvice(input: BatteryInput): AdviceResult {
   );
   if (annualFeedInKwh > 1500) {
     reasons.push(
-      `Je levert ${Math.round(annualFeedInKwh)} kWh/jaar terug — veel ruimte om zelf meer te verbruiken.`,
+      `Je levert ${Math.round(annualFeedInKwh)} kWh/jaar terug, veel ruimte om zelf meer te verbruiken.`,
     );
   } else {
     reasons.push(
