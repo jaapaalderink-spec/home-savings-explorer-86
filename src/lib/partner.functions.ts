@@ -53,6 +53,10 @@ export const createCompany = createServerFn({ method: "POST" })
     z
       .object({
         name: z.string().trim().min(2).max(80),
+        kvkNumber: z
+          .string()
+          .transform((v) => v.replace(/\s/g, ""))
+          .refine((v) => /^\d{8}$/.test(v), "Vul een geldig KvK-nummer van 8 cijfers in."),
         categories: z.array(z.string().max(24)).min(1).max(6),
         plan: z.enum(["starter", "groei", "premium"]),
       })
@@ -72,6 +76,7 @@ export const createCompany = createServerFn({ method: "POST" })
       .from("companies")
       .insert({
         name: data.name,
+        kvk_number: data.kvkNumber,
         categories: data.categories,
         plan_name: plan.id,
         monthly_lead_limit: plan.leads,
