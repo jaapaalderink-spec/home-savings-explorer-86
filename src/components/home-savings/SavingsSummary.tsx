@@ -113,7 +113,7 @@ export function SavingsSummary({ results, inputs, onPick }: Props) {
                 </span>
                 <span className="shrink-0 text-sm font-bold text-leaf">
                   {!r ? (
-                    <span className="text-xs font-normal text-moss/50">—</span>
+                    <span className="text-xs font-normal text-moss/50">…</span>
                   ) : (
                     <>
                       {formatEuro(r.practicalSavings)}

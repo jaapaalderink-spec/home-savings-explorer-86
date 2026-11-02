@@ -124,7 +124,7 @@ export function ProductCoverage() {
                   <td className="p-3 text-moss/80">{r.capacity}</td>
                   <td className="p-3 text-moss/80">{r.demand}</td>
                   <td className="p-3 text-moss/80">
-                    {r.gap_reason ? GAP_REASON_LABEL[r.gap_reason] : "—"}
+                    {r.gap_reason ? GAP_REASON_LABEL[r.gap_reason] : "…"}
                   </td>
                 </tr>
               ))}

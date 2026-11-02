@@ -96,7 +96,7 @@ function PartnerRow({ c, months }: { c: Company; months: string[] }) {
         <div>
           <p className="font-semibold text-ink">{c.name}</p>
           <p className="text-moss/70">
-            {c.owner?.name ?? "—"} · {c.owner?.email ?? c.contact_email ?? "geen e-mail"}
+            {c.owner?.name ?? "…"} · {c.owner?.email ?? c.contact_email ?? "geen e-mail"}
             {(c.owner?.phone ?? c.contact_phone) ? ` · ${c.owner?.phone ?? c.contact_phone}` : ""}
           </p>
           <p className="text-moss/60">

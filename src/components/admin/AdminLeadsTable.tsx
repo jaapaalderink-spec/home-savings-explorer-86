@@ -87,7 +87,7 @@ export function AdminLeadsTable({ filters }: { filters: LeadFilters }) {
                     <td className="p-4">
                       <span className="font-semibold text-ink">{l.postcode}</span>
                       <span className="block text-xs text-moss/60">
-                        {l.city || l.region || "—"}
+                        {l.city || l.region || "…"}
                       </span>
                     </td>
                     <td className="p-4">

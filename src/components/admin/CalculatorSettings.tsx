@@ -47,7 +47,7 @@ const fullValues = (stored: Record<string, unknown> | null | undefined): Overrid
     SETTINGS.map((s) => [s.key, (stored?.[s.key] as SettingValue) ?? defaultValue(s.key)]),
   );
 const fmtDate = (iso?: string | null) =>
-  iso ? new Date(iso).toLocaleString("nl-NL", { dateStyle: "medium", timeStyle: "short" }) : "—";
+  iso ? new Date(iso).toLocaleString("nl-NL", { dateStyle: "medium", timeStyle: "short" }) : "…";
 const show = (d: SettingDef, v: unknown) => {
   if (d.kind === "number")
     return String(+((v as number) * (d.scale ?? 1)).toFixed(4)).replace(".", ",");
@@ -368,7 +368,7 @@ export function CalculatorSettings() {
 }
 
 const eur = (n: number | undefined) =>
-  n === undefined ? "—" : `€ ${Math.round(n).toLocaleString("nl-NL")}`;
+  n === undefined ? "…" : `€ ${Math.round(n).toLocaleString("nl-NL")}`;
 
 function Diff({ a, b }: { a: number | undefined; b: number | undefined }) {
   const changed = b !== undefined && a !== undefined && Math.round(a) !== Math.round(b);

@@ -356,7 +356,7 @@ function ResultCard({
         <CountUp value={result.practicalSavings} prefix="€ " />
       </p>
       <p className="text-sm text-moss/70">
-        bandbreedte {formatEuro(result.range.min)} – {formatEuro(result.range.max)}
+        bandbreedte {formatEuro(result.range.min)} tot {formatEuro(result.range.max)}
       </p>
 
       {result.beforeAfter && (

@@ -95,7 +95,7 @@ function InvoicesPage() {
                   <div>
                     <p className="font-semibold text-ink">Factuur {i.invoice_number as string}</p>
                     <p className="text-xs text-moss/70">
-                      {new Date(i.period_start as string).toLocaleDateString("nl-NL")} –{" "}
+                      {new Date(i.period_start as string).toLocaleDateString("nl-NL")} tot{" "}
                       {new Date(i.period_end as string).toLocaleDateString("nl-NL")} ·{" "}
                       {PAYMENT_STATUS_LABEL[status] ?? status}
                       {paid && i.paid_at

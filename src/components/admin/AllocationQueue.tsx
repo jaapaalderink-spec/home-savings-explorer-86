@@ -75,7 +75,7 @@ export function AllocationQueue() {
                   <td className="p-3">
                     {FULFILLMENT_LABEL[l.fulfillment_status as FulfillmentStatus]}
                   </td>
-                  <td className="p-3">{l.retry_until ? fmt(l.retry_until) : "—"}</td>
+                  <td className="p-3">{l.retry_until ? fmt(l.retry_until) : "…"}</td>
                   <td className="p-3">
                     <Button
                       size="sm"

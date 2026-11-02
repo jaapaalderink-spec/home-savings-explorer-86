@@ -79,7 +79,7 @@ export function RegionMapPanel({ filters }: { filters: LeadFilters }) {
                 <td className="p-4 text-moss/80">{r.partners}</td>
                 <td className="p-4 text-xs text-moss/80">
                   {r.missingCategories.length === 0
-                    ? "—"
+                    ? "…"
                     : r.missingCategories.map((c) => CATEGORY_LABEL[c] ?? c).join(", ")}
                 </td>
               </tr>
