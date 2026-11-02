@@ -1,6 +1,10 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Input } from "@/components/ui/input";
-import { DEFAULT_PROFILE, type EnergyProfile } from "@/lib/home-savings/scenario";
+import {
+  DEFAULT_PROFILE,
+  recommendedBatteryKwh,
+  type EnergyProfile,
+} from "@/lib/home-savings/scenario";
 import { ENERGY_CONFIG as C } from "@/lib/home-savings/config";
 
 type Props = {
@@ -19,6 +23,12 @@ const INTRO: Record<string, string> = {
 };
 
 export function EnergyProfileForm({ value: p, onChange, category, hideShared }: Props) {
+  const rec = recommendedBatteryKwh(p);
+  // Pre-select the advice until the visitor picks a capacity themselves.
+  useEffect(() => {
+    if (category !== "battery" || p.adviseBattery || p.provided.includes("newBattery")) return;
+    if (p.newBattery !== rec) onChange({ ...p, newBattery: rec });
+  }, [category, rec, p, onChange]);
   const set = (key: keyof EnergyProfile, value: unknown) =>
     onChange({
       ...p,
