@@ -5,7 +5,7 @@ const esc = (v: unknown) =>
   String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 const eur = (n: unknown) =>
   new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(Number(n ?? 0));
-const date = (d: unknown) => (d ? new Date(String(d)).toLocaleDateString("nl-NL") : "—");
+const date = (d: unknown) => (d ? new Date(String(d)).toLocaleDateString("nl-NL") : "…");
 
 export function printInvoice(i: Record<string, unknown>) {
   const company = (i["company"] ?? {}) as { name?: string; address?: string | null; vat_number?: string | null };
@@ -26,7 +26,7 @@ th{font-size:11px;text-transform:uppercase;color:#64748b}.r{text-align:right}.to
 </style></head><body>
 <h1>Factuur ${esc(i["invoice_number"])}</h1><div class="muted">Onafhankelijke Offerte</div>
 <div class="grid"><div><strong>Aan</strong><br>${esc(company.name)}<br>${esc(company.address ?? "")}${company.vat_number ? `<br>Btw: ${esc(company.vat_number)}` : ""}</div>
-<div class="r">Periode: ${date(i["period_start"])} – ${date(i["period_end"])}<br>Vervaldatum: ${date(i["due_date"])}<br>Status: ${esc(i["payment_status"] ?? "open")}</div></div>
+<div class="r">Periode: ${date(i["period_start"])} tot ${date(i["period_end"])}<br>Vervaldatum: ${date(i["due_date"])}<br>Status: ${esc(i["payment_status"] ?? "open")}</div></div>
 <table><thead><tr><th>Omschrijving</th><th class="r">Aantal</th><th class="r">Prijs</th><th class="r">Bedrag</th></tr></thead><tbody>${lines}</tbody></table>
 <table class="tot"><tr><td class="r">Subtotaal excl. btw</td><td class="r" style="width:120px">${eur(i["subtotal_ex_vat"])}</td></tr>
 <tr><td class="r">Btw 21%</td><td class="r">${eur(i["vat_amount"])}</td></tr>

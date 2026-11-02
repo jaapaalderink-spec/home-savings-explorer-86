@@ -120,7 +120,7 @@ function Hotspot({
     <button
       type="button"
       onClick={() => onPick(cat.id)}
-      aria-label={`${cat.label} — ${stateLabel}`}
+      aria-label={`${cat.label}, ${stateLabel}`}
       data-state={state}
       className="group absolute hidden -translate-x-1/2 -translate-y-1/2 rounded-full focus-brand hover:z-20 focus-visible:z-20 sm:block"
       style={{ left: `${cat.hotspot.x}%`, top: `${cat.hotspot.y}%` }}

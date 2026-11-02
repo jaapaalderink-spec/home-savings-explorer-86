@@ -96,7 +96,7 @@ function PartnerRow({ c, months }: { c: Company; months: string[] }) {
         <div>
           <p className="font-semibold text-ink">{c.name}</p>
           <p className="text-moss/70">
-            {c.owner?.name ?? "—"} · {c.owner?.email ?? c.contact_email ?? "geen e-mail"}
+            {c.owner?.name ?? "…"} · {c.owner?.email ?? c.contact_email ?? "geen e-mail"}
             {(c.owner?.phone ?? c.contact_phone) ? ` · ${c.owner?.phone ?? c.contact_phone}` : ""}
           </p>
           <p className="text-moss/60">
@@ -152,7 +152,7 @@ function ApproveForm({ c, months, onDone }: { c: Company; months: string[]; onDo
           <Label htmlFor={`a-pkg-${c.id}`}>Pakket</Label>
           <select id={`a-pkg-${c.id}`} value={pkg} onChange={(e) => setPkg(e.target.value as PackageCode)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
             {SELECTABLE_PACKAGES.map((k) => (
-              <option key={k} value={k}>{PACKAGES[k].label} — {PACKAGES[k].leads} leads</option>
+              <option key={k} value={k}>{PACKAGES[k].label}, {PACKAGES[k].leads} leads</option>
             ))}
           </select>
         </div>

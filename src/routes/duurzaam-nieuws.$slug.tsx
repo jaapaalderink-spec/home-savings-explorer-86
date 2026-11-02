@@ -14,8 +14,8 @@ export const Route = createFileRoute("/duurzaam-nieuws/$slug")({
     return { title: post.title, excerpt: post.excerpt, image: post.media_type === "image" ? post.media_url : null };
   },
   head: ({ loaderData }) => {
-    if (!loaderData) return { meta: [{ title: "Artikel niet gevonden — Duurzaam nieuws" }, { name: "robots", content: "noindex" }] };
-    const t = `${loaderData.title} — Duurzaam nieuws`;
+    if (!loaderData) return { meta: [{ title: "Artikel niet gevonden, Duurzaam nieuws" }, { name: "robots", content: "noindex" }] };
+    const t = `${loaderData.title}, Duurzaam nieuws`;
     const meta = [
       { title: t },
       { name: "description", content: loaderData.excerpt },

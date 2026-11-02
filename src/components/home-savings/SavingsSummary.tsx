@@ -43,7 +43,7 @@ export function SavingsSummary({ results, inputs, onPick }: Props) {
         <CountUp value={total} prefix="€ " />
       </p>
       <p className="mt-1 text-center text-sm text-moss/70">
-        geschat totaal per jaar — {doneCount} van {items.length} onderdelen ingevuld
+        geschat totaal per jaar, {doneCount} van {items.length} onderdelen ingevuld
       </p>
 
       <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-background">
@@ -113,7 +113,7 @@ export function SavingsSummary({ results, inputs, onPick }: Props) {
                 </span>
                 <span className="shrink-0 text-sm font-bold text-leaf">
                   {!r ? (
-                    <span className="text-xs font-normal text-moss/50">—</span>
+                    <span className="text-xs font-normal text-moss/50">…</span>
                   ) : (
                     <>
                       {formatEuro(r.practicalSavings)}

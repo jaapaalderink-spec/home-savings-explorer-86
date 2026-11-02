@@ -49,7 +49,7 @@ export function QualityScores() {
         <div>
           <h2 className="font-display text-lg font-bold text-ink">Kwaliteit van partners</h2>
           <p className="text-sm text-moss/70">
-            Reactiesnelheid, reclamaties, opvolging en conversie — gewogen naar het aantal leads.
+            Reactiesnelheid, reclamaties, opvolging en conversie, gewogen naar het aantal leads.
           </p>
         </div>
         <Button
@@ -89,7 +89,7 @@ export function QualityScores() {
                       {r.quality_warning && (
                         <span
                           className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive"
-                          title="Structureel zwakke prestaties — bekijk deze partner"
+                          title="Structureel zwakke prestaties, bekijk deze partner"
                         >
                           <AlertTriangle size={12} /> aandacht
                         </span>

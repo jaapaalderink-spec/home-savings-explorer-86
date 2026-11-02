@@ -730,7 +730,7 @@ export function profileFromSearch(search: URLSearchParams): EnergyProfile {
 
 const round = (n: number) => Math.round(n);
 function contractNote(p: EnergyProfile) {
-  const name = [p.supplier, p.contractName].filter(Boolean).join(" – ");
+  const name = [p.supplier, p.contractName].filter(Boolean).join(", ");
   const label = {
     vast: "vast contract",
     variabel: "variabel contract",

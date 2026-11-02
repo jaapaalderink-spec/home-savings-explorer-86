@@ -356,13 +356,13 @@ function ResultCard({
         <CountUp value={result.practicalSavings} prefix="€ " />
       </p>
       <p className="text-sm text-moss/70">
-        bandbreedte {formatEuro(result.range.min)} – {formatEuro(result.range.max)}
+        bandbreedte {formatEuro(result.range.min)} tot {formatEuro(result.range.max)}
       </p>
 
       {result.beforeAfter && (
         <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
           <div className="rounded-lg bg-cloud p-2.5">
-            <p className="text-[11px] text-moss/60">{result.beforeAfter.label} — nu</p>
+            <p className="text-[11px] text-moss/60">{result.beforeAfter.label}, nu</p>
             <p className="font-semibold text-ink">{result.beforeAfter.before}</p>
           </div>
           <div className="rounded-lg bg-cloud p-2.5">

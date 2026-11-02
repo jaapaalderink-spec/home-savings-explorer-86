@@ -121,7 +121,7 @@ function AreaCard({
           <span className="text-xs text-moss/60">
             {offered
               ? "Deze dienst staat uit"
-              : "Nog niet aangeboden — opslaan zet deze dienst aan"}
+              : "Nog niet aangeboden, opslaan zet deze dienst aan"}
           </span>
         )}
       </div>

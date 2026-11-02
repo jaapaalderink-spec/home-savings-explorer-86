@@ -20,13 +20,13 @@ import { ResetCalculation } from "@/components/home-savings/ResetCalculation";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Bespaar op je huis — Onafhankelijke Offerte" },
+      { title: "Bespaar op je huis, Onafhankelijke Offerte" },
       {
         name: "description",
         content:
           "Klik op je huis en ontdek per duurzame maatregel wat het jou oplevert: zonnepanelen, warmtepomp, thuisbatterij, laadpaal en airco. Gratis en vrijblijvend.",
       },
-      { property: "og:title", content: "Bespaar op je huis — Onafhankelijke Offerte" },
+      { property: "og:title", content: "Bespaar op je huis, Onafhankelijke Offerte" },
       {
         property: "og:description",
         content:
@@ -150,7 +150,7 @@ function HomePage() {
           Zie in één oogopslag hoeveel je kunt besparen
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-base text-moss/80 sm:text-lg">
-          Klik op je huis en ontdek per maatregel wat het jou oplevert — vrijblijvend en binnen 2
+          Klik op je huis en ontdek per maatregel wat het jou oplevert, vrijblijvend en binnen 2
           minuten.
         </p>
       </section>

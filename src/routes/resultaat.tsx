@@ -27,13 +27,13 @@ import {
 export const Route = createFileRoute("/resultaat")({
   head: () => ({
     meta: [
-      { title: "Jouw totale besparing — Onafhankelijke Offerte" },
+      { title: "Jouw totale besparing, Onafhankelijke Offerte" },
       {
         name: "description",
         content:
           "Zie wat je gekozen energiemaatregelen samen opleveren: energiekosten voor en na, voordeel per maatregel en hoe ze samenwerken.",
       },
-      { property: "og:title", content: "Jouw totale besparing — Onafhankelijke Offerte" },
+      { property: "og:title", content: "Jouw totale besparing, Onafhankelijke Offerte" },
       {
         property: "og:description",
         content:

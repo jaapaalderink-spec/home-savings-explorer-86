@@ -11,9 +11,9 @@ export const Route = createFileRoute("/_authenticated/uitnodiging")({
   validateSearch: z.object({ token: z.string().optional() }),
   head: () => ({
     meta: [
-      { title: "Uitnodiging accepteren — Onafhankelijke Offerte" },
+      { title: "Uitnodiging accepteren, Onafhankelijke Offerte" },
       { name: "description", content: "Sluit je aan bij het team van je bedrijf." },
-      { property: "og:title", content: "Uitnodiging accepteren — Onafhankelijke Offerte" },
+      { property: "og:title", content: "Uitnodiging accepteren, Onafhankelijke Offerte" },
       { property: "og:description", content: "Sluit je aan bij het team van je bedrijf." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

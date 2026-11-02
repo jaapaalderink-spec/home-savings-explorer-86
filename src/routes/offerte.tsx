@@ -18,13 +18,13 @@ import { EnergyBillUpload, applyBillToProfile } from "@/components/home-savings/
 export const Route = createFileRoute("/offerte")({
   head: () => ({
     meta: [
-      { title: "Gratis offertes aanvragen — Onafhankelijke Offerte" },
+      { title: "Gratis offertes aanvragen, Onafhankelijke Offerte" },
       {
         name: "description",
         content:
           "Vul in 3 stappen je situatie in en ontvang gratis en vrijblijvend tot 3 offertes van gecontroleerde installateurs voor zonnepanelen, warmtepomp, thuisbatterij, laadpaal of airco.",
       },
-      { property: "og:title", content: "Gratis offertes aanvragen — Onafhankelijke Offerte" },
+      { property: "og:title", content: "Gratis offertes aanvragen, Onafhankelijke Offerte" },
       {
         property: "og:description",
         content:

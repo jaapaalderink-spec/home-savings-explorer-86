@@ -128,7 +128,7 @@ export function PartnerLeaderboard() {
                   <td className="py-2 text-moss">{r.appointments}</td>
                   <td className="py-2 text-moss">{r.response48h}%</td>
                   <td className="py-2 text-moss">{r.leads}</td>
-                  <td className="py-2 text-moss">{r.quality ?? "–"}</td>
+                  <td className="py-2 text-moss">{r.quality ?? "…"}</td>
                 </tr>
               ))}
             </tbody>

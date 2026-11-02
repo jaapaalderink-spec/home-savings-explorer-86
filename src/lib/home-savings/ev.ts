@@ -47,7 +47,7 @@ export function calculateEVAdvice(input: EVInput): AdviceResult {
   const reasons: string[] = [];
   if (evStatus === "nu") {
     reasons.push(
-      "Je rijdt al elektrisch — een eigen laadpaal maakt thuis laden makkelijk en goedkoper dan openbare palen.",
+      "Je rijdt al elektrisch, een eigen laadpaal maakt thuis laden makkelijk en goedkoper dan openbare palen.",
     );
   } else if (evStatus === "binnen2jaar") {
     reasons.push(

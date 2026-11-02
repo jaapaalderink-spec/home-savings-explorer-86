@@ -11,7 +11,7 @@ interface Props {
 const Email = ({ firstName, categories, city }: Props) => (
   <Html lang="nl" dir="ltr">
     <Head />
-    <Preview>Uw aanvraag is ontvangen — wij zoeken een specialist in uw regio</Preview>
+    <Preview>Uw aanvraag is ontvangen, wij zoeken een specialist in uw regio</Preview>
     <Body style={main}>
       <Container style={container}>
         <Heading style={heading}>Uw aanvraag is ontvangen</Heading>
@@ -38,7 +38,7 @@ const Email = ({ firstName, categories, city }: Props) => (
 
 export const template = {
   component: Email,
-  subject: 'Uw aanvraag is ontvangen – wij zoeken een specialist in uw regio',
+  subject: 'Uw aanvraag is ontvangen, wij zoeken een specialist in uw regio',
   displayName: 'Aanvraag ontvangen (particulier)',
   previewData: { firstName: 'Jan', categories: 'Zonnepanelen, Thuisbatterij', city: 'Zwolle' },
 } satisfies TemplateEntry

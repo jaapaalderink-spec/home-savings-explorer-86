@@ -14,14 +14,14 @@ import { printInvoice } from "@/lib/invoice-print";
 export const Route = createFileRoute("/_authenticated/facturen")({
   head: () => ({
     meta: [
-      { title: "Facturen betalen — Onafhankelijke Offerte" },
+      { title: "Facturen betalen, Onafhankelijke Offerte" },
       {
         name: "description",
         content:
           "Bekijk je maandfacturen, betaal openstaande bedragen met iDEAL en volg de betaalstatus.",
       },
       { name: "robots", content: "noindex" },
-      { property: "og:title", content: "Facturen betalen — Onafhankelijke Offerte" },
+      { property: "og:title", content: "Facturen betalen, Onafhankelijke Offerte" },
       { property: "og:description", content: "Bekijk je facturen, creditnota’s en betaalstatus." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -95,7 +95,7 @@ function InvoicesPage() {
                   <div>
                     <p className="font-semibold text-ink">Factuur {i.invoice_number as string}</p>
                     <p className="text-xs text-moss/70">
-                      {new Date(i.period_start as string).toLocaleDateString("nl-NL")} –{" "}
+                      {new Date(i.period_start as string).toLocaleDateString("nl-NL")} tot{" "}
                       {new Date(i.period_end as string).toLocaleDateString("nl-NL")} ·{" "}
                       {PAYMENT_STATUS_LABEL[status] ?? status}
                       {paid && i.paid_at

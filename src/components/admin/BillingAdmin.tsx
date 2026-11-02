@@ -42,7 +42,7 @@ const STATUS_LABEL: Record<string, string> = {
 function financialResult(c: Record<string, unknown>): string {
   const status = c["status"] as string;
   if (status === "pending") return "Nog te beoordelen";
-  if (status === "rejected") return "Afgewezen — geen creditering";
+  if (status === "rejected") return "Afgewezen, geen creditering";
   const note = (c["credit_note"] ?? null) as {
     credit_number?: string;
     total_inc_vat?: number;
@@ -57,8 +57,8 @@ function financialResult(c: Record<string, unknown>): string {
     is_trial?: boolean;
     invoice_id?: string | null;
   } | null;
-  if (purchase?.is_trial) return "Proeflead — geen creditering nodig";
-  if (!purchase?.invoice_id) return "Nog niet gefactureerd — van facturatie uitgesloten";
+  if (purchase?.is_trial) return "Proeflead, geen creditering nodig";
+  if (!purchase?.invoice_id) return "Nog niet gefactureerd, van facturatie uitgesloten";
   return "Goedgekeurd";
 }
 
@@ -261,7 +261,7 @@ export function BillingAdmin() {
                   <tr key={i.id} className="border-t border-moss/10">
                     <td className="p-2 font-semibold text-ink">{i.invoice_number as string}</td>
                     <td className="p-2 text-moss/80">
-                      {(i.company as { name?: string } | null)?.name ?? "—"}
+                      {(i.company as { name?: string } | null)?.name ?? "…"}
                       {(i.company as { payment_suspended_at?: string | null } | null)?.payment_suspended_at && (
                         <span className="mt-1 block w-fit rounded bg-destructive/15 px-1.5 py-0.5 text-[11px] font-semibold text-destructive">
                           Gepauzeerd (openstaande facturen)
@@ -269,7 +269,7 @@ export function BillingAdmin() {
                       )}
                     </td>
                     <td className="p-2 text-xs text-moss/70">
-                      {new Date(i.period_start as string).toLocaleDateString("nl-NL")} –{" "}
+                      {new Date(i.period_start as string).toLocaleDateString("nl-NL")} tot{" "}
                       {new Date(i.period_end as string).toLocaleDateString("nl-NL")}
                     </td>
                     <td className="p-2 text-moss/80">
@@ -408,15 +408,15 @@ export function BillingAdmin() {
                     <tr key={cn.id as string} className="border-t border-moss/10">
                       <td className="p-2 font-semibold text-ink">{cn.credit_number as string}</td>
                       <td className="p-2 text-moss/80">
-                        {(cn.company as { name?: string } | null)?.name ?? "—"}
+                        {(cn.company as { name?: string } | null)?.name ?? "…"}
                       </td>
                       <td className="p-2 text-xs text-moss/70">
-                        {(cn.invoice as { invoice_number?: string } | null)?.invoice_number ?? "—"}
+                        {(cn.invoice as { invoice_number?: string } | null)?.invoice_number ?? "…"}
                       </td>
                       <td className="p-2 text-xs text-moss/70">
                         {lead
                           ? `${lead.first_name ?? ""} ${lead.last_name ?? ""} · ${lead.postcode ?? ""}`
-                          : "—"}
+                          : "…"}
                       </td>
                       <td className="p-2 text-moss/80">
                         −{formatEuro(Number(cn.subtotal_ex_vat ?? 0))}

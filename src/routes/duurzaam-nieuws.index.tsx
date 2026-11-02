@@ -9,9 +9,9 @@ const postsQuery = queryOptions({ queryKey: ["blog", "list"], queryFn: () => lis
 export const Route = createFileRoute("/duurzaam-nieuws/")({
   head: () => ({
     meta: [
-      { title: "Duurzaam nieuws — Onafhankelijke Offerte" },
+      { title: "Duurzaam nieuws, Onafhankelijke Offerte" },
       { name: "description", content: "Het laatste nieuws en praktische tips over zonnepanelen, warmtepompen, thuisbatterijen, laadpalen en airco." },
-      { property: "og:title", content: "Duurzaam nieuws — Onafhankelijke Offerte" },
+      { property: "og:title", content: "Duurzaam nieuws, Onafhankelijke Offerte" },
       { property: "og:description", content: "Nieuws en tips om slim te besparen met duurzame maatregelen in huis." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
