@@ -246,11 +246,22 @@ export function EnergyProfileForm({ value: p, onChange, category, hideShared }: 
           )}
           <div className="space-y-1 text-sm">
             <span className="font-medium">Gewenste capaciteit</span>
+            <p className="rounded-lg bg-cloud px-3 py-2 text-xs text-moss">
+              Aanbevolen voor jouw situatie: <strong>{rec} kWh</strong> (op basis van{" "}
+              {p.consumption.toLocaleString("nl-NL")} kWh verbruik
+              {p.existingPanels + p.newPanels > 0
+                ? ` en ${p.existingPanels + p.newPanels} zonnepanelen`
+                : ""}
+              ). Wil je iets anders in je offerte? Kies dan zelf een capaciteit.
+            </p>
             {choice(
               p.adviseBattery ? "advise" : String(p.newBattery),
               {
                 ...Object.fromEntries(
-                  C.battery.adviseOptions.map((k) => [String(k), `${k} kWh`]),
+                  C.battery.adviseOptions.map((k) => [
+                    String(k),
+                    k === rec ? `${k} kWh · aanbevolen` : `${k} kWh`,
+                  ]),
                 ),
                 advise: "Laat adviseren",
               },
