@@ -91,7 +91,7 @@ export function HouseScene({ activeId, status, onPick }: Props) {
             <MousePointerClick size={15} aria-hidden="true" />
             Tik op een onderdeel van het huis
           </span>
-          <span className="hidden rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium text-white/90 backdrop-blur-md ring-1 ring-white/25 sm:inline-flex">
+          <span className="hidden rounded-full bg-[rgba(23,33,27,0.55)] px-3 py-1.5 text-xs font-medium text-white/90 backdrop-blur-md ring-1 ring-white/25 sm:inline-flex">
             6 maatregelen · 1 overzicht
           </span>
         </div>
