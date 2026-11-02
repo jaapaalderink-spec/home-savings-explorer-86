@@ -143,6 +143,13 @@ export function CategoryPanel({
                   <ResultCard
                     categoryId={openId!}
                     result={result}
+                    preview={
+                      result
+                        ? null
+                        : (calculateScenario(inputs.profile, [...selected, openId!]).results[
+                            openId!
+                          ] ?? null)
+                    }
                     battery={
                       openId === "battery" && result
                         ? (() => {
@@ -281,6 +288,7 @@ function ResultCard({
   offerteHref,
   resultHref,
   result,
+  preview,
   onCalculate,
   onRemove,
   battery,
@@ -291,6 +299,7 @@ function ResultCard({
   offerteHref: string;
   resultHref: string;
   result: AdviceResult | null;
+  preview?: AdviceResult | null;
   onCalculate: () => void;
 }) {
   if (!result) {
@@ -299,11 +308,28 @@ function ResultCard({
         className="rounded-2xl p-5"
         style={{ backgroundColor: "var(--color-background)", boxShadow: "var(--shadow-panel)" }}
       >
-        <div className="animate-pulse space-y-2">
-          <div className="h-4 w-2/3 rounded bg-cloud" />
-          <div className="h-8 w-1/2 rounded bg-cloud" />
-          <div className="h-3 w-full rounded bg-cloud" />
-        </div>
+        {preview ? (
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-moss/60">
+              Geschatte besparing per jaar
+            </p>
+            <p className="mt-1 text-3xl font-bold text-leaf">
+              <CountUp value={preview.practicalSavings} prefix="€ " />
+            </p>
+            <p className="text-sm text-moss/70">
+              bandbreedte {formatEuro(preview.range.min)} tot {formatEuro(preview.range.max)}
+            </p>
+            <p className="mt-2 text-[11px] text-moss/60">
+              Rekent live mee met je keuzes. Voeg toe om het in je totaal mee te nemen.
+            </p>
+          </div>
+        ) : (
+          <div className="animate-pulse space-y-2">
+            <div className="h-4 w-2/3 rounded bg-cloud" />
+            <div className="h-8 w-1/2 rounded bg-cloud" />
+            <div className="h-3 w-full rounded bg-cloud" />
+          </div>
+        )}
         <Button
           onClick={onCalculate}
           className="mt-4 w-full"
