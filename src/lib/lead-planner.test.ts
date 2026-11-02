@@ -9,13 +9,13 @@ const c = (id: string, products: string[], remainingShare = 1, rank = 0): PlanCa
 });
 
 describe("planAllocation", () => {
-  it("nooit meer dan 4 bedrijven, ook als er meer plekken gevraagd worden", () => {
+  it("nooit meer dan 3 bedrijven, ook als er meer plekken gevraagd worden", () => {
     const plan = planAllocation(
       ["solar"],
       9,
       ["a", "b", "c", "d", "e", "f"].map((i) => c(i, ["solar"])),
     );
-    expect(plan).toHaveLength(4);
+    expect(plan).toHaveLength(3);
   });
 
   it("één toewijzing per bedrijf met gebundelde producten", () => {
