@@ -39,10 +39,19 @@ const DEFAULTS = {
     efficiency: 0.9,
     chargePowerPerKwh: 0.5,
     dischargePowerPerKwh: 0.5,
-    adviseOptions: [5, 10, 15] as number[],
+    adviseOptions: [5, 10, 15, 20, 25, 30] as number[],
     defaultCapacity: 5,
-    adviseLargeAboveKwh: 5000, // "Laat adviseren": larger battery above this consumption
+    adviseLargeAboveKwh: 5000, // legacy setting, superseded by adviceTiers
     adviseLargeCapacity: 10,
+    // Recommended capacity: highest tier reached by yearly use (kWh) or panel count.
+    adviceTiers: [
+      { capacity: 5, fromKwh: 0, fromPanels: 0 },
+      { capacity: 10, fromKwh: 3500, fromPanels: 8 },
+      { capacity: 15, fromKwh: 5500, fromPanels: 12 },
+      { capacity: 20, fromKwh: 8000, fromPanels: 18 },
+      { capacity: 25, fromKwh: 11000, fromPanels: 999 },
+      { capacity: 30, fromKwh: 14000, fromPanels: 999 },
+    ] as { capacity: number; fromKwh: number; fromPanels: number }[],
     minSoc: 0.05,
     maxSoc: 1,
     standbyW: 0,

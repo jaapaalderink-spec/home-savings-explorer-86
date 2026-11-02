@@ -1,6 +1,10 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Input } from "@/components/ui/input";
-import { DEFAULT_PROFILE, type EnergyProfile } from "@/lib/home-savings/scenario";
+import {
+  DEFAULT_PROFILE,
+  recommendedBatteryKwh,
+  type EnergyProfile,
+} from "@/lib/home-savings/scenario";
 import { ENERGY_CONFIG as C } from "@/lib/home-savings/config";
 
 type Props = {
@@ -19,6 +23,12 @@ const INTRO: Record<string, string> = {
 };
 
 export function EnergyProfileForm({ value: p, onChange, category, hideShared }: Props) {
+  const rec = recommendedBatteryKwh(p);
+  // Pre-select the advice until the visitor picks a capacity themselves.
+  useEffect(() => {
+    if (category !== "battery" || p.adviseBattery || p.provided.includes("newBattery")) return;
+    if (p.newBattery !== rec) onChange({ ...p, newBattery: rec });
+  }, [category, rec, p, onChange]);
   const set = (key: keyof EnergyProfile, value: unknown) =>
     onChange({
       ...p,
@@ -246,11 +256,22 @@ export function EnergyProfileForm({ value: p, onChange, category, hideShared }: 
           )}
           <div className="space-y-1 text-sm">
             <span className="font-medium">Gewenste capaciteit</span>
+            <p className="rounded-lg bg-cloud px-3 py-2 text-xs text-moss">
+              Aanbevolen voor jouw situatie: <strong>{rec} kWh</strong> (op basis van{" "}
+              {p.consumption.toLocaleString("nl-NL")} kWh verbruik
+              {p.existingPanels + p.newPanels > 0
+                ? ` en ${p.existingPanels + p.newPanels} zonnepanelen`
+                : ""}
+              ). Wil je iets anders in je offerte? Kies dan zelf een capaciteit.
+            </p>
             {choice(
               p.adviseBattery ? "advise" : String(p.newBattery),
               {
                 ...Object.fromEntries(
-                  C.battery.adviseOptions.map((k) => [String(k), `${k} kWh`]),
+                  C.battery.adviseOptions.map((k) => [
+                    String(k),
+                    k === rec ? `${k} kWh · aanbevolen` : `${k} kWh`,
+                  ]),
                 ),
                 advise: "Laat adviseren",
               },

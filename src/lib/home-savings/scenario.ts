@@ -179,12 +179,16 @@ const existingSolarKwh = (p: EnergyProfile) =>
   p.existingPanels > 0
     ? (p.existingYield ?? ((p.existingPanels * p.existingWp) / 1000) * p.yieldPerKwp * solarFactor())
     : 0;
+/** Recommended new battery capacity (kWh) from yearly use and panel count. */
+export function recommendedBatteryKwh(p: Pick<EnergyProfile, "consumption" | "existingPanels" | "newPanels">) {
+  const panels = p.existingPanels + p.newPanels;
+  let rec = C.battery.adviceTiers[0]?.capacity ?? C.battery.defaultCapacity;
+  for (const t of C.battery.adviceTiers)
+    if (p.consumption >= t.fromKwh || panels >= t.fromPanels) rec = t.capacity;
+  return rec;
+}
 const newBatteryKwh = (p: EnergyProfile) =>
-  p.adviseBattery
-    ? p.consumption > C.battery.adviseLargeAboveKwh
-      ? C.battery.adviseLargeCapacity
-      : C.battery.defaultCapacity
-    : p.newBattery;
+  p.adviseBattery ? recommendedBatteryKwh(p) : p.newBattery;
 
 // Representative dynamic price shape per month (mean 1 over the day). Not historical data.
 let dynCache: { stamp: number; shape: number[][] } | null = null;
