@@ -70,7 +70,7 @@ export function AllocationQueue() {
                     {(l.categories ?? []).map((c) => CATEGORY_LABEL[c] ?? c).join(", ")}
                   </td>
                   <td className="p-3">
-                    {l.purchase_count} / {Math.min(l.max_partners, 4)}
+                    {l.purchase_count} / {Math.min(l.max_partners, 3)}
                   </td>
                   <td className="p-3">
                     {FULFILLMENT_LABEL[l.fulfillment_status as FulfillmentStatus]}

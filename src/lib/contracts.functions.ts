@@ -186,7 +186,7 @@ export const searchCompaniesForLead = createServerFn({ method: "POST" })
 
 const MANUAL_MESSAGES: Record<string, string> = {
   already_assigned: "Dit bedrijf heeft deze aanvraag al.",
-  lead_full: "Deze aanvraag heeft al het maximum van 4 bedrijven (of het aantal gevraagde).",
+  lead_full: "Deze aanvraag heeft al het maximum van 3 bedrijven (of het aantal gevraagde).",
   lead_not_verified: "Het telefoonnummer is nog niet bevestigd.",
   lead_blocked: "Deze aanvraag is geblokkeerd.",
   lead_duplicate: "Dit is een dubbele aanvraag.",

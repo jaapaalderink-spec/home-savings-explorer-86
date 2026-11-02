@@ -16,8 +16,8 @@ export const LEAD_TYPE_PRICE: Record<"shared_2" | "shared_4", number> = {
 export const TRIAL_LEAD_ALLOWANCE = 10;
 
 export const LEAD_TYPE_LABEL: Record<"shared_2" | "shared_4", string> = {
-  shared_2: "Exclusief (max 2 partners)",
-  shared_4: "Gedeeld (max 4 partners)",
+  shared_2: "Maximaal 3 partners",
+  shared_4: "Maximaal 3 partners",
 };
 
 export const CATEGORY_LABEL: Record<string, string> = {
@@ -65,10 +65,10 @@ export function leadTypePrice(type: string | null | undefined): number {
 
 /** Aantal partners dat een lead maximaal mag ontvangen. */
 export function maxPartnersFor(type: string | null | undefined): number {
-  return type === "shared_2" ? 2 : 4;
+  return 3;
 }
 
-/** Eén categorie = exclusievere lead met 2 partners, meerdere categorieën = gedeeld met 4. */
+/** Leadtype blijft voor historie; elke aanvraag gaat standaard naar maximaal 3 partners. */
 export function leadTypeFor(categories: string[]): "shared_2" | "shared_4" {
   return categories.length <= 1 ? "shared_2" : "shared_4";
 }

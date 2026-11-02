@@ -3,13 +3,13 @@
  * de database controleert en schrijft daarna elke toewijzing definitief weg.
  *
  * Regels:
- * - maximaal `slots` bedrijven (nooit meer dan 4 per aanvraag);
+ * - maximaal `slots` bedrijven (nooit meer dan 3 per aanvraag);
  * - één toewijzing per bedrijf, met alle producten die het hier kan leveren gebundeld;
  * - eerst zoveel mogelijk producten van de aanvraag afdekken;
  * - daarna eerlijk: wie relatief het meeste quotum over heeft, gaat voor;
  * - bij gelijke stand beslist de kwaliteitsvolgorde (`rank`, lager = eerder).
  */
-export const MAX_COMPANIES_PER_REQUEST = 4;
+export const MAX_COMPANIES_PER_REQUEST = 3;
 
 export type PlanCandidate = {
   companyId: string;
