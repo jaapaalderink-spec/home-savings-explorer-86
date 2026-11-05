@@ -87,7 +87,7 @@ export function HouseScene({ activeId, status, onPick }: Props) {
 
         {/* hint bovenin, uitgelijnd tegen de bovenrand van de foto */}
         <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-3 p-4 sm:p-6">
-          <span className="inline-flex items-center gap-2 rounded-full bg-[rgba(23,33,27,0.55)] px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md ring-1 ring-white/25 sm:text-sm">
+          <span className="hidden items-center gap-2 rounded-full sm:inline-flex bg-[rgba(23,33,27,0.55)] px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md ring-1 ring-white/25 sm:text-sm">
             <MousePointerClick size={15} aria-hidden="true" />
             Tik op een onderdeel van het huis
           </span>
