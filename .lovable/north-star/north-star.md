@@ -2,7 +2,7 @@
 
 # Leidster
 
-Huiseigenaren verduurzamen hun woning met een betrouwbare installateur
+Huiseigenaren die eenmalig een offerte willen ontvangen voor een of meerdere verduurzamingsmaatregelen, en installateurs die maandelijks een pakket met leads willen afnemen
 
 ## Maatstaf
 
