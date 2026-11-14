@@ -175,12 +175,17 @@ export async function loadRankingInputs(companyIds: string[]) {
   const db = await adminDb();
   const { data } = await db
     .from("company_quality_scores")
-    .select("company_id, overall_score, sample_size")
+    .select("company_id, response_score, complaint_score, sample_size")
     .in("company_id", companyIds);
+  // Ranking gebruikt alleen platformgemeten signalen (reactietijd, goedgekeurde klachten),
+  // nooit zelfgerapporteerde verkoop- of conversiecijfers van partners.
   return new Map(
     (data ?? []).map((r) => [
       r.company_id,
-      { overall: Number(r.overall_score), sampleSize: Number(r.sample_size) },
+      {
+        overall: (Number(r.response_score) + Number(r.complaint_score)) / 2,
+        sampleSize: Number(r.sample_size),
+      },
     ]),
   );
 }

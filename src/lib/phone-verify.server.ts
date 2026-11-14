@@ -17,11 +17,9 @@ export function generateCode(): string {
 }
 
 function hashSecret(): string {
-  return (
-    process.env["PHONE_VERIFY_SECRET"] ??
-    process.env["SUPABASE_SERVICE_ROLE_KEY"] ??
-    "development-only-fallback"
-  );
+  const secret = process.env["PHONE_VERIFY_SECRET"] || process.env["SUPABASE_SERVICE_ROLE_KEY"];
+  if (!secret) throw new Error("Verificatie is tijdelijk niet beschikbaar.");
+  return secret;
 }
 
 /** HMAC van de code, gebonden aan challenge-id en telefoonnummer. */

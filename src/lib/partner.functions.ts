@@ -58,7 +58,8 @@ export const createCompany = createServerFn({ method: "POST" })
           .transform((v) => v.replace(/\s/g, ""))
           .refine((v) => /^\d{8}$/.test(v), "Vul een geldig KvK-nummer van 8 cijfers in."),
         categories: z.array(z.string().max(24)).min(1).max(6),
-        plan: z.enum(["starter", "groei", "premium"]),
+        // Genegeerd: pakket en quotum worden pas door een beheerder vastgelegd.
+        plan: z.enum(["starter", "groei", "premium"]).optional(),
       })
       .parse(data),
   )
@@ -71,7 +72,7 @@ export const createCompany = createServerFn({ method: "POST" })
       .maybeSingle();
     if (profile?.company_id) throw new Error("Je bent al aan een bedrijf gekoppeld.");
 
-    const plan = planByName(data.plan);
+    const plan = planByName("starter");
     const { data: company, error } = await db
       .from("companies")
       .insert({
@@ -79,7 +80,7 @@ export const createCompany = createServerFn({ method: "POST" })
         kvk_number: data.kvkNumber,
         categories: data.categories,
         plan_name: plan.id,
-        monthly_lead_limit: plan.leads,
+        monthly_lead_limit: 0,
         monthly_fee_ex_vat: plan.price,
         // Nieuwe aanmeldingen ontvangen pas leads na goedkeuring door een beheerder.
         active: false,
@@ -100,7 +101,7 @@ export const createCompany = createServerFn({ method: "POST" })
         company_id: company.id,
         category,
         active: true,
-        monthly_max: Math.max(Math.round(plan.leads / data.categories.length), 1),
+        monthly_max: 0,
       })),
       { onConflict: "company_id,category" },
     );
