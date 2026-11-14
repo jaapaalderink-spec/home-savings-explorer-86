@@ -94,13 +94,18 @@ async function contractCapacity(db: Db, companyId: string): Promise<number> {
       .order("version", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    db.from("companies").select("monthly_lead_limit").eq("id", companyId).maybeSingle(),
+    db.from("companies").select("monthly_lead_limit, approval_status").eq("id", companyId).maybeSingle(),
     db.from("lead_bundles").select("size").eq("company_id", companyId).eq("period_start", monthStart),
   ]);
-  const base = sub ? sub.lead_quota_per_month : company?.monthly_lead_limit ?? 0;
+  if (company?.approval_status !== "approved" && !sub) return 0;
   const extra = (bundles ?? []).reduce((t, b) => t + b.size, 0);
+  // Contract zonder inbegrepen leads (Start): elke lead wordt achteraf betaald, met een vaste bovengrens.
+  if (sub && sub.lead_quota_per_month === 0) return PAY_PER_LEAD_MAX + extra;
+  const base = sub ? sub.lead_quota_per_month : company?.monthly_lead_limit ?? 0;
   return Math.max(base, 0) + extra;
 }
+const PAY_PER_LEAD_MAX = 200;
+
 
 async function loadTerms(db: Db, companyId: string): Promise<CostTerms & { contract: boolean; packageQuota: number | null }> {
   const today = new Date().toISOString().slice(0, 10);
