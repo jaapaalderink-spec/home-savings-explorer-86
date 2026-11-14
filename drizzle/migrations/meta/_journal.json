@@ -183,6 +183,13 @@
       "when": 1793649893874,
       "tag": "0025_company_kvk_number",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794677111380,
+      "tag": "0026_lock_profile_company_id",
+      "breakpoints": true
     }
   ]
 }
