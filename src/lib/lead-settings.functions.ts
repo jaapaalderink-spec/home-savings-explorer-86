@@ -81,6 +81,32 @@ function companyAreaOf(a: {
   };
 }
 
+async function contractCapacity(db: Db, companyId: string): Promise<number> {
+  const today = new Date().toISOString().slice(0, 10);
+  const monthStart = `${today.slice(0, 7)}-01`;
+  const [{ data: sub }, { data: company }, { data: bundles }] = await Promise.all([
+    db
+      .from("subscription_versions")
+      .select("lead_quota_per_month")
+      .eq("company_id", companyId)
+      .lte("valid_from", today)
+      .order("valid_from", { ascending: false })
+      .order("version", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    db.from("companies").select("monthly_lead_limit, approval_status").eq("id", companyId).maybeSingle(),
+    db.from("lead_bundles").select("size").eq("company_id", companyId).eq("period_start", monthStart),
+  ]);
+  if (company?.approval_status !== "approved" && !sub) return 0;
+  const extra = (bundles ?? []).reduce((t, b) => t + b.size, 0);
+  // Contract zonder inbegrepen leads (Start): elke lead wordt achteraf betaald, met een vaste bovengrens.
+  if (sub && sub.lead_quota_per_month === 0) return PAY_PER_LEAD_MAX + extra;
+  const base = sub ? sub.lead_quota_per_month : company?.monthly_lead_limit ?? 0;
+  return Math.max(base, 0) + extra;
+}
+const PAY_PER_LEAD_MAX = 200;
+
+
 async function loadTerms(db: Db, companyId: string): Promise<CostTerms & { contract: boolean; packageQuota: number | null }> {
   const today = new Date().toISOString().slice(0, 10);
   const { data } = await db
@@ -264,6 +290,15 @@ export const saveLeadSettings = createServerFn({ method: "POST" })
       }
     }
     if (problems.length) throw new Error(problems.slice(0, 3).join(" "));
+
+    // Capaciteit mag nooit boven het contract (pakket + actieve bundels deze maand) uitkomen.
+    const contractCap = await contractCapacity(db, companyId);
+    const totalRequested = data.rows.reduce(
+      (t, r) => t + (r.paused ? 0 : r.services.filter((s) => s.enabled).reduce((a, s) => a + s.monthlyMax, 0)),
+      0,
+    );
+    if (totalRequested > contractCap)
+      throw new Error(`Je kunt maximaal ${contractCap} leads per maand instellen volgens je contract. Koop een extra bundel voor meer leads.`);
 
     // Alleen het hoofdaccount mag bewerkrechten toekennen of intrekken.
     const prevEdit = new Map((existing ?? []).map((e) => [e.user_id, e.can_edit_settings]));
