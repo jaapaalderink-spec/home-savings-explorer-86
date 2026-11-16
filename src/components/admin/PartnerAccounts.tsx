@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import {
   approvePartner,
   completePriceReview,
+  createPartnerManual,
   listPartnerAccounts,
   listPriceReviews,
   setPartnerClosed,
@@ -58,6 +59,7 @@ export function PartnerAccounts() {
   return (
     <div className="space-y-4">
       <PriceReviews />
+      {data && <NewPartner months={[data.currentMonth, data.nextMonth]} />}
       <section className="rounded-2xl bg-background p-5" style={panel}>
         <div className="flex flex-wrap gap-2">
           {([["pending", "Nieuwe aanmeldingen"], ["approved", "Actief"], ["closed", "Gesloten"]] as const).map(([id, label]) => (
@@ -249,6 +251,118 @@ function PriceReviews() {
             </li>
           ))}
         </ul>
+      )}
+    </section>
+  );
+}
+
+const CATS = ["solar", "heatpump", "battery", "ev", "airco"] as const;
+
+function NewPartner({ months }: { months: string[] }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [f, setF] = useState({ name: "", kvk: "", contact: "", email: "", phone: "", website: "" });
+  const [cats, setCats] = useState<string[]>([]);
+  const [pkg, setPkg] = useState<PackageCode>("start");
+  const [mode, setMode] = useState<BillingMode>("actual_delivered");
+  const [seats, setSeats] = useState(0);
+  const [validFrom, setValidFrom] = useState(months[1]);
+  const [note, setNote] = useState("");
+  const [pricing, setPricing] = useState<PricingState>(defaultPricing);
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
+  const kvkOk = /^\d{8}$/.test(f.kvk.replace(/\s/g, ""));
+  const save = useMutation({
+    mutationFn: () =>
+      createPartnerManual({
+        data: {
+          name: f.name, kvkNumber: f.kvk, contactName: f.contact, email: f.email,
+          ...(f.phone ? { phone: f.phone } : {}), ...(f.website ? { website: f.website } : {}),
+          categories: cats as (typeof CATS)[number][],
+          packageCode: pkg, billingMode: mode, paidSeats: seats, validFrom,
+          ...(note ? { note } : {}), ...pricingPayload(pricing),
+          redirectOrigin: window.location.origin,
+        },
+      }),
+    onSuccess: () => {
+      toast.success(`${f.name} is toegevoegd. ${f.email} ontvangt een uitnodiging om een wachtwoord in te stellen.`);
+      qc.invalidateQueries({ queryKey: ["partner-accounts"] });
+      qc.invalidateQueries({ queryKey: ["price-reviews"] });
+      setOpen(false);
+      setF({ name: "", kvk: "", contact: "", email: "", phone: "", website: "" });
+      setCats([]);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const field = (k: keyof typeof f, label: string, type = "text") => (
+    <div className="space-y-1.5">
+      <Label htmlFor={`np-${k}`}>{label}</Label>
+      <Input id={`np-${k}`} type={type} value={f[k]} onChange={set(k)} />
+    </div>
+  );
+  return (
+    <section className="rounded-2xl bg-background p-5" style={panel}>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h3 className="font-display text-lg font-bold text-ink">Nieuwe partner toevoegen</h3>
+          <p className="text-sm text-moss/70">Voer een installateur zelf in. Hij wordt direct actief en krijgt een uitnodigingsmail.</p>
+        </div>
+        <Button size="sm" variant={open ? "outline" : "default"} onClick={() => setOpen(!open)}>{open ? "Annuleren" : "Nieuwe partner toevoegen"}</Button>
+      </div>
+      {open && (
+        <div className="mt-4 rounded-xl bg-muted p-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {field("name", "Bedrijfsnaam")}
+            {field("kvk", "KvK-nummer (8 cijfers)")}
+            {field("website", "Website (optioneel)")}
+            {field("contact", "Contactpersoon")}
+            {field("email", "E-mailadres eigenaar", "email")}
+            {field("phone", "Telefoon (optioneel)", "tel")}
+          </div>
+          {f.kvk && !kvkOk && <p className="mt-1 text-xs text-destructive">Vul een KvK-nummer van 8 cijfers in.</p>}
+          <p className="mt-4 text-sm font-medium text-ink">Diensten</p>
+          <div className="mt-1 flex flex-wrap gap-2">
+            {CATS.map((k) => (
+              <Button key={k} type="button" size="sm" variant={cats.includes(k) ? "default" : "outline"}
+                onClick={() => setCats(cats.includes(k) ? cats.filter((x) => x !== k) : [...cats, k])}>
+                {CATEGORY_LABEL[k] ?? k}
+              </Button>
+            ))}
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="np-pkg">Pakket</Label>
+              <select id="np-pkg" value={pkg} onChange={(e) => setPkg(e.target.value as PackageCode)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                {SELECTABLE_PACKAGES.map((k) => <option key={k} value={k}>{PACKAGES[k].label}, {PACKAGES[k].leads} leads</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="np-mode">Facturatie</Label>
+              <select id="np-mode" value={mode} onChange={(e) => setMode(e.target.value as BillingMode)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                <option value="actual_delivered">Werkelijk geleverde leads</option>
+                <option value="fixed_package">Vast pakketbedrag</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="np-seats">Extra accountmanagers</Label>
+              <Input id="np-seats" type="number" min={0} value={seats} onChange={(e) => setSeats(Number(e.target.value))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="np-from">Ingangsdatum</Label>
+              <select id="np-from" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                {months.map((m, i) => <option key={m} value={m}>{fmt(m)}{i === 0 ? " (deze maand)" : ""}</option>)}
+              </select>
+            </div>
+          </div>
+          <CustomPricingFields value={pricing} onChange={setPricing} />
+          <div className="mt-3 space-y-1.5">
+            <Label htmlFor="np-note">Notitie {pricing.enabled ? "(verplicht bij maatwerk)" : "(optioneel)"}</Label>
+            <Input id="np-note" value={note} onChange={(e) => setNote(e.target.value)} />
+          </div>
+          <Button className="mt-3" disabled={save.isPending || !kvkOk || cats.length === 0 || f.name.trim().length < 2 || f.contact.trim().length < 2 || !f.email.includes("@")}
+            onClick={() => save.mutate()}>
+            Partner aanmaken en uitnodigen
+          </Button>
+        </div>
       )}
     </section>
   );

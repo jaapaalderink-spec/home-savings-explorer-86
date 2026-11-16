@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BedanktRouteImport } from './routes/bedankt'
 import { Route as OfferteRouteImport } from './routes/offerte'
 import { Route as ResultaatRouteImport } from './routes/resultaat'
+import { Route as WachtwoordInstellenRouteImport } from './routes/wachtwoord-instellen'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedFacturenRouteImport } from './routes/_authenticated/facturen'
@@ -52,6 +53,11 @@ const OfferteRoute = OfferteRouteImport.update({
 const ResultaatRoute = ResultaatRouteImport.update({
   id: '/resultaat',
   path: '/resultaat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WachtwoordInstellenRoute = WachtwoordInstellenRouteImport.update({
+  id: '/wachtwoord-instellen',
+  path: '/wachtwoord-instellen',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -109,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/bedankt': typeof BedanktRoute
   '/offerte': typeof OfferteRoute
   '/resultaat': typeof ResultaatRoute
+  '/wachtwoord-instellen': typeof WachtwoordInstellenRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/facturen': typeof AuthenticatedFacturenRoute
@@ -125,6 +132,7 @@ export interface FileRoutesByTo {
   '/bedankt': typeof BedanktRoute
   '/offerte': typeof OfferteRoute
   '/resultaat': typeof ResultaatRoute
+  '/wachtwoord-instellen': typeof WachtwoordInstellenRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/facturen': typeof AuthenticatedFacturenRoute
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/bedankt': typeof BedanktRoute
   '/offerte': typeof OfferteRoute
   '/resultaat': typeof ResultaatRoute
+  '/wachtwoord-instellen': typeof WachtwoordInstellenRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/facturen': typeof AuthenticatedFacturenRoute
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/bedankt'
     | '/offerte'
     | '/resultaat'
+    | '/wachtwoord-instellen'
     | '/admin'
     | '/dashboard'
     | '/facturen'
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/bedankt'
     | '/offerte'
     | '/resultaat'
+    | '/wachtwoord-instellen'
     | '/admin'
     | '/dashboard'
     | '/facturen'
@@ -194,6 +205,7 @@ export interface FileRouteTypes {
     | '/bedankt'
     | '/offerte'
     | '/resultaat'
+    | '/wachtwoord-instellen'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/_authenticated/facturen'
@@ -212,6 +224,7 @@ export interface RootRouteChildren {
   BedanktRoute: typeof BedanktRoute
   OfferteRoute: typeof OfferteRoute
   ResultaatRoute: typeof ResultaatRoute
+  WachtwoordInstellenRoute: typeof WachtwoordInstellenRoute
   DuurzaamNieuwsSlugRoute: typeof DuurzaamNieuwsSlugRoute
   DuurzaamNieuwsIndexRoute: typeof DuurzaamNieuwsIndexRoute
   ApiPublicAllocationRetryRoute: typeof ApiPublicAllocationRetryRoute
@@ -261,6 +274,13 @@ declare module '@tanstack/react-router' {
       path: '/resultaat'
       fullPath: '/resultaat'
       preLoaderRoute: typeof ResultaatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wachtwoord-instellen': {
+      id: '/wachtwoord-instellen'
+      path: '/wachtwoord-instellen'
+      fullPath: '/wachtwoord-instellen'
+      preLoaderRoute: typeof WachtwoordInstellenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -353,6 +373,7 @@ const rootRouteChildren: RootRouteChildren = {
   BedanktRoute: BedanktRoute,
   OfferteRoute: OfferteRoute,
   ResultaatRoute: ResultaatRoute,
+  WachtwoordInstellenRoute: WachtwoordInstellenRoute,
   DuurzaamNieuwsSlugRoute: DuurzaamNieuwsSlugRoute,
   DuurzaamNieuwsIndexRoute: DuurzaamNieuwsIndexRoute,
   ApiPublicAllocationRetryRoute: ApiPublicAllocationRetryRoute,
