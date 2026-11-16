@@ -22,7 +22,7 @@ export const Route = createFileRoute("/privacy")({
 
 function Page() {
   const c = COMPANY;
-  const mail = "administratie@onafhankelijke-offerte.nl";
+  const mail = c.email;
   return (
     <LegalPage title="Privacyverklaring" updated="16 november 2026">
       <h2>Wie zijn wij?</h2>
@@ -110,9 +110,16 @@ function Page() {
         uit hoe het daarmee omgaat.
       </p>
       <p>
-        Als wij Google Analytics of Google Ads inschakelen, vragen wij daar vooraf je toestemming voor. Bij weigering
-        blijven deze diensten uit. Intrekken van je toestemming verandert niets aan de verwerking die daarvóór
-        rechtmatig plaatsvond.
+        Klikken en andere interacties worden pas vastgelegd nadat je statistieken accepteert in de cookiemelding.
+        Paginabezoeken, tijd op de pagina, laadsnelheid en foutmeldingen worden voor elke bezoeker vastgelegd, zonder
+        cookies en zonder je te herkennen. Je keuze wordt tot 12 maanden in je browser bewaard. Als je browser een
+        Global Privacy Control signaal stuurt, behandelen we dat als weigering.
+      </p>
+      <p>
+        Als wij Google Analytics, Tag Manager of Google Ads inschakelen, plaatsen die diensten pas cookies nadat je
+        daar via de cookiemelding toestemming voor geeft. Bij weigering blijven deze cookies uit. Je kunt je keuze
+        altijd wijzigen via "Cookie-instellingen" onderaan elke pagina. Intrekken van je toestemming verandert niets
+        aan de verwerking die daarvoor rechtmatig plaatsvond.
       </p>
 
       <h2>Je rechten en contact</h2>

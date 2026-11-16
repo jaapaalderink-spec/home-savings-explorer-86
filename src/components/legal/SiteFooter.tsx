@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { COMPANY } from "./company";
+import { openCookieSettings } from "./CookieBanner";
 
 export function SiteFooter() {
   return (
@@ -11,11 +12,13 @@ export function SiteFooter() {
             Een handelsnaam van {COMPANY.legalName}, {COMPANY.street}, {COMPANY.postcode} {COMPANY.city}
           </p>
           <p>KvK {COMPANY.kvk}</p>
+          <p><a href={`mailto:${COMPANY.email}`} className="hover:underline">{COMPANY.email}</a></p>
         </div>
         <nav className="flex flex-wrap gap-x-5 gap-y-2">
           <Link to="/privacy" className="hover:underline">Privacyverklaring</Link>
           <Link to="/voorwaarden" className="hover:underline">Algemene voorwaarden</Link>
           <Link to="/partnervoorwaarden" className="hover:underline">Partnervoorwaarden</Link>
+          <button type="button" onClick={openCookieSettings} className="hover:underline">Cookie-instellingen</button>
         </nav>
       </div>
     </footer>
