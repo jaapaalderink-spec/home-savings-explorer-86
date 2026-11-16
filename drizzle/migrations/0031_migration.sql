@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.purge_prelaunch_test_data();

@@ -2580,7 +2580,6 @@ export type Database = {
       }
       next_credit_number: { Args: never; Returns: string }
       publish_calculator_config: { Args: { _id: string }; Returns: number }
-      purge_prelaunch_test_data: { Args: never; Returns: string }
       recipient_area_covers: {
         Args: {
           p_center_lat: number
