@@ -22,47 +22,84 @@ export const Route = createFileRoute("/privacy")({
 
 function Page() {
   const c = COMPANY;
+  const mail = "administratie@onafhankelijke-offerte.nl";
   return (
     <LegalPage title="Privacyverklaring" updated="16 november 2026">
+      <h2>Wie zijn wij?</h2>
       <p>
-        {c.tradeName} is een handelsnaam van {c.legalName}, gevestigd aan {c.street}, {c.postcode} {c.city},
-        ingeschreven bij de KvK onder nummer {c.kvk}. Wij zijn verwerkingsverantwoordelijke voor de gegevens die
-        je via deze website aan ons verstrekt.
+        {c.tradeName} is een handelsnaam van {c.legalName}, {c.street}, {c.postcode} {c.city}, KvK-nummer {c.kvk}.{" "}
+        {c.legalName} is verantwoordelijk voor de verwerking van persoonsgegevens die in deze verklaring wordt
+        beschreven. Je bereikt ons via <a href={`mailto:${mail}`}>{mail}</a>.
       </p>
-      <h2>Welke gegevens wij verwerken</h2>
+
+      <h2>Waarvoor gebruiken wij je gegevens?</h2>
       <ul>
-        <li>Contactgegevens: naam, adres, postcode, huisnummer, woonplaats, telefoonnummer en e-mailadres.</li>
-        <li>Woning- en energiegegevens: verbruik, tarieven, energieleverancier, contracttype en je gekozen maatregelen.</li>
-        <li>Technische gegevens die nodig zijn om misbruik te voorkomen, zoals een versleutelde (gehashte) weergave van je IP-adres bij het uitlezen van een jaaropgave.</li>
-        <li>Voor partners: bedrijfsgegevens, KvK-nummer, contactpersonen, inloggegevens en factuurgegevens.</li>
+        <li><strong>Een besparing berekenen.</strong> We gebruiken de woning-, installatie- en energiegegevens die je invult, zoals verbruik, contracttype, leverancier, tarieven en gekozen maatregelen, om de door jou gevraagde indicatieve berekening te maken. Je kunt de calculator gebruiken zonder een offerte aan te vragen.</li>
+        <li><strong>Een offerteaanvraag verwerken.</strong> We gebruiken je naam, e-mailadres, telefoonnummer, adresgegevens, gekozen maatregelen en relevante aanvraaggegevens om je aanvraag te verwerken, aan installateurs te koppelen en je over de voortgang en de toegewezen installateurs te informeren.</li>
+        <li><strong>Aanvragen controleren en misbruik voorkomen.</strong> We verifiëren je telefoonnummer per sms. Bij het uploaden van een jaaropgave gebruiken we een gehashte weergave van je IP-adres om misbruik van die functie tegen te gaan. Ons gerechtvaardigd belang is het beveiligen van het platform en het tegengaan van nepaanvragen en misbruik.</li>
+        <li><strong>Een partneraccount beheren.</strong> We verwerken bedrijfsgegevens, KvK-nummer, gegevens van contactpersonen en gebruikers, inlog- en sessiegegevens en factuur- en betaalgegevens voor accountbeheer, het leveren van aanvragen en facturatie. Dit doen we om de partnerovereenkomst uit te voeren. Voor de fiscale administratie verwerken we de noodzakelijke gegevens ook om aan een wettelijke verplichting te voldoen. Voor zakelijke contactpersonen die zelf geen contractspartij zijn, is ons gerechtvaardigd belang het onderhouden van het zakelijke contact en het beheren van de overeenkomst.</li>
       </ul>
-      <h2>Waarom wij deze gegevens verwerken</h2>
-      <ul>
-        <li>Om een indicatieve besparing te berekenen en je offerteaanvraag te koppelen aan installateurs (uitvoering van je verzoek).</li>
-        <li>Om je telefoonnummer te verifiëren per sms en misbruik of nepaanvragen te voorkomen (gerechtvaardigd belang).</li>
-        <li>Om je per e-mail te informeren over de status van je aanvraag en de installateurs die contact met je opnemen.</li>
-        <li>Voor partners: het leveren van aanvragen, facturatie en accountbeheer (uitvoering van de overeenkomst en wettelijke plicht).</li>
-      </ul>
-      <h2>Jaaropgave uploaden</h2>
       <p>
-        Upload je een jaaropgave of energierekening (PDF, JPG of PNG), dan wordt het bestand alleen tijdelijk in het
-        werkgeheugen van onze server verwerkt. Een AI-dienst leest de relevante gegevens uit, waarna het bestand direct
-        wordt verwijderd. Wij slaan het document niet op en installateurs krijgen het nooit te zien. Je controleert
-        de uitgelezen gegevens altijd zelf voordat je verder gaat.
+        Voor de berekening, het optionele uitlezen en de offertebemiddeling, inclusief statusmails, gebruiken we de
+        informatie die nodig is om de gevraagde dienst uit te voeren of op jouw verzoek stappen te zetten vóór het
+        sluiten van een overeenkomst over die dienst. Zonder de verplichte gegevens in het offerteformulier en zonder
+        sms-verificatie kunnen we je aanvraag niet doorzetten. Een jaaropgave uploaden is optioneel: je kunt gegevens
+        ook zelf invoeren.
       </p>
-      <h2>Met wie wij gegevens delen</h2>
-      <ul>
-        <li>Met maximaal 3 aangesloten installateurs in jouw regio die jouw aanvraag opvolgen. Zij ontvangen je contact-, woning- en energiegegevens en mogen deze alleen gebruiken voor jouw aanvraag.</li>
-        <li>Met dienstverleners die ons helpen de website te laten werken: hosting en database, een AI-dienst voor het uitlezen van jaaropgaven, een sms-dienst voor verificatie, een e-maildienst en Mollie voor betalingen door partners. Met hen zijn verwerkersafspraken gemaakt waar dat nodig is.</li>
-      </ul>
-      <p>Wij verkopen je gegevens nooit aan derden.</p>
-      <h2>Hoe lang wij gegevens bewaren</h2>
+
+      <h2>Een jaaropgave uploaden</h2>
       <p>
-        Aanvraaggegevens bewaren wij zolang nodig is om je aanvraag af te handelen en klachten te kunnen behandelen,
-        maximaal 2 jaar na je aanvraag. Facturen en financiële gegevens van partners bewaren wij 7 jaar vanwege de
-        wettelijke bewaarplicht. Gegevens voor misbruikpreventie bij jaaropgaven worden na uiterlijk 2 dagen verwijderd.
+        Als je een jaaropgave of energierekening uploadt, gebruiken we een AI-functie via Lovable om relevante
+        energiegegevens uit te lezen. Je kunt de uitgelezen waarden controleren en corrigeren. Als je daarna een offerte
+        aanvraagt, worden de overgenomen waarden onderdeel van je aanvraag.
       </p>
-      <h2>Cookies, opslag en bezoekersstatistieken</h2>
+      <p>
+        Wij bewaren het oorspronkelijke bestand niet in ons aanvraagdossier en delen het niet met installateurs. Voor het
+        uitlezen wordt het document tijdelijk verwerkt.
+      </p>
+
+      <h2>Met wie delen wij je gegevens?</h2>
+      <p>
+        Pas nadat je zelf een offerteaanvraag hebt verstuurd en je telefoonnummer per sms hebt bevestigd, kunnen wij je
+        aanvraag delen met maximaal <strong>drie aangesloten installateurs</strong> die de aanvraag kunnen opvolgen. Bij
+        alleen gebruik van de calculator delen we je gegevens niet met installateurs.
+      </p>
+      <p>
+        De installateur kan je naam, e-mailadres, telefoonnummer, postcode, huisnummer en woonplaats zien, samen met de
+        aangevraagde maatregelen. Afhankelijk van wat je hebt ingevuld, kan de aanvraag ook het woningtype, bouwjaar,
+        type energiecontract, type verwarming, jaarlijks stroom- en gasverbruik, aantal zonnepanelen, informatie over een
+        elektrische auto, jaarkilometrage en batterijcapaciteit bevatten.
+      </p>
+      <p>
+        Installateurs betalen ons voor ontvangen offerteaanvragen. We delen de gegevens zodat zij jouw aanvraag kunnen
+        opvolgen en een offerte kunnen maken. Voor zover een installateur zelfstandig bepaalt hoe hij contact met je
+        opneemt en zijn offerte afhandelt, is die installateur verantwoordelijk voor die verwerking en geldt ook zijn
+        eigen privacyverklaring.
+      </p>
+      <p>
+        We maken gebruik van dienstverleners voor hosting en database, het uitlezen van jaaropgaven via Lovable,
+        sms-verificatie, e-mail en betalingen door partners via Mollie. Waar een leverancier als verwerker optreedt,
+        maken we afspraken over hoe die persoonsgegevens in onze opdracht verwerkt. Wij verkopen je gegevens nooit.
+      </p>
+
+      <h2>Hoe lang bewaren wij gegevens?</h2>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead><tr className="border-b border-moss/20"><th className="py-2 pr-4 font-semibold text-ink">Gegevens</th><th className="py-2 font-semibold text-ink">Bewaartermijn</th></tr></thead>
+          <tbody className="[&_td]:border-b [&_td]:border-moss/10 [&_td]:py-2 [&_td]:pr-4 [&_td]:align-top">
+            <tr><td>Offerteaanvragen, inclusief daarin overgenomen energiegegevens</td><td>Zolang nodig voor afhandeling en klachten, maximaal twee jaar na de aanvraag.</td></tr>
+            <tr><td>Gegevens voor misbruikpreventie bij uploads van jaaropgaven</td><td>Uiterlijk twee dagen.</td></tr>
+            <tr><td>Partneraccounts met factuurhistorie</td><td>Na beëindiging zeven jaar, voor zover de gegevens nodig zijn voor de financiële administratie en om facturen aan de juiste partner te kunnen koppelen.</td></tr>
+            <tr><td>Fiscale basisgegevens, waaronder facturen</td><td>Zeven jaar volgens de fiscale bewaarplicht.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Cookies en bezoekersstatistieken</h2>
+      <p>
+        We gebruiken noodzakelijke browseropslag om partners en beheerders ingelogd te houden. Die opslag is bedoeld om
+        het account te laten werken.
+      </p>
       <p>
         Wij gebruiken bezoekersstatistieken van Lovable. Die gebruiken geen cookies, slaan niets op je apparaat op,
         bewaren geen IP-adressen en herkennen geen bezoekers. Er wordt bijgehouden welke pagina's je bezoekt, waar je
@@ -73,21 +110,26 @@ function Page() {
         uit hoe het daarmee omgaat.
       </p>
       <p>
-        Log je in als partner of beheerder, dan wordt je inlogsessie in je browser bewaard zodat je ingelogd blijft.
-        Als wij Google Analytics, Google Tag Manager of Google Ads inschakelen, kunnen deze diensten cookies plaatsen en
-        gegevens over je bezoek naar Google sturen. Wij vragen daar dan vooraf toestemming voor.
+        Als wij Google Analytics of Google Ads inschakelen, vragen wij daar vooraf je toestemming voor. Bij weigering
+        blijven deze diensten uit. Intrekken van je toestemming verandert niets aan de verwerking die daarvóór
+        rechtmatig plaatsvond.
       </p>
-      <h2>Je rechten</h2>
+
+      <h2>Je rechten en contact</h2>
       <p>
-        Je hebt het recht op inzage, correctie, verwijdering en overdracht van je gegevens, en je kunt bezwaar maken
-        tegen of een beperking vragen van de verwerking. Stuur je verzoek naar ons via de contactgegevens hieronder;
-        wij reageren binnen 4 weken. Ben je niet tevreden, dan kun je een klacht indienen bij de Autoriteit
-        Persoonsgegevens.
+        Je kunt vragen om inzage, correctie, verwijdering, beperking of overdracht van je persoonsgegevens, voor zover
+        dat recht op jouw situatie van toepassing is. Je kunt bezwaar maken tegen verwerking op basis van ons
+        gerechtvaardigd belang. Voor verwerking op basis van toestemming kun je die toestemming intrekken.
       </p>
-      <h2>Beveiliging en contact</h2>
       <p>
-        Wij beveiligen je gegevens met versleutelde verbindingen, toegangsbeperking per partner en tweestapsverificatie
-        voor beheerders. Vragen? Schrijf naar {c.legalName}, {c.street}, {c.postcode} {c.city}.
+        Mail naar <a href={`mailto:${mail}`}>{mail}</a>. We reageren uiterlijk binnen één maand. Bij een ingewikkeld
+        verzoek kan de termijn met maximaal twee maanden worden verlengd. Als dat nodig is, laten we je dat binnen de
+        eerste maand weten en leggen we uit waarom. Je kunt ook een klacht indienen bij de{" "}
+        <a href="https://autoriteitpersoonsgegevens.nl/" target="_blank" rel="noreferrer">Autoriteit Persoonsgegevens</a>.
+      </p>
+      <p>
+        We beschermen persoonsgegevens onder meer met versleutelde verbindingen, toegangsbeperking per partner en
+        tweestapsverificatie voor beheerders.
       </p>
     </LegalPage>
   );
