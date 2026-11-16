@@ -12,6 +12,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { SiteFooter } from "@/components/legal/SiteFooter";
+import { CookieBanner } from "@/components/legal/CookieBanner";
+import { CONSENT_DEFAULTS } from "@/lib/consent-defaults";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { getSiteTags } from "@/lib/site-tags.functions";
 import { gtagBootstrap, gtmBootstrap, type SiteTags } from "@/lib/site-tags";
@@ -107,7 +109,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         ? [{ name: "google-site-verification", content: loaderData.search_console_token }]
         : []),
     ],
-    scripts: siteTagScripts(loaderData),
+    scripts: [{ children: CONSENT_DEFAULTS }, ...siteTagScripts(loaderData)],
     links: [
       {
         rel: "stylesheet",
@@ -150,6 +152,7 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <SiteFooter />
+      <CookieBanner />
       <Toaster />
     </QueryClientProvider>
   );

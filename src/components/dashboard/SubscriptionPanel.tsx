@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { COMPANY, COMPANY_VAT } from "@/components/legal/company";
 import {
   buyLeadBundle,
   confirmTermination,
@@ -63,6 +64,9 @@ export function SubscriptionPanel() {
 
   return (
     <div className="space-y-4">
+      <p className="text-xs text-moss/70">
+        Facturen worden verstuurd door {COMPANY.legalName} ({COMPANY.tradeName}), KvK {COMPANY.kvk}, btw-nummer {COMPANY_VAT}.
+      </p>
       <section className="rounded-2xl bg-background p-5" style={panel}>
         <h3 className="font-display text-lg font-bold text-ink">Je abonnement</h3>
         {!a ? (
