@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Mail, Phone, MapPin, UserCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductCrm } from "@/components/dashboard/ProductCrm";
+import { LeadIntake } from "@/components/dashboard/LeadIntake";
 import { LeadPlanner } from "@/components/dashboard/LeadPlanner";
 import {
   assignPurchases,
@@ -155,11 +156,7 @@ export function MyLeads({ viewAs }: { viewAs?: string | null } = {}) {
                   </div>
                 </div>
 
-                {lead["notes"] ? (
-                  <p className="mt-3 rounded-xl bg-muted p-3 text-xs text-moss/80">
-                    {String(lead["notes"])}
-                  </p>
-                ) : null}
+                <LeadIntake lead={lead} />
 
                 <div className="mt-3 flex flex-wrap items-center gap-1.5">
                   <span className="text-xs font-semibold text-moss">{p.status === "partial_won" ? "Gedeeltelijk gewonnen" : STATUSES.find((s) => s.id === p.status)?.label ?? p.status} · {p.closed ? "Afgesloten" : "Open"}</span>
