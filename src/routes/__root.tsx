@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
+import { SiteFooter } from "@/components/legal/SiteFooter";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { getSiteTags } from "@/lib/site-tags.functions";
 import { gtagBootstrap, gtmBootstrap, type SiteTags } from "@/lib/site-tags";
@@ -129,7 +130,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="nl">
       <head>
         <HeadContent />
       </head>
@@ -148,6 +149,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <SiteFooter />
       <Toaster />
     </QueryClientProvider>
   );
