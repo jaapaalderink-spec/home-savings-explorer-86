@@ -1,5 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { getRequestHeader } from "@tanstack/react-start/server";
+
+const SCANS_PER_HOUR = 5;
+const SCANS_PER_DAY = 300;
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const MIME = ["application/pdf", "image/jpeg", "image/png"] as const;
@@ -57,6 +61,28 @@ export const readEnergyBill = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ ok: true; data: EnergyBillData } | { ok: false; error: string }> => {
     const key = process.env["LOVABLE_API_KEY"];
     if (!key) return { ok: false, error: "Het uitlezen is tijdelijk niet beschikbaar." };
+    const ip =
+      getRequestHeader("cf-connecting-ip") ??
+      getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() ??
+      "unknown";
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`energy-bill:${ip}`));
+    const clientHash = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: claim, error: claimError } = await supabaseAdmin.rpc("claim_energy_bill_scan", {
+      p_client_hash: clientHash,
+      p_per_hour: SCANS_PER_HOUR,
+      p_per_day: SCANS_PER_DAY,
+    });
+    if (claimError) return { ok: false, error: "Het uitlezen is tijdelijk niet beschikbaar." };
+    if (claim !== "ok") {
+      return {
+        ok: false,
+        error:
+          claim === "client_limit"
+            ? "Je hebt het maximale aantal uploads bereikt. Probeer het over een uur opnieuw of vul je gegevens zelf in."
+            : "Het uitlezen is vandaag niet meer beschikbaar. Vul je gegevens zelf in.",
+      };
+    }
     const part =
       data.mimeType === "application/pdf"
         ? { type: "input_file", filename: data.filename || "jaaropgave.pdf", file_data: `data:application/pdf;base64,${data.base64}` }
