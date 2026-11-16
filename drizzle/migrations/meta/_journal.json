@@ -204,6 +204,13 @@
       "when": 1794858860578,
       "tag": "0028_energy_bill_scan_limit",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1794859319114,
+      "tag": "0029_lock_capacity_regions_role_checks",
+      "breakpoints": true
     }
   ]
 }

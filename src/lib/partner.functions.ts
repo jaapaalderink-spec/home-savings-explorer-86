@@ -268,6 +268,12 @@ export const listPurchasedLeads = createServerFn({ method: "GET" })
       .eq("id", context.userId)
       .maybeSingle();
     if (!profile?.company_id) return [];
+    const { data: company } = await db
+      .from("companies")
+      .select("approval_status, closed_at")
+      .eq("id", profile.company_id)
+      .maybeSingle();
+    if (!company || company.approval_status !== "approved" || company.closed_at) return [];
 
     const { partnerAccess } = await import("@/lib/partner-access.server");
     const access = await partnerAccess(context.userId);

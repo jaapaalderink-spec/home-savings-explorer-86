@@ -1,6 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { adminRole } from "@/lib/admin-guard";
 import { adminDb } from "@/lib/partner-util";
@@ -15,18 +13,7 @@ const EMPTY: SiteTags = {
 
 export const getSiteTags = createServerFn({ method: "GET" }).handler(async (): Promise<SiteTags> => {
   try {
-    const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
-    const db = createClient<Database>(process.env["SUPABASE_URL"]!, key, {
-      auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-      global: {
-        fetch: (input, init) => {
-          const h = new Headers(init?.headers);
-          if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) h.delete("Authorization");
-          h.set("apikey", key);
-          return fetch(input, { ...init, headers: h });
-        },
-      },
-    });
+    const db = await adminDb();
     const { data } = await db
       .from("site_integrations")
       .select("ga_measurement_id, gtm_container_id, ads_conversion_id, search_console_token")

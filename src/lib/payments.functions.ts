@@ -38,10 +38,7 @@ export const createInvoicePayment = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await authorizeInvoice(context.userId, data.invoiceId, context.claims);
     const { startInvoicePayment } = await import("@/lib/payments.server");
-    const origin =
-      process.env["APP_URL"] ??
-      getRequestHeader("origin") ??
-      (getRequestHeader("host") ? `https://${getRequestHeader("host")}` : "http://localhost:8080");
+    const origin = trustedOrigin(getRequestHeader("origin"));
     try {
       const result = await startInvoicePayment({ invoiceId: data.invoiceId, origin });
       return { ok: true as const, ...result };
@@ -66,3 +63,12 @@ export const refreshInvoicePayment = createServerFn({ method: "POST" })
     }
     return state;
   });
+
+const ALLOWED_ORIGIN = /^https:\/\/((www\.)?onafhankelijke-offerte\.nl|[a-z0-9-]+\.lovable\.app)$/;
+/** Betaalterugkeer en webhook alleen naar eigen domeinen, nooit naar een door de aanroeper gekozen adres. */
+function trustedOrigin(requested: string | undefined): string {
+  const configured = process.env["APP_URL"];
+  if (configured) return configured.replace(/\/$/, "");
+  if (requested && ALLOWED_ORIGIN.test(requested)) return requested;
+  return "https://onafhankelijke-offerte.nl";
+}
