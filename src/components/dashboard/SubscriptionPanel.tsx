@@ -65,7 +65,7 @@ export function SubscriptionPanel() {
   return (
     <div className="space-y-4">
       <p className="text-xs text-moss/70">
-        Facturen worden verstuurd door {COMPANY.tradeName}, KvK {COMPANY.kvk}, btw-nummer {COMPANY_VAT}.
+        Facturen worden verstuurd door {COMPANY.tradeName}, een handelsnaam van {COMPANY.legalName}, KvK {COMPANY.kvk}, btw-nummer {COMPANY_VAT}.
       </p>
       <section className="rounded-2xl bg-background p-5" style={panel}>
         <h3 className="font-display text-lg font-bold text-ink">Je abonnement</h3>
