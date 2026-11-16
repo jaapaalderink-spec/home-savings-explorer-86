@@ -132,3 +132,76 @@ export const completePriceReview = createServerFn({ method: "POST" })
     if (error) throw new Error("Afronden is mislukt.");
     return { ok: true };
   });
+
+/** Beheerder voert zelf een partner in: bedrijf, eigenaar-uitnodiging en eerste contractversie. */
+export const createPartnerManual = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        name: z.string().trim().min(2).max(80),
+        kvkNumber: z.string().transform((v) => v.replace(/\s/g, "")).refine((v) => /^\d{8}$/.test(v), "Vul een geldig KvK-nummer van 8 cijfers in."),
+        contactName: z.string().trim().min(2).max(100),
+        email: z.string().trim().toLowerCase().email().max(255),
+        phone: z.string().trim().max(30).optional(),
+        website: z.string().trim().max(200).optional(),
+        categories: z.array(z.enum(["solar", "heatpump", "battery", "ev", "airco"])).min(1),
+        validFrom: z.string().regex(/^\d{4}-\d{2}-01$/),
+        packageCode: z.enum(["start", "groei", "team"]),
+        billingMode: z.enum(["actual_delivered", "fixed_package"]),
+        paidSeats: z.number().int().min(0).max(500),
+        note: z.string().trim().max(300).optional(),
+        customPrices: customPricesSchema.optional(),
+        reviewDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        reviewNote: z.string().trim().max(300).optional(),
+        redirectOrigin: z.string().url(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const db = await assertAdmin(context.userId, context.claims);
+    if (data.validFrom < currentMonthStart()) throw new Error("De ingangsdatum mag niet in het verleden liggen.");
+    const { data: existing } = await db.from("profiles").select("id").ilike("email", data.email).maybeSingle();
+    if (existing) throw new Error("Er bestaat al een account met dit e-mailadres.");
+
+    const site = (process.env["PUBLIC_SITE_URL"] || data.redirectOrigin).replace(/\/$/, "");
+    const { data: invited, error: inviteErr } = await db.auth.admin.inviteUserByEmail(data.email, {
+      data: { full_name: data.contactName },
+      redirectTo: `${site}/wachtwoord-instellen`,
+    });
+    if (inviteErr || !invited?.user) throw new Error("Uitnodiging versturen is mislukt.");
+    const ownerId = invited.user.id;
+
+    const { planByName } = await import("@/lib/lead-pricing");
+    const plan = planByName("starter");
+    const { data: company, error } = await db
+      .from("companies")
+      .insert({
+        name: data.name, kvk_number: data.kvkNumber, categories: data.categories,
+        plan_name: plan.id, monthly_lead_limit: 0, monthly_fee_ex_vat: plan.price,
+        contact_email: data.email, contact_phone: data.phone || null, website: data.website || null,
+        active: false, approval_status: "pending",
+      })
+      .select("id")
+      .single();
+    if (error || !company) throw new Error("Bedrijf aanmaken is mislukt.");
+
+    await db.from("profiles").upsert({ id: ownerId, email: data.email, full_name: data.contactName, phone: data.phone || null, company_id: company.id });
+    await db.from("user_roles").upsert({ user_id: ownerId, role: "owner" }, { onConflict: "user_id,role" });
+    await db.from("company_products").upsert(
+      data.categories.map((category) => ({ company_id: company.id, category, active: true, monthly_max: 0 })),
+      { onConflict: "company_id,category" },
+    );
+
+    const { insertContractVersion } = await import("@/lib/contract-version.server");
+    await insertContractVersion(db, { ...data, companyId: company.id, leadQuotaPerMonth: 0 }, context.userId);
+    await db
+      .from("companies")
+      .update({ active: true, approval_status: "approved", approved_at: new Date().toISOString(), approved_by: context.userId })
+      .eq("id", company.id);
+    await db.rpc("log_audit_event_api", {
+      p_event: "COMPANY_ACTIVATED", p_entity: "company", p_entity_id: company.id,
+      p_company: company.id, p_actor: context.userId, p_source: "admin", p_metadata: { approved: true, manual: true },
+    } as never);
+    return { ok: true, companyId: company.id };
+  });
