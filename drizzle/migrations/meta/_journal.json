@@ -225,6 +225,13 @@
       "when": 1794863878636,
       "tag": "0031_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794869724882,
+      "tag": "0032_restrict_geo_reference_tables",
+      "breakpoints": true
     }
   ]
 }
