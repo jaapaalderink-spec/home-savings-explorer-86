@@ -26,7 +26,7 @@ function Page() {
     <LegalPage title="Partnervoorwaarden" updated="16 november 2026">
       <p>
         Deze voorwaarden gelden voor elk installatiebedrijf (de partner) dat via {c.tradeName} aanvragen ontvangt.
-        {" "}{c.tradeName} is een handelsnaam van {c.legalName} ({c.street}, {c.postcode} {c.city}, KvK {c.kvk}).
+        {" "}{c.tradeName} ({c.street}, {c.postcode} {c.city}, KvK {c.kvk}) biedt dit platform aan.
         Afspraken in een individuele contractversie gaan voor deze voorwaarden.
       </p>
       <h2>1. Aanmelding en goedkeuring</h2>

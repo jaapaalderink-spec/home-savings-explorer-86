@@ -8,9 +8,7 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="font-semibold text-ink">{COMPANY.tradeName}</p>
-          <p>
-            Een handelsnaam van {COMPANY.legalName}, {COMPANY.street}, {COMPANY.postcode} {COMPANY.city}
-          </p>
+          <p>{COMPANY.street}, {COMPANY.postcode} {COMPANY.city}</p>
           <p>KvK {COMPANY.kvk}</p>
           <p><a href={`mailto:${COMPANY.email}`} className="hover:underline">{COMPANY.email}</a></p>
         </div>
