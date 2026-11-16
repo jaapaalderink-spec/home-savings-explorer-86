@@ -8,7 +8,7 @@ import { Client } from "pg";
 import { createClient } from "@supabase/supabase-js";
 
 const DB_URL = process.env["SUPABASE_DB_URL"];
-const suite = DB_URL && process.env["SUPABASE_URL"] ? describe : describe.skip;
+const suite = process.env["RUN_DB_INTEGRATION_TESTS"] === "true" && DB_URL && process.env["SUPABASE_URL"] ? describe : describe.skip;
 
 const mollieState: {
   payments: Record<
