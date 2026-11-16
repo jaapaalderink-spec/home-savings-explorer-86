@@ -1,4 +1,6 @@
 /** Browserzijde: opent een afdrukbare factuur (Opslaan als PDF via het printvenster). */
+import { COMPANY, COMPANY_VAT } from "@/components/legal/company";
+
 type Line = { description: string; quantity: number; unit_price_ex_vat: number; amount_ex_vat: number };
 
 const esc = (v: unknown) =>
@@ -24,7 +26,7 @@ table{width:100%;border-collapse:collapse;margin-top:16px}th,td{padding:8px 6px;
 th{font-size:11px;text-transform:uppercase;color:#64748b}.r{text-align:right}.tot td{border:none;padding:4px 6px}
 .big td{font-weight:bold;font-size:15px}tr{break-inside:avoid}
 </style></head><body>
-<h1>Factuur ${esc(i["invoice_number"])}</h1><div class="muted">Onafhankelijke Offerte, KvK 94021376, btw NL005058894B81</div>
+<h1>Factuur ${esc(i["invoice_number"])}</h1><div class="muted">${esc(COMPANY.tradeName)}, een handelsnaam van ${esc(COMPANY.legalName)}, ${esc(COMPANY.street)}, ${esc(COMPANY.postcode)} ${esc(COMPANY.city)}, KvK ${esc(COMPANY.kvk)}, btw ${esc(COMPANY_VAT)}</div>
 <div class="grid"><div><strong>Aan</strong><br>${esc(company.name)}<br>${esc(company.address ?? "")}${company.vat_number ? `<br>Btw: ${esc(company.vat_number)}` : ""}</div>
 <div class="r">Periode: ${date(i["period_start"])} tot ${date(i["period_end"])}<br>Vervaldatum: ${date(i["due_date"])}<br>Status: ${esc(i["payment_status"] ?? "open")}</div></div>
 <table><thead><tr><th>Omschrijving</th><th class="r">Aantal</th><th class="r">Prijs</th><th class="r">Bedrag</th></tr></thead><tbody>${lines}</tbody></table>
