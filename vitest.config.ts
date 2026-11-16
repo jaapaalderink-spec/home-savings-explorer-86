@@ -8,5 +8,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    // Integratietests schrijven naar de gedeelde database; alleen met RUN_DB_INTEGRATION_TESTS=true.
+    exclude: process.env["RUN_DB_INTEGRATION_TESTS"] === "true" ? ["node_modules/**"] : ["node_modules/**", "**/*.integration.test.ts"],
   },
 });

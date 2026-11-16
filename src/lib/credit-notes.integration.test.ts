@@ -10,7 +10,7 @@ import { createClient } from "@supabase/supabase-js";
 const DB_URL = process.env["SUPABASE_DB_URL"];
 const SB_URL = process.env["SUPABASE_URL"];
 const SB_KEY = process.env["SUPABASE_SERVICE_ROLE_KEY"];
-const suite = DB_URL && SB_URL && SB_KEY ? describe : describe.skip;
+const suite = process.env["RUN_DB_INTEGRATION_TESTS"] === "true" && DB_URL && SB_URL && SB_KEY ? describe : describe.skip;
 
 const sb = createClient(SB_URL ?? "http://localhost", SB_KEY ?? "none", {
   auth: { persistSession: false },

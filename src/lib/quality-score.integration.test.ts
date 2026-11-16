@@ -10,7 +10,7 @@ const SB_URL = process.env["SUPABASE_URL"];
 const SB_KEY = process.env["SUPABASE_SERVICE_ROLE_KEY"];
 const ANON_KEY =
   process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
-const suite = SB_URL && SB_KEY && ANON_KEY ? describe : describe.skip;
+const suite = process.env["RUN_DB_INTEGRATION_TESTS"] === "true" && SB_URL && SB_KEY && ANON_KEY ? describe : describe.skip;
 
 const sb = createClient(SB_URL ?? "http://localhost", SB_KEY ?? "none", {
   auth: { persistSession: false },
