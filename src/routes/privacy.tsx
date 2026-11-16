@@ -27,9 +27,8 @@ function Page() {
     <LegalPage title="Privacyverklaring" updated="16 november 2026">
       <h2>Wie zijn wij?</h2>
       <p>
-        {c.tradeName} is een handelsnaam van {c.legalName}, {c.street}, {c.postcode} {c.city}, KvK-nummer {c.kvk}.{" "}
-        {c.legalName} is verantwoordelijk voor de verwerking van persoonsgegevens die in deze verklaring wordt
-        beschreven. Je bereikt ons via <a href={`mailto:${mail}`}>{mail}</a>.
+        {c.tradeName}, {c.street}, {c.postcode} {c.city}, KvK-nummer {c.kvk}, is verantwoordelijk voor de
+        verwerking van persoonsgegevens die in deze verklaring wordt beschreven. Je bereikt ons via <a href={`mailto:${mail}`}>{mail}</a>.
       </p>
 
       <h2>Waarvoor gebruiken wij je gegevens?</h2>

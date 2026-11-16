@@ -25,7 +25,7 @@ function Page() {
   return (
     <LegalPage title="Algemene voorwaarden" updated="16 november 2026">
       <p>
-        Deze voorwaarden gelden voor het gebruik van de website van {c.tradeName}, een handelsnaam van {c.legalName}
+        Deze voorwaarden gelden voor het gebruik van de website van {c.tradeName}
         ({c.street}, {c.postcode} {c.city}, KvK {c.kvk}).
       </p>
       <h2>1. Onze dienst</h2>
