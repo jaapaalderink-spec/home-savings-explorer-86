@@ -36,12 +36,12 @@ function SetPasswordPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pw.length < 10) return toast.error("Kies een wachtwoord van minimaal 10 tekens.");
-    if (pw !== pw2) return toast.error("De wachtwoorden komen niet overeen.");
+    if (pw.length < 10) { toast.error("Kies een wachtwoord van minimaal 10 tekens."); return; }
+    if (pw !== pw2) { toast.error("De wachtwoorden komen niet overeen."); return; }
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password: pw });
     setBusy(false);
-    if (error) return toast.error("Wachtwoord instellen is mislukt. Kies een sterker wachtwoord.");
+    if (error) { toast.error("Wachtwoord instellen is mislukt. Kies een sterker wachtwoord."); return; }
     toast.success("Je wachtwoord is ingesteld.");
     navigate({ to: "/dashboard" });
   };
