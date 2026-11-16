@@ -14,7 +14,10 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BedanktRouteImport } from './routes/bedankt'
 import { Route as OfferteRouteImport } from './routes/offerte'
+import { Route as PartnervoorwaardenRouteImport } from './routes/partnervoorwaarden'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResultaatRouteImport } from './routes/resultaat'
+import { Route as VoorwaardenRouteImport } from './routes/voorwaarden'
 import { Route as WachtwoordInstellenRouteImport } from './routes/wachtwoord-instellen'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -50,9 +53,24 @@ const OfferteRoute = OfferteRouteImport.update({
   path: '/offerte',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PartnervoorwaardenRoute = PartnervoorwaardenRouteImport.update({
+  id: '/partnervoorwaarden',
+  path: '/partnervoorwaarden',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResultaatRoute = ResultaatRouteImport.update({
   id: '/resultaat',
   path: '/resultaat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VoorwaardenRoute = VoorwaardenRouteImport.update({
+  id: '/voorwaarden',
+  path: '/voorwaarden',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WachtwoordInstellenRoute = WachtwoordInstellenRouteImport.update({
@@ -114,7 +132,10 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/bedankt': typeof BedanktRoute
   '/offerte': typeof OfferteRoute
+  '/partnervoorwaarden': typeof PartnervoorwaardenRoute
+  '/privacy': typeof PrivacyRoute
   '/resultaat': typeof ResultaatRoute
+  '/voorwaarden': typeof VoorwaardenRoute
   '/wachtwoord-instellen': typeof WachtwoordInstellenRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -131,7 +152,10 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/bedankt': typeof BedanktRoute
   '/offerte': typeof OfferteRoute
+  '/partnervoorwaarden': typeof PartnervoorwaardenRoute
+  '/privacy': typeof PrivacyRoute
   '/resultaat': typeof ResultaatRoute
+  '/voorwaarden': typeof VoorwaardenRoute
   '/wachtwoord-instellen': typeof WachtwoordInstellenRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -150,7 +174,10 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/bedankt': typeof BedanktRoute
   '/offerte': typeof OfferteRoute
+  '/partnervoorwaarden': typeof PartnervoorwaardenRoute
+  '/privacy': typeof PrivacyRoute
   '/resultaat': typeof ResultaatRoute
+  '/voorwaarden': typeof VoorwaardenRoute
   '/wachtwoord-instellen': typeof WachtwoordInstellenRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -169,7 +196,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/bedankt'
     | '/offerte'
+    | '/partnervoorwaarden'
+    | '/privacy'
     | '/resultaat'
+    | '/voorwaarden'
     | '/wachtwoord-instellen'
     | '/admin'
     | '/dashboard'
@@ -186,7 +216,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/bedankt'
     | '/offerte'
+    | '/partnervoorwaarden'
+    | '/privacy'
     | '/resultaat'
+    | '/voorwaarden'
     | '/wachtwoord-instellen'
     | '/admin'
     | '/dashboard'
@@ -204,7 +237,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/bedankt'
     | '/offerte'
+    | '/partnervoorwaarden'
+    | '/privacy'
     | '/resultaat'
+    | '/voorwaarden'
     | '/wachtwoord-instellen'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
@@ -223,7 +259,10 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BedanktRoute: typeof BedanktRoute
   OfferteRoute: typeof OfferteRoute
+  PartnervoorwaardenRoute: typeof PartnervoorwaardenRoute
+  PrivacyRoute: typeof PrivacyRoute
   ResultaatRoute: typeof ResultaatRoute
+  VoorwaardenRoute: typeof VoorwaardenRoute
   WachtwoordInstellenRoute: typeof WachtwoordInstellenRoute
   DuurzaamNieuwsSlugRoute: typeof DuurzaamNieuwsSlugRoute
   DuurzaamNieuwsIndexRoute: typeof DuurzaamNieuwsIndexRoute
@@ -269,11 +308,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OfferteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/partnervoorwaarden': {
+      id: '/partnervoorwaarden'
+      path: '/partnervoorwaarden'
+      fullPath: '/partnervoorwaarden'
+      preLoaderRoute: typeof PartnervoorwaardenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/resultaat': {
       id: '/resultaat'
       path: '/resultaat'
       fullPath: '/resultaat'
       preLoaderRoute: typeof ResultaatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/voorwaarden': {
+      id: '/voorwaarden'
+      path: '/voorwaarden'
+      fullPath: '/voorwaarden'
+      preLoaderRoute: typeof VoorwaardenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/wachtwoord-instellen': {
@@ -372,7 +432,10 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BedanktRoute: BedanktRoute,
   OfferteRoute: OfferteRoute,
+  PartnervoorwaardenRoute: PartnervoorwaardenRoute,
+  PrivacyRoute: PrivacyRoute,
   ResultaatRoute: ResultaatRoute,
+  VoorwaardenRoute: VoorwaardenRoute,
   WachtwoordInstellenRoute: WachtwoordInstellenRoute,
   DuurzaamNieuwsSlugRoute: DuurzaamNieuwsSlugRoute,
   DuurzaamNieuwsIndexRoute: DuurzaamNieuwsIndexRoute,
