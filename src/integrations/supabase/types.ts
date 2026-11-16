@@ -934,6 +934,24 @@ export type Database = {
           },
         ]
       }
+      energy_bill_scans: {
+        Row: {
+          client_hash: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          client_hash: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          client_hash?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       financial_events: {
         Row: {
           actor_id: string | null
@@ -2414,6 +2432,10 @@ export type Database = {
       can_access_purchase: {
         Args: { p_actor: string; p_id: string }
         Returns: boolean
+      }
+      claim_energy_bill_scan: {
+        Args: { p_client_hash: string; p_per_day: number; p_per_hour: number }
+        Returns: string
       }
       commit_product_outcome: {
         Args: {
