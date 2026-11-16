@@ -10,6 +10,7 @@ import { PAYMENT_STATUS_LABEL, type PaymentStatus } from "@/lib/payments-policy"
 import { CREDIT_STATUS_LABEL, type CreditNoteStatus } from "@/lib/credit-policy";
 import { formatEuro } from "@/lib/home-savings";
 import { printInvoice } from "@/lib/invoice-print";
+import { COMPANY, COMPANY_VAT } from "@/components/legal/company";
 
 export const Route = createFileRoute("/_authenticated/facturen")({
   head: () => ({
@@ -201,6 +202,9 @@ function InvoicesPage() {
           </ul>
         )}
       </section>
+      <p className="text-xs text-moss/70">
+        Facturen worden uitgebracht door {COMPANY.tradeName}, een handelsnaam van {COMPANY.legalName}, {COMPANY.street}, {COMPANY.postcode} {COMPANY.city}, KvK {COMPANY.kvk}, btw-nummer {COMPANY_VAT}.
+      </p>
     </main>
   );
 }
