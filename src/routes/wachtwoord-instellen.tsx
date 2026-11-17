@@ -10,6 +10,7 @@ export const Route = createFileRoute("/wachtwoord-instellen")({
   staticData: { sitemap: false },
   head: () => ({
     meta: [
+      { name: "robots", content: "noindex" },
       { title: "Wachtwoord instellen, Onafhankelijke Offerte" },
       { name: "description", content: "Stel je wachtwoord in voor het partnerportaal van Onafhankelijke Offerte." },
       { property: "og:title", content: "Wachtwoord instellen, Onafhankelijke Offerte" },
