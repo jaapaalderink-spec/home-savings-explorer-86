@@ -111,7 +111,7 @@ function PartnerRow({ c, months }: { c: Company; months: string[] }) {
           </p>
           <p className="text-moss/70">
             {c.owner?.name ?? "…"} · {c.owner?.email ?? c.contact_email ?? "geen e-mail"}
-            {(c.owner?.phone ?? c.contact_phone) ? ` · ${c.owner?.phone ?? c.contact_phone}` : ""}
+            {(c.contact_phone ?? c.owner?.phone) ? ` · ${c.contact_phone ?? c.owner?.phone}` : ""}
           </p>
           <p className="text-moss/70">Adres: {c.address ?? "niet opgegeven"}</p>
           <p className="text-moss/60">
