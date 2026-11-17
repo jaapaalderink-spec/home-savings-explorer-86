@@ -10,8 +10,7 @@ export const MIN_TERM_MONTHS = 6;
 export const NOTICE_MONTHS = 1;
 
 export const PACKAGES: Record<PackageCode, { label: string; leads: number; includedSeats: number }> = {
-  // Start heeft geen inbegrepen leads: elke geleverde lead wordt apart gefactureerd.
-  start: { label: "Start", leads: 0, includedSeats: 0 },
+  start: { label: "Start", leads: 10, includedSeats: 0 },
   groei: { label: "Groei", leads: 25, includedSeats: 1 },
   team: { label: "Team", leads: 50, includedSeats: 3 },
 };
