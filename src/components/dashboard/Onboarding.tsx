@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { createCompany, joinCompany } from "@/lib/partner.functions";
 import { CATEGORY_LABEL, PLANS } from "@/lib/lead-pricing";
 
-const CATEGORY_IDS = ["solar", "heatpump", "battery", "ev", "ehms", "airco", "boiler"];
+const CATEGORY_IDS = ["solar", "heatpump", "battery", "ev", "airco", "boiler"];
 
 export function Onboarding() {
   const queryClient = useQueryClient();
@@ -16,6 +16,14 @@ export function Onboarding() {
   const [kvk, setKvk] = useState("");
   const kvkClean = kvk.replace(/\s/g, "");
   const kvkValid = /^\d{8}$/.test(kvkClean);
+  const [street, setStreet] = useState("");
+  const [postcode, setPostcode] = useState("");
+  const [city, setCity] = useState("");
+  const [phone, setPhone] = useState("");
+  const postcodeClean = postcode.replace(/\s/g, "").toUpperCase();
+  const postcodeValid = /^\d{4}[A-Z]{2}$/.test(postcodeClean);
+  const phoneValid = /^[+0-9][0-9 ()-]{8,18}$/.test(phone.trim());
+  const addressValid = street.trim().length >= 3 && postcodeValid && city.trim().length >= 2;
   const [categories, setCategories] = useState<string[]>([]);
   const [plan, setPlan] = useState<"starter" | "groei" | "premium">("starter");
   const [code, setCode] = useState("");
@@ -23,7 +31,7 @@ export function Onboarding() {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["partner-context"] });
 
   const create = useMutation({
-    mutationFn: () => createCompany({ data: { name, kvkNumber: kvkClean, categories, plan } }),
+    mutationFn: () => createCompany({ data: { name, kvkNumber: kvkClean, street, postcode: postcodeClean, city, phone, categories, plan } }),
     onSuccess: () => {
       toast.success("Bedrijf aangemaakt. Je bent nu eigenaar.");
       invalidate();
@@ -93,6 +101,31 @@ export function Onboarding() {
             )}
           </div>
 
+          <div className="space-y-1.5">
+            <Label htmlFor="street">Straat en huisnummer</Label>
+            <Input id="street" autoComplete="street-address" value={street} onChange={(e) => setStreet(e.target.value)} />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-[1fr_2fr]">
+            <div className="space-y-1.5">
+              <Label htmlFor="postcode">Postcode</Label>
+              <Input id="postcode" autoComplete="postal-code" placeholder="1234 AB" maxLength={7} value={postcode} onChange={(e) => setPostcode(e.target.value)} aria-invalid={postcode.length > 0 && !postcodeValid} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="city">Plaats</Label>
+              <Input id="city" autoComplete="address-level2" value={city} onChange={(e) => setCity(e.target.value)} />
+            </div>
+          </div>
+          {postcode.length > 0 && !postcodeValid && (
+            <p className="text-xs text-destructive">Vul een postcode in als 1234 AB.</p>
+          )}
+          <div className="space-y-1.5">
+            <Label htmlFor="phone">Telefoonnummer</Label>
+            <Input id="phone" type="tel" autoComplete="tel" placeholder="06 12345678" value={phone} onChange={(e) => setPhone(e.target.value)} aria-invalid={phone.length > 0 && !phoneValid} />
+            {phone.length > 0 && !phoneValid && (
+              <p className="text-xs text-destructive">Vul een geldig telefoonnummer in.</p>
+            )}
+          </div>
+
           <div>
             <Label>Waarin ben je actief?</Label>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -145,7 +178,7 @@ export function Onboarding() {
 
           <Button
             onClick={() => create.mutate()}
-            disabled={create.isPending || name.trim().length < 2 || categories.length === 0}
+            disabled={create.isPending || name.trim().length < 2 || categories.length === 0 || !kvkValid || !addressValid || !phoneValid}
             className="w-full"
             style={{ backgroundColor: "#4f8f62", color: "white" }}
           >

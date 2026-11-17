@@ -113,6 +113,7 @@ function PartnerRow({ c, months }: { c: Company; months: string[] }) {
             {c.owner?.name ?? "…"} · {c.owner?.email ?? c.contact_email ?? "geen e-mail"}
             {(c.owner?.phone ?? c.contact_phone) ? ` · ${c.owner?.phone ?? c.contact_phone}` : ""}
           </p>
+          <p className="text-moss/70">Adres: {c.address ?? "niet opgegeven"}</p>
           <p className="text-moss/60">
             Aangemeld {fmt(c.created_at)} · {c.categories.map((k) => CATEGORY_LABEL[k] ?? k).join(", ")}
           </p>
