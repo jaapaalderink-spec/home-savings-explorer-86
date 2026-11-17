@@ -7,6 +7,7 @@ import { adminDb, average, monthStart, percentage } from "@/lib/partner-util";
 import { LEAD_STATUSES } from "@/lib/lead-status-policy";
 import { PARTNER_VISIBLE_EVENTS } from "@/lib/audit-policy";
 import { isBillingMonthClosed } from "@/lib/billing-period";
+import { leadOverviewPeriod, monthLeadLimit } from "@/lib/month-lead-overview";
 
 /** Profiel, bedrijf, rollen en het maandverbruik van de ingelogde partner. */
 export const getPartnerContext = createServerFn({ method: "GET" })
@@ -29,21 +30,29 @@ export const getPartnerContext = createServerFn({ method: "GET" })
       };
     }
 
-    const [{ data: company }, { count }] = await Promise.all([
+    const period = leadOverviewPeriod();
+    const [{ data: company }, { count }, { data: subscription, error: subscriptionError }, { data: bundles, error: bundleError }] = await Promise.all([
       db.from("companies").select("*").eq("id", profile.company_id).maybeSingle(),
       db
         .from("lead_purchases")
         .select("id", { count: "exact", head: true })
         .eq("company_id", profile.company_id)
         .gte("created_at", monthStart()),
+      db.from("subscription_versions").select("lead_quota_per_month")
+        .eq("company_id", profile.company_id).lte("valid_from", period.today)
+        .order("valid_from", { ascending: false }).order("version", { ascending: false })
+        .limit(1).maybeSingle(),
+      db.from("lead_bundles").select("size, period_start")
+        .eq("company_id", profile.company_id).eq("period_start", period.start),
     ]);
+    if (subscriptionError || bundleError) throw new Error("Het maandoverzicht kon niet worden geladen.");
 
     return {
       profile,
       company,
       roles,
       usedThisMonth: count ?? 0,
-      limit: company?.monthly_lead_limit ?? 0,
+      limit: monthLeadLimit(subscription?.lead_quota_per_month ?? company?.monthly_lead_limit ?? 0, bundles ?? [], period.start),
     };
   });
 
