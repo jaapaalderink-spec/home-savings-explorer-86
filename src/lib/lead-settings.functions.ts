@@ -106,6 +106,13 @@ async function contractCapacity(db: Db, companyId: string): Promise<number> {
 }
 const PAY_PER_LEAD_MAX = 200;
 
+/** Bijgekochte bundelleads voor de huidige kalendermaand. */
+async function monthBundleLeads(db: Db, companyId: string): Promise<number> {
+  const monthStart = `${new Date().toISOString().slice(0, 7)}-01`;
+  const { data } = await db.from("lead_bundles").select("size").eq("company_id", companyId).eq("period_start", monthStart);
+  return (data ?? []).reduce((t, b) => t + b.size, 0);
+}
+
 
 async function loadTerms(db: Db, companyId: string): Promise<CostTerms & { contract: boolean; packageQuota: number | null }> {
   const today = new Date().toISOString().slice(0, 10);
@@ -126,7 +133,7 @@ async function loadTerms(db: Db, companyId: string): Promise<CostTerms & { contr
     baseLeadPrice: Number(data.base_lead_price_ex_vat),
     extraProductPrice: Number(data.extra_product_price_ex_vat),
     contract: true,
-    packageQuota: data.package_code ? data.lead_quota_per_month : null,
+    packageQuota: data.package_code ? data.lead_quota_per_month + (await monthBundleLeads(db, companyId)) : null,
   };
 }
 
