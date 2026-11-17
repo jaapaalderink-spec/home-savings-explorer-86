@@ -38,7 +38,12 @@ export function SubscriptionPanel() {
 
   const bundle = useMutation({
     mutationFn: (size: BundleSize) => buy({ data: { size } }),
-    onSuccess: () => { toast.success("Bundel toegevoegd voor deze maand."); refresh(); },
+    onSuccess: () => {
+      toast.success("Bundel toegevoegd voor deze maand.");
+      refresh();
+      qc.invalidateQueries({ queryKey: ["lead-settings"] });
+      qc.invalidateQueries({ queryKey: ["partner-context"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const cancel = useMutation({

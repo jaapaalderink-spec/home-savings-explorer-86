@@ -469,6 +469,7 @@ function BuyExtra({ over, quota }: { over: number; quota: number }) {
       toast.success("Extra leads toegevoegd voor deze maand.");
       qc.invalidateQueries({ queryKey: ["my-subscription"] });
       qc.invalidateQueries({ queryKey: ["lead-settings"] });
+      qc.invalidateQueries({ queryKey: ["partner-context"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
