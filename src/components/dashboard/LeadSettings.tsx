@@ -468,12 +468,13 @@ function BuyExtra({ over, quota }: { over: number; quota: number }) {
     onSuccess: () => {
       toast.success("Extra leads toegevoegd voor deze maand.");
       qc.invalidateQueries({ queryKey: ["my-subscription"] });
+      qc.invalidateQueries({ queryKey: ["lead-settings"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
   return (
     <div role="status" className="rounded-2xl bg-muted p-4 text-sm text-moss/80" style={panel}>
-      <p className="font-semibold text-ink">Je stelt {over} lead(s) meer in dan je pakket ({quota} per maand).</p>
+      <p className="font-semibold text-ink">Je stelt {over} lead(s) meer in dan je pakket en bijgekochte leads ({quota} deze maand).</p>
       <p className="mt-1">Koop leads bij voor deze maand. Je betaalt alleen voor leads die je echt ontvangt, achteraf op de maandfactuur.</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {sizes.map((s) => (
