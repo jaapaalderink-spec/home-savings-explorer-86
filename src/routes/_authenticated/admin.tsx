@@ -40,6 +40,7 @@ import { FilterBar } from "@/components/admin/FilterBar";
 import type { LeadFilters } from "@/components/admin/filters";
 
 export const Route = createFileRoute("/_authenticated/admin")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Platformbeheer, Onafhankelijke Offerte" },

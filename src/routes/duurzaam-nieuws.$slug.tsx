@@ -8,6 +8,7 @@ const postQuery = (slug: string) =>
   queryOptions({ queryKey: ["blog", "post", slug], queryFn: () => getPublishedPost({ data: { slug } }) });
 
 export const Route = createFileRoute("/duurzaam-nieuws/$slug")({
+  staticData: { sitemap: true },
   loader: async ({ context, params }) => {
     const post = await context.queryClient.ensureQueryData(postQuery(params.slug));
     if (!post) throw notFound();

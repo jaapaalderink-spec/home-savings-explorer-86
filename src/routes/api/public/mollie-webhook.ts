@@ -5,6 +5,7 @@ import { createFileRoute } from "@tanstack/react-router";
  * halen we altijd zelf op bij Mollie. De body kan dus nooit "betaald" faken.
  */
 export const Route = createFileRoute("/api/public/mollie-webhook")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

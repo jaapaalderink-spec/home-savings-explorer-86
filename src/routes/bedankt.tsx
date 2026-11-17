@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/bedankt")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Aanvraag ontvangen, Onafhankelijke Offerte" },

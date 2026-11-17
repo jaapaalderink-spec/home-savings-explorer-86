@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PENDING_INVITE_KEY } from "@/lib/team-policy";
 
 export const Route = createFileRoute("/_authenticated")({
+  staticData: { sitemap: "exclude-subtree" },
   ssr: false,
   beforeLoad: async ({ location }) => {
     const { data, error } = await supabase.auth.getUser();

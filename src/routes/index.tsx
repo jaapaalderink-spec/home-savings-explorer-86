@@ -18,6 +18,7 @@ import {
 import { ResetCalculation } from "@/components/home-savings/ResetCalculation";
 
 export const Route = createFileRoute("/")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Bespaar op je huis, Onafhankelijke Offerte" },

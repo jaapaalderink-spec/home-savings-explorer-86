@@ -17,6 +17,7 @@ import { Route as OfferteRouteImport } from './routes/offerte'
 import { Route as PartnervoorwaardenRouteImport } from './routes/partnervoorwaarden'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResultaatRouteImport } from './routes/resultaat'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as VoorwaardenRouteImport } from './routes/voorwaarden'
 import { Route as WachtwoordInstellenRouteImport } from './routes/wachtwoord-instellen'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -66,6 +67,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const ResultaatRoute = ResultaatRouteImport.update({
   id: '/resultaat',
   path: '/resultaat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VoorwaardenRoute = VoorwaardenRouteImport.update({
@@ -135,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/partnervoorwaarden': typeof PartnervoorwaardenRoute
   '/privacy': typeof PrivacyRoute
   '/resultaat': typeof ResultaatRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/voorwaarden': typeof VoorwaardenRoute
   '/wachtwoord-instellen': typeof WachtwoordInstellenRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -155,6 +162,7 @@ export interface FileRoutesByTo {
   '/partnervoorwaarden': typeof PartnervoorwaardenRoute
   '/privacy': typeof PrivacyRoute
   '/resultaat': typeof ResultaatRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/voorwaarden': typeof VoorwaardenRoute
   '/wachtwoord-instellen': typeof WachtwoordInstellenRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -177,6 +185,7 @@ export interface FileRoutesById {
   '/partnervoorwaarden': typeof PartnervoorwaardenRoute
   '/privacy': typeof PrivacyRoute
   '/resultaat': typeof ResultaatRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/voorwaarden': typeof VoorwaardenRoute
   '/wachtwoord-instellen': typeof WachtwoordInstellenRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
@@ -199,6 +208,7 @@ export interface FileRouteTypes {
     | '/partnervoorwaarden'
     | '/privacy'
     | '/resultaat'
+    | '/sitemap.xml'
     | '/voorwaarden'
     | '/wachtwoord-instellen'
     | '/admin'
@@ -219,6 +229,7 @@ export interface FileRouteTypes {
     | '/partnervoorwaarden'
     | '/privacy'
     | '/resultaat'
+    | '/sitemap.xml'
     | '/voorwaarden'
     | '/wachtwoord-instellen'
     | '/admin'
@@ -240,6 +251,7 @@ export interface FileRouteTypes {
     | '/partnervoorwaarden'
     | '/privacy'
     | '/resultaat'
+    | '/sitemap.xml'
     | '/voorwaarden'
     | '/wachtwoord-instellen'
     | '/_authenticated/admin'
@@ -262,6 +274,7 @@ export interface RootRouteChildren {
   PartnervoorwaardenRoute: typeof PartnervoorwaardenRoute
   PrivacyRoute: typeof PrivacyRoute
   ResultaatRoute: typeof ResultaatRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   VoorwaardenRoute: typeof VoorwaardenRoute
   WachtwoordInstellenRoute: typeof WachtwoordInstellenRoute
   DuurzaamNieuwsSlugRoute: typeof DuurzaamNieuwsSlugRoute
@@ -327,6 +340,13 @@ declare module '@tanstack/react-router' {
       path: '/resultaat'
       fullPath: '/resultaat'
       preLoaderRoute: typeof ResultaatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/voorwaarden': {
@@ -435,6 +455,7 @@ const rootRouteChildren: RootRouteChildren = {
   PartnervoorwaardenRoute: PartnervoorwaardenRoute,
   PrivacyRoute: PrivacyRoute,
   ResultaatRoute: ResultaatRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   VoorwaardenRoute: VoorwaardenRoute,
   WachtwoordInstellenRoute: WachtwoordInstellenRoute,
   DuurzaamNieuwsSlugRoute: DuurzaamNieuwsSlugRoute,

@@ -16,6 +16,7 @@ import { FullEnergyProfileForm } from "@/components/home-savings/EnergyProfileFo
 import { EnergyBillUpload, applyBillToProfile } from "@/components/home-savings/EnergyBillUpload";
 
 export const Route = createFileRoute("/offerte")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Gratis offertes aanvragen, Onafhankelijke Offerte" },

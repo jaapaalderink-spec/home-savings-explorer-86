@@ -5,6 +5,7 @@ import { COMPANY } from "@/components/legal/company";
 const URL = "https://home-dreams-visualizer.lovable.app/partnervoorwaarden";
 
 export const Route = createFileRoute("/partnervoorwaarden")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Partnervoorwaarden, Onafhankelijke Offerte" },
