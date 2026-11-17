@@ -100,12 +100,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Onafhankelijke Offerte, vergelijk gratis offertes" },
       { name: "description", content: "Vergelijk gratis en vrijblijvend offertes voor zonnepanelen, warmtepompen, thuisbatterijen, airco's en laadpalen." },
-      { name: "author", content: "Lovable" },
+      { name: "author", content: "Onafhankelijke Offerte" },
       { property: "og:title", content: "Onafhankelijke Offerte" },
       { property: "og:description", content: "Vergelijk gratis offertes van gecontroleerde installateurs." },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Onafhankelijke Offerte" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
       ...(loaderData?.search_console_token
         ? [{ name: "google-site-verification", content: loaderData.search_console_token }]
         : []),

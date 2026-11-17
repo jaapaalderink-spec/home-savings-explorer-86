@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { LegalPage } from "@/components/legal/LegalPage";
 import { COMPANY } from "@/components/legal/company";
 
-const URL = "https://home-dreams-visualizer.lovable.app/voorwaarden";
+const URL = "https://onafhankelijke-offerte.nl/voorwaarden";
 
 export const Route = createFileRoute("/voorwaarden")({
   staticData: { sitemap: true },
