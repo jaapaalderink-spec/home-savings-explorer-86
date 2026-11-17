@@ -57,6 +57,13 @@ export const createCompany = createServerFn({ method: "POST" })
           .string()
           .transform((v) => v.replace(/\s/g, ""))
           .refine((v) => /^\d{8}$/.test(v), "Vul een geldig KvK-nummer van 8 cijfers in."),
+        street: z.string().trim().min(3, "Vul straat en huisnummer in.").max(100),
+        postcode: z
+          .string()
+          .transform((v) => v.replace(/\s/g, "").toUpperCase())
+          .refine((v) => /^\d{4}[A-Z]{2}$/.test(v), "Vul een geldige postcode in."),
+        city: z.string().trim().min(2, "Vul een plaats in.").max(60),
+        phone: z.string().trim().regex(/^[+0-9][0-9 ()-]{8,18}$/, "Vul een geldig telefoonnummer in."),
         categories: z.array(z.string().max(24)).min(1).max(6),
         // Genegeerd: pakket en quotum worden pas door een beheerder vastgelegd.
         plan: z.enum(["starter", "groei", "premium"]).optional(),
@@ -78,6 +85,8 @@ export const createCompany = createServerFn({ method: "POST" })
       .insert({
         name: data.name,
         kvk_number: data.kvkNumber,
+        address: `${data.street}, ${data.postcode.slice(0, 4)} ${data.postcode.slice(4)} ${data.city}`,
+        contact_phone: data.phone,
         categories: data.categories,
         plan_name: plan.id,
         monthly_lead_limit: 0,
