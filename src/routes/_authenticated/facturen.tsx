@@ -13,6 +13,7 @@ import { printInvoice } from "@/lib/invoice-print";
 import { COMPANY, COMPANY_VAT } from "@/components/legal/company";
 
 export const Route = createFileRoute("/_authenticated/facturen")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Facturen betalen, Onafhankelijke Offerte" },

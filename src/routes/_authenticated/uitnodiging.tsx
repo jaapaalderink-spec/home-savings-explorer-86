@@ -8,6 +8,7 @@ import { acceptInvitation, previewInvitation } from "@/lib/team.functions";
 import { PENDING_INVITE_KEY, teamResultMessage } from "@/lib/team-policy";
 
 export const Route = createFileRoute("/_authenticated/uitnodiging")({
+  staticData: { sitemap: false },
   validateSearch: z.object({ token: z.string().optional() }),
   head: () => ({
     meta: [

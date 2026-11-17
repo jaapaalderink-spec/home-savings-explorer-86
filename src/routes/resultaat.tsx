@@ -25,6 +25,7 @@ import {
 } from "@/lib/home-savings/session";
 
 export const Route = createFileRoute("/resultaat")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Jouw totale besparing, Onafhankelijke Offerte" },

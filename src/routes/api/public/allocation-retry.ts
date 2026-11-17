@@ -3,6 +3,7 @@ import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 
 /** Geplande herpoging van wachtende en gedeeltelijk geleverde aanvragen (tot 30 dagen). */
 export const Route = createFileRoute("/api/public/allocation-retry")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

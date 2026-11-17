@@ -7,6 +7,7 @@ import { BlogMedia, formatDate } from "@/components/blog/BlogMedia";
 const postsQuery = queryOptions({ queryKey: ["blog", "list"], queryFn: () => listPublishedPosts() });
 
 export const Route = createFileRoute("/duurzaam-nieuws/")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Duurzaam nieuws, Onafhankelijke Offerte" },

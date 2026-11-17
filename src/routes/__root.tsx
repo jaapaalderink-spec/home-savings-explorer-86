@@ -91,6 +91,7 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  staticData: { sitemap: false },
   loader: () => getSiteTags(),
   staleTime: 5 * 60_000,
   head: ({ loaderData }) => ({

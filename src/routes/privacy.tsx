@@ -5,6 +5,7 @@ import { COMPANY } from "@/components/legal/company";
 const URL = "https://home-dreams-visualizer.lovable.app/privacy";
 
 export const Route = createFileRoute("/privacy")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Privacyverklaring, Onafhankelijke Offerte" },

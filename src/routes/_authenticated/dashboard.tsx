@@ -21,6 +21,7 @@ import { SubscriptionPanel } from "@/components/dashboard/SubscriptionPanel";
 import { planByName } from "@/lib/lead-pricing";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Partnerdashboard, Onafhankelijke Offerte" },

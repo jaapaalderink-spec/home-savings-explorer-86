@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/wachtwoord-instellen")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Wachtwoord instellen, Onafhankelijke Offerte" },

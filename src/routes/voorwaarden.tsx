@@ -5,6 +5,7 @@ import { COMPANY } from "@/components/legal/company";
 const URL = "https://home-dreams-visualizer.lovable.app/voorwaarden";
 
 export const Route = createFileRoute("/voorwaarden")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Algemene voorwaarden, Onafhankelijke Offerte" },
