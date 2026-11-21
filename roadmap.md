@@ -1,4 +1,9 @@
 # Roadmap
+## Artikel zonnepanelen, 21 november 2026
+- [x] Artikel 1 gepubliceerd via bestaand nieuwsbeheer; klikbare links gecontroleerd in de preview
+- [x] Artikel, nieuwsindex en sitemap gecontroleerd; gewijzigde sitemap bij Google ingediend
+- [ ] Klikbare links en canoniek adres live bevestigen, wachten op aangevraagde publicatie
+
 - [x] Fase 0 — Inventaris (docs/backend-inventaris.md)
 - [x] Fase 1 — Rollen, team, uitnodigingen
 - [x] Fase 2 — Diensten, werkgebieden, kaart

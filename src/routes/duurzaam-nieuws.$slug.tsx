@@ -14,20 +14,22 @@ export const Route = createFileRoute("/duurzaam-nieuws/$slug")({
     if (!post) throw notFound();
     return { title: post.title, excerpt: post.excerpt, image: post.media_type === "image" ? post.media_url : null };
   },
-  head: ({ loaderData }) => {
+  head: ({ loaderData, params }) => {
     if (!loaderData) return { meta: [{ title: "Artikel niet gevonden, Duurzaam nieuws" }, { name: "robots", content: "noindex" }] };
     const t = `${loaderData.title}, Duurzaam nieuws`;
+    const url = `https://onafhankelijke-offerte.nl/duurzaam-nieuws/${encodeURIComponent(params.slug)}`;
     const meta = [
       { title: t },
       { name: "description", content: loaderData.excerpt },
       { property: "og:title", content: t },
       { property: "og:description", content: loaderData.excerpt },
       { property: "og:type", content: "article" },
+      { property: "og:url", content: url },
       { name: "twitter:card", content: "summary_large_image" },
     ];
     if (loaderData.image?.startsWith("https://"))
       meta.push({ property: "og:image", content: loaderData.image }, { name: "twitter:image", content: loaderData.image });
-    return { meta };
+    return { meta, links: [{ rel: "canonical", href: url }] };
   },
   notFoundComponent: () => (
     <main className="mx-auto max-w-2xl px-5 py-20 text-center">
